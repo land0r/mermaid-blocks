@@ -126,6 +126,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					'Write your MermaidJS code here…',
 					'mermaid-blocks'
 				) }
+				rows={ 10 }
 				value={ inputValue }
 				onChange={ setInputValue }
 				__nextHasNoMarginBottom
