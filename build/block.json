@@ -6,7 +6,7 @@
   "title": "Mermaid Diagram",
   "category": "widgets",
   "icon": "chart-bar",
-  "description": "Add MermaidJS diagrams to your WordPress posts and pages. Supports flowcharts, Gantt charts, sequence diagrams, and more.",
+  "description": "MermaidJS diagram: flowcharts, Gantt charts, sequence diagrams, and more.",
   "supports": {
     "html": false
   },
