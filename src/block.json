@@ -17,7 +17,6 @@
 	},
 	"textdomain": "mermaid-blocks",
 	"editorScript": [ "mermaid-js", "file:./index.js" ],
-	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",
 	"viewScript": [ "mermaid-js", "file:./view.js" ]
 }

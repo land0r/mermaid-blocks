@@ -33,11 +33,16 @@ add_action( 'init', 'create_block_mermaid_blocks_block_init' );
  * Register block assets.
  */
 function enqueue_mermaid_blocks_assets() {
+	$is_debug        = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
+	$mermaid_file    = $is_debug ? 'mermaid.js' : 'mermaid.min.js';
+	$mermaid_js_path = plugin_dir_url( __FILE__ ) . "assets/{$mermaid_file}";
+	$mermaid_version = '11.4.1';
+
 	wp_register_script(
 		'mermaid-js',
-		'https://unpkg.com/mermaid@10.2.4/dist/mermaid.min.js',
+		$mermaid_js_path,
 		array(),
-		'10.2.4',
+		$mermaid_version,
 		true
 	);
 }

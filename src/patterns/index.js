@@ -20,8 +20,6 @@ const variations = [
 	stateDiagram,
 ];
 
-console.log( variations );
-
 variations.forEach( ( variation ) => {
 	registerBlockVariation( 'mermaid-blocks/diagram', {
 		name: variation.name,
