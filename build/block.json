@@ -5,7 +5,6 @@
   "version": "0.1.0",
   "title": "Mermaid Diagram",
   "category": "widgets",
-  "icon": "chart-bar",
   "description": "MermaidJS diagram: flowcharts, Gantt charts, sequence diagrams, and more.",
   "supports": {
     "html": false

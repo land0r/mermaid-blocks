@@ -22,12 +22,19 @@ import save from './save';
 import metadata from './block.json';
 import './variations';
 
+import icon from './icon.svg';
+
 /**
  * Every block starts by registering a new block type definition.
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-registration/
  */
 registerBlockType( metadata.name, {
+	icon: {
+		background: '#fff',
+		src: <img src={ icon } alt={ 'icon' } />,
+	},
+
 	/**
 	 * @see ./edit.js
 	 */
