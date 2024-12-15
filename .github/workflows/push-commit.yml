@@ -1,0 +1,43 @@
+name: Push Commit
+
+on:
+  push:
+    branches:
+      - '**' # Matches all branches. Update if needed for specific branches.
+
+jobs:
+  lint:
+    name: Run Linters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22 # Node.js version used in your project
+          cache: 'npm'
+
+      - name: Install Node.js dependencies
+        run: npm install
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2' # Replace with your desired PHP version
+          extensions: mbstring, zip
+          tools: composer # Ensures Composer is installed
+
+      - name: Install Composer dependencies
+        run: composer install --no-scripts --no-interaction --prefer-dist
+
+      - name: Run WPCS check
+        run: npm run lint:php
+
+      - name: Run JS Linter
+        run: npm run lint:js
+
+      - name: Run CSS Linter
+        run: npm run lint:css
