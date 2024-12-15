@@ -11,7 +11,7 @@ Moving --> Still
 Moving --> Crash
 Crash --> [*]`,
 	},
-	keywords: ['state', 'diagram', 'mermaid'],
+	keywords: [ 'state', 'diagram', 'mermaid' ],
 	icon: 'controls-play',
 	scope: 'transform',
 };

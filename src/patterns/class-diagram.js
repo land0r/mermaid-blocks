@@ -20,7 +20,7 @@ class Class10 {
   size()
 }`,
 	},
-	keywords: ['class', 'diagram', 'mermaid'],
+	keywords: [ 'class', 'diagram', 'mermaid' ],
 	icon: 'database',
 	scope: 'transform',
 };

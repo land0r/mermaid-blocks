@@ -24,11 +24,5 @@ import { useBlockProps } from '@wordpress/block-editor';
 export default function save( { attributes } ) {
 	const { code } = attributes;
 
-	return (
-		<div
-			{ ...useBlockProps.save( {
-				'data-mermaid': code,
-			} ) }
-		/>
-	);
+	return <pre { ...useBlockProps.save() }>{ code }</pre>;
 }

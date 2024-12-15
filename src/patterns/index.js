@@ -17,7 +17,7 @@ const variations = [
 	flowchart,
 	mindMap,
 	sequenceDiagram,
-	stateDiagram
+	stateDiagram,
 ];
 
 console.log( variations );

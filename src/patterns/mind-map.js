@@ -19,7 +19,7 @@ Origins
       Pen and paper
       Mermaid`,
 	},
-	keywords: ['mindmap', 'diagram', 'mermaid'],
+	keywords: [ 'mindmap', 'diagram', 'mermaid' ],
 	icon: 'admin-users',
 	scope: 'transform',
 };
