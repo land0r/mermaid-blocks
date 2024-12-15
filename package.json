@@ -16,6 +16,9 @@
 		"start": "wp-scripts start",
 		"prepare": "husky install"
 	},
+	"files": [
+		"assets", "build", "mermaid-blocks.php", "readme.txt", "LICENSE.txt"
+	],
 	"devDependencies": {
 		"@wordpress/scripts": "^30.7.0",
 		"husky": "^9.1.7"
