@@ -1,6 +1,5 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
-composer cs
-npm run list:css
 npm run lint:js
+npm run lint:css
+npm run lint:php

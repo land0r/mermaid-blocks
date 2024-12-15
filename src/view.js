@@ -22,6 +22,7 @@ if ( typeof mermaid !== 'undefined' ) {
 			// eslint-disable-next-line no-undef
 			mermaid.initialize( { startOnLoad: false } );
 
+			// eslint-disable-next-line no-undef
 			await mermaid.run( {
 				querySelector: '.wp-block-mermaid-blocks-diagram',
 			} );
