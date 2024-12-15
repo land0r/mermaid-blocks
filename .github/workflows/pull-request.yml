@@ -1,0 +1,57 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-and-build:
+    name: Lint and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22 # Replace with your Node.js version
+          cache: 'npm'
+
+      # Step 3: Install Node.js dependencies
+      - name: Install Node.js dependencies
+        run: npm install
+
+      # Step 4: Set up PHP
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2' # Replace with your PHP version
+
+      # Step 5: Install Composer dependencies
+      - name: Install Composer dependencies
+        run: composer install --no-scripts --no-interaction --prefer-dist
+
+      # Step 6: Run WPCS Linter (PHP Lint)
+      - name: Run PHP Linter
+        run: npm run lint:php
+
+      # Step 7: Run JS Linter
+      - name: Run JS Linter
+        run: npm run lint:js
+
+      # Step 8: Run CSS Linter
+      - name: Run CSS Linter
+        run: npm run lint:css
+
+      # Step 9: Build the plugin
+      - name: Build Plugin
+        run: npm run build
+
+      # Step 10: Create a plugin archive
+      - name: Plugin ZIP
+        run: npm run plugin-zip
