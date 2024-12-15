@@ -28,7 +28,8 @@ export function initializeMermaid() {
 		if ( ! window.mermaid.isInitialized ) {
 			// Initialize Mermaid.js with default options
 			window.mermaid.initialize( {
-				startOnLoad: false, // Disable auto-rendering on page load
+				startOnLoad: false, // Disable auto-rendering on page load  securityLevel: 'loose',
+				htmlLabels: false, // fix incompatibility with Gutenberg.
 			} );
 
 			// Mark Mermaid as initialized to avoid re-initialization
