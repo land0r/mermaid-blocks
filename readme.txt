@@ -2,7 +2,7 @@
 Contributors:      IvanHryhorenko
 Tags:              block, diagrams, mermaidjs, flowchart, gantt, sequence
 Tested up to:      6.6
-Stable tag:        1.0.0
+Stable tag:        1.1.0
 Requires PHP:      7.4
 License:           GPL-3.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-3.0.html
@@ -55,6 +55,10 @@ Yes, it is compatible with most modern WordPress themes.
 * Initial stable release.
 * Add MermaidJS block with support for flowcharts, sequence diagrams, Gantt charts, and class diagrams.
 * Real-time rendering of diagrams in the Gutenberg editor.
+
+= 1.1.0 =
+* Instructions in the editor.
+* ObsidianMD markdown to Mermaid Blocks transformation.
 
 == Future Plans ==
 
