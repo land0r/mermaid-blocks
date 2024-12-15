@@ -1,55 +1,62 @@
 === Mermaid Blocks ===
-Contributors:      The WordPress Contributors
-Tags:              block
+Contributors:      IvanHryhorenko
+Tags:              block, diagrams, mermaidjs, flowchart, gantt, sequence
 Tested up to:      6.6
 Stable tag:        0.1.0
-License:           GPL-2.0-or-later
-License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+Requires PHP:      7.4
+License:           GPL-3.0-or-later
+License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
-Example block scaffolded with Create Block tool.
+Mermaid Blocks allows you to add, edit, and render diagrams using MermaidJS directly in the WordPress editor.
 
 == Description ==
 
-This is the long description. No limit, and you can use Markdown (as well as in the following sections).
+Mermaid Blocks is a powerful Gutenberg plugin that lets you integrate [MermaidJS](https://mermaid-js.github.io/) diagrams into your WordPress posts and pages. With support for flowcharts, sequence diagrams, Gantt charts, and more, this plugin provides an easy way to visually represent data and workflows directly in the editor.
 
-For backwards compatibility, if this section is missing, the full length of the short description will be used, and
-Markdown parsed.
+### Features
+* Edit MermaidJS diagrams using a built-in code editor with syntax highlighting.
+* Supports popular diagram types: flowchart, sequence, Gantt, class diagrams, and more.
+* Fully integrated with Gutenberg's block editor.
+* Customizable MermaidJS configuration options.
+
+This plugin is ideal for developers, bloggers, and content creators who want to include dynamic, visually engaging diagrams in their WordPress content.
 
 == Installation ==
 
-This section describes how to install the plugin and get it working.
-
-e.g.
-
 1. Upload the plugin files to the `/wp-content/plugins/mermaid-blocks` directory, or install the plugin through the WordPress plugins screen directly.
-1. Activate the plugin through the 'Plugins' screen in WordPress
-
+2. Activate the plugin through the 'Plugins' screen in WordPress.
+3. Add the "Mermaid Diagram" block to your content in the Gutenberg editor and start creating your diagrams.
 
 == Frequently Asked Questions ==
 
-= A question that someone might have =
+= What is MermaidJS? =
 
-An answer to that question.
+[MermaidJS](https://mermaid-js.github.io/) is a JavaScript-based diagramming and charting tool that renders diagrams from plain text descriptions.
 
-= What about foo bar? =
+= Does this plugin support all MermaidJS diagrams? =
 
-Answer to foo bar dilemma.
+Yes, the plugin supports all diagram types that are part of MermaidJS, including flowcharts, sequence diagrams, Gantt charts, class diagrams, and more.
+
+= Can I customize MermaidJS configurations? =
+
+Yes, you can provide your own MermaidJS configuration within the block settings.
+
+= Is it compatible with all WordPress themes? =
+
+The plugin works seamlessly with most modern WordPress themes. However, some custom themes may require minor adjustments to CSS.
 
 == Screenshots ==
 
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
-(or jpg, jpeg, gif).
-2. This is the second screen shot
+1. Adding a MermaidJS diagram in the Gutenberg editor.
+2. Example of a flowchart rendered on the frontend.
 
 == Changelog ==
 
 = 0.1.0 =
-* Release
+* Initial release: Add, edit, and render MermaidJS diagrams in the Gutenberg editor.
 
-== Arbitrary section ==
+== Future Plans ==
 
-You may provide arbitrary sections, in the same format as the ones above. This may be of use for extremely complicated
-plugins where more information needs to be conveyed that doesn't fit into the categories of "description" or
-"installation." Arbitrary sections will be shown below the built-in sections outlined above.
+* Add support for theme-based MermaidJS configurations.
+* Provide an SVG export option for diagrams.
+* Include pre-designed diagram templates for faster creation.
