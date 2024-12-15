@@ -45,10 +45,9 @@ Yes, it is compatible with most modern WordPress themes.
 == Screenshots ==
 
 1. **Adding a diagram block** – Inserting a Mermaid Diagram block in Gutenberg editor.
-2. **Editing MermaidJS code** – Writing MermaidJS code in the block editor.
-3. **Example: Flowchart** – A rendered flowchart in the Gutenberg editor.
-4. **Example: Sequence Diagram** – MermaidJS sequence diagram rendered live.
-5. **Frontend View** – A Mermaid diagram displayed on the published site.
+2. **Example: Flowchart** – A rendered flowchart in the Gutenberg editor.
+3. **Example: Sequence Diagram** – MermaidJS sequence diagram rendered live.
+4. **Frontend View** – A Mermaid diagram displayed on the published site.
 
 == Changelog ==
 
