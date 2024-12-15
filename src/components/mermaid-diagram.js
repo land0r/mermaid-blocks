@@ -14,14 +14,6 @@ import { useEffect, useRef } from '@wordpress/element';
 import { useInstanceId } from '@wordpress/compose';
 
 /**
- * Initializes MermaidJS globally.
- * Ensures Mermaid is properly set up for rendering diagrams.
- *
- * @see https://mermaid-js.github.io/mermaid/#/Setup
- */
-import '../utils/mermaid-init';
-
-/**
  * Mermaid Diagram Component
  * Renders MermaidJS diagrams inside a container using the global Mermaid.js object.
  *
