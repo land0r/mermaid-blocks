@@ -31,7 +31,7 @@ add_action( 'init', 'create_block_mermaid_blocks_block_init' );
 
 function enqueue_mermaid_blocks_assets() {
 	// Enqueue Mermaid.js from a reliable CDN
-	wp_enqueue_script(
+	wp_register_script(
 		'mermaid-js',
 		'https://unpkg.com/mermaid@10.2.4/dist/mermaid.min.js',
 		[],
@@ -39,5 +39,6 @@ function enqueue_mermaid_blocks_assets() {
 		true
 	);
 }
-add_action('enqueue_block_editor_assets', 'enqueue_mermaid_blocks_assets');
+add_action( 'enqueue_block_assets', 'enqueue_mermaid_blocks_assets' );
+add_action( 'enqueue_block_editor_assets', 'enqueue_mermaid_blocks_assets' );
 

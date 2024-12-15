@@ -361,15 +361,27 @@ __webpack_require__.r(__webpack_exports__);
  * be combined into the final markup, which is then serialized by the block
  * editor into `post_content`.
  *
+ * The serialized content includes the MermaidJS code in a `data-mermaid`
+ * attribute, which will be processed on the front end to render the diagram.
+ *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#save
  *
- * @return {Element} Element to render.
+ * @param {Object} props            The block props.
+ * @param {Object} props.attributes The block attributes.
+ *
+ * @return {Element} The rendered block markup to be saved in the post content.
  */
 
-function save() {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("p", {
-    ..._wordpress_block_editor__WEBPACK_IMPORTED_MODULE_0__.useBlockProps.save(),
-    children: 'Mermaid Blocks – hello from the saved content!'
+function save({
+  attributes
+}) {
+  const {
+    code
+  } = attributes;
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("div", {
+    ..._wordpress_block_editor__WEBPACK_IMPORTED_MODULE_0__.useBlockProps.save({
+      'data-mermaid': code
+    })
   });
 }
 
@@ -550,7 +562,7 @@ module.exports = window["wp"]["i18n"];
   \************************/
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"create-block/mermaid-blocks","version":"0.1.0","title":"Mermaid Blocks","category":"widgets","icon":"smiley","description":"Example block scaffolded with Create Block tool.","example":{},"supports":{"html":false},"attributes":{"code":{"type":"string"}},"textdomain":"mermaid-blocks","editorScript":["mermaid-js","file:./index.js"],"editorStyle":"file:./index.css","style":"file:./style-index.css","viewScript":"file:./view.js"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"mermaid-blocks/diagram","version":"0.1.0","title":"Mermaid Blocks","category":"widgets","icon":"smiley","description":"Example block scaffolded with Create Block tool.","supports":{"html":false},"attributes":{"code":{"type":"string"}},"textdomain":"mermaid-blocks","editorScript":["mermaid-js","file:./index.js"],"editorStyle":"file:./index.css","style":"file:./style-index.css","viewScript":["mermaid-js","file:./view.js"]}');
 
 /***/ })
 

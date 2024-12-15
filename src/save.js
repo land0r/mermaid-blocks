@@ -11,14 +11,24 @@ import { useBlockProps } from '@wordpress/block-editor';
  * be combined into the final markup, which is then serialized by the block
  * editor into `post_content`.
  *
+ * The serialized content includes the MermaidJS code in a `data-mermaid`
+ * attribute, which will be processed on the front end to render the diagram.
+ *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#save
  *
- * @return {Element} Element to render.
+ * @param {Object} props            The block props.
+ * @param {Object} props.attributes The block attributes.
+ *
+ * @return {Element} The rendered block markup to be saved in the post content.
  */
-export default function save() {
+export default function save( { attributes } ) {
+	const { code } = attributes;
+
 	return (
-		<p { ...useBlockProps.save() }>
-			{ 'Mermaid Blocks – hello from the saved content!' }
-		</p>
+		<div
+			{ ...useBlockProps.save( {
+				'data-mermaid': code,
+			} ) }
+		/>
 	);
 }

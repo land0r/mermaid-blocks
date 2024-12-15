@@ -1,13 +1,12 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "create-block/mermaid-blocks",
+	"name": "mermaid-blocks/diagram",
 	"version": "0.1.0",
 	"title": "Mermaid Blocks",
 	"category": "widgets",
 	"icon": "smiley",
 	"description": "Example block scaffolded with Create Block tool.",
-	"example": {},
 	"supports": {
 		"html": false
 	},
@@ -20,5 +19,5 @@
 	"editorScript": [ "mermaid-js", "file:./index.js" ],
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",
-	"viewScript": "file:./view.js"
+	"viewScript": [ "mermaid-js", "file:./view.js" ]
 }
