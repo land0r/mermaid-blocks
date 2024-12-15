@@ -11,7 +11,7 @@ import { __ } from '@wordpress/i18n';
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-block-editor/#useblockprops
  */
-import { useBlockProps } from '@wordpress/block-editor';
+import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 
 /**
  * Processes CSS, SASS, or SCSS files referenced in JavaScript files.
@@ -33,7 +33,7 @@ import { useDebouncedInput } from '@wordpress/compose';
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/components/textareacontrol/
  */
-import { TextareaControl } from '@wordpress/components';
+import { TextareaControl, PanelBody, PanelRow } from '@wordpress/components';
 
 /**
  * React hooks for lifecycle events and mutable values.
@@ -123,6 +123,43 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	return (
 		<div { ...useBlockProps() }>
+			<InspectorControls>
+				<PanelBody title="Instructions" initialOpen={ true }>
+					<PanelRow>
+						<p>
+							Use <strong>MermaidJS syntax</strong> to create
+							diagrams. For example:
+						</p>
+					</PanelRow>
+					<PanelRow>
+						<code>
+							flowchart LR
+							<br />
+							A[Start] --&gt; B[Decision]
+							<br />
+							B --&gt;|Yes| C[Result]
+							<br />
+							B --&gt;|No| D[Exit]
+							<br />
+						</code>
+					</PanelRow>
+					<PanelRow>
+						<p>
+							Supported diagram types: flowchart, sequence
+							diagram, Gantt chart, class, and many other
+							diagrams. Visit&nbsp;
+							<a
+								href="https://mermaid.js.org/intro/"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								MermaidJS Documentation
+							</a>
+							&nbsp;for details.
+						</p>
+					</PanelRow>
+				</PanelBody>
+			</InspectorControls>
 			{ /* Textarea for entering MermaidJS code */ }
 			<TextareaControl
 				label={ __( 'Mermaid Code', 'mermaid-blocks' ) }
