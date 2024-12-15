@@ -9,6 +9,7 @@
 	<file>mermaid-blocks.php</file>
 
 	<!-- Ignore these directories -->
+	<exclude-pattern>assets/*</exclude-pattern>
 	<exclude-pattern>node_modules/*</exclude-pattern>
 	<exclude-pattern>build/*</exclude-pattern>
 	<exclude-pattern>src/*</exclude-pattern>
