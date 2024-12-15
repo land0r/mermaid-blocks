@@ -4,7 +4,7 @@
  * Description:       Mermaid Blocks: A Gutenberg block plugin that allows you to create, edit, and render diagrams using MermaidJS directly in the WordPress editor. Perfect for flowcharts, sequence diagrams, Gantt charts, and more.
  * Requires at least: 6.6
  * Requires PHP:      7.2
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            Ivan Hryhorenko
  * License:           GPL-3.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
