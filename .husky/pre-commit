@@ -1,0 +1,5 @@
+#!/bin/sh
+
+npm run lint:js
+npm run lint:css
+npm run lint:php
