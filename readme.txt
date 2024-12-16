@@ -15,6 +15,9 @@ Mermaid Blocks is a Gutenberg plugin that integrates [MermaidJS](https://mermaid
 
 This makes it easy to include **text-based diagrams** using MermaidJS syntax in the Gutenberg editor without additional tools or complex setups.
 
+[Playground Demo](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/land0r/mermaid-blocks/main/blueprint.json)
+
+
 ### Features:
 - Add MermaidJS diagrams via a dedicated Gutenberg block.
 - **Supported diagram types:** Flowcharts, Sequence Diagrams, Gantt Charts, Class Diagrams.
