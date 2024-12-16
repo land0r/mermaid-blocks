@@ -1,0 +1,27 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/wp-admin/post-new.php?post_type=page",
+	"plugins": [
+		"https://github-proxy.com/proxy/?repo=land0r/mermaid-blocks"
+	],
+	"steps": [
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "url",
+				"url": "https://github-proxy.com/proxy/?repo=land0r/mermaid-blocks"
+			}
+		}
+	],
+	"preferredVersions": {
+		"php": "8.2",
+		"wp": "latest"
+	},
+	"features": {
+		"networking": true
+	},
+	"phpExtensionBundles": [
+		"kitchen-sink"
+	],
+	"login": true
+}
