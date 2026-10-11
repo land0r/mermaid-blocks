@@ -1,42 +1,31 @@
 /**
- * This file contains JavaScript code to render MermaidJS diagrams dynamically
- * on the front end of posts or pages containing this block.
- *
- * When this file is specified as the value of the `viewScript` property in
- * `block.json`, it will be enqueued automatically on the front end.
- *
- * Example:
- * {
- *   "viewScript": "file:./view.js"
- * }
+ * Renders MermaidJS diagrams on the front end of posts or pages containing
+ * the block. Enqueued automatically through the `viewScript` property in
+ * block.json, after the global `mermaid` library.
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-metadata/#view-script
  */
+import renderBlocks from './frontend/render-blocks';
 
-// Check if the MermaidJS library is available globally
-if ( typeof mermaid !== 'undefined' ) {
-	// Wait for the DOM to load
-	document.addEventListener( 'DOMContentLoaded', async () => {
-		// Initialize Mermaid globally
-		if ( typeof mermaid !== 'undefined' ) {
-			// eslint-disable-next-line no-undef
-			mermaid.initialize( { startOnLoad: false } );
+async function init() {
+	const mermaid = window.mermaid;
 
-			// eslint-disable-next-line no-undef
-			await mermaid.run( {
-				querySelector: '.wp-block-mermaid-blocks-diagram',
-			} );
-		} else {
-			// eslint-disable-next-line no-console
-			console.warn(
-				'Mermaid.js library is not available. Mermaid blocks will not be rendered.'
-			);
-		}
-	} );
+	if ( ! mermaid ) {
+		// eslint-disable-next-line no-console
+		console.warn(
+			'Mermaid.js library is not available. Mermaid blocks will not be rendered.'
+		);
+		return;
+	}
+
+	mermaid.initialize( { startOnLoad: false } );
+	await renderBlocks( mermaid );
+}
+
+// The script may execute after DOMContentLoaded (deferred/delayed by
+// optimisation plugins), so do not rely on the event alone.
+if ( document.readyState === 'loading' ) {
+	document.addEventListener( 'DOMContentLoaded', init, { once: true } );
 } else {
-	// Log a warning if Mermaid.js is not loaded
-	// eslint-disable-next-line no-console
-	console.warn(
-		'Mermaid.js library is not available. Mermaid blocks will not be rendered.'
-	);
+	init();
 }
