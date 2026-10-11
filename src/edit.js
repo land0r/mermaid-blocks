@@ -48,14 +48,6 @@ import {
 } from '@wordpress/element';
 
 /**
- * Initializes MermaidJS globally.
- * Ensures Mermaid is properly set up for rendering diagrams.
- *
- * @see https://mermaid-js.github.io/mermaid/#/Setup
- */
-import './utils/mermaid-init';
-
-/**
  * Component for rendering a Mermaid diagram. This is a custom React component
  * built to render MermaidJS diagrams in WordPress blocks.
  */

@@ -6,6 +6,7 @@
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-metadata/#view-script
  */
 import renderBlocks from './frontend/render-blocks';
+import MERMAID_CONFIG from './utils/mermaid-config';
 
 async function init() {
 	const mermaid = window.mermaid;
@@ -18,7 +19,7 @@ async function init() {
 		return;
 	}
 
-	mermaid.initialize( { startOnLoad: false } );
+	mermaid.initialize( MERMAID_CONFIG );
 	await renderBlocks( mermaid );
 }
 

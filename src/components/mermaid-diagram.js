@@ -26,11 +26,14 @@ import { useEffect, useRef, useState } from '@wordpress/element';
  */
 import { useInstanceId } from '@wordpress/compose';
 
+import { getMermaid } from '../utils/mermaid-init';
 import { renderDiagram } from '../utils/render-diagram';
 
 /**
  * Mermaid Diagram Component
- * Renders MermaidJS diagrams using the global Mermaid.js object.
+ * Renders MermaidJS diagrams with the Mermaid copy loaded in the window the
+ * preview is displayed in (the editor canvas iframe), using the front-end
+ * configuration, so the preview matches the published diagram.
  *
  * Empty code clears the preview. Invalid code shows Mermaid's own error
  * message (as text) in place of the diagram. Only the result of the latest
@@ -47,6 +50,9 @@ import { renderDiagram } from '../utils/render-diagram';
 export default function MermaidDiagram( { code, className } ) {
 	const instanceId = useInstanceId( MermaidDiagram );
 
+	// The preview container; its window decides which Mermaid copy renders.
+	const containerRef = useRef( null );
+
 	// Incrementing counter so every render call gets a unique Mermaid id.
 	const renderCounter = useRef( 0 );
 
@@ -61,7 +67,12 @@ export default function MermaidDiagram( { code, className } ) {
 			return;
 		}
 
-		if ( ! window.mermaid ) {
+		const owner = getMermaid(
+			containerRef.current &&
+				containerRef.current.ownerDocument.defaultView
+		);
+
+		if ( ! owner ) {
 			setSvg( '' );
 			setError( {
 				message: __(
@@ -77,20 +88,22 @@ export default function MermaidDiagram( { code, className } ) {
 		renderCounter.current += 1;
 		const renderId = `mermaid-diagram-${ instanceId }-${ renderCounter.current }`;
 
-		renderDiagram( window.mermaid, renderId, code ).then( ( result ) => {
-			// A newer render started, or the component unmounted.
-			if ( cancelled ) {
-				return;
-			}
+		renderDiagram( owner.mermaid, renderId, code, owner.document ).then(
+			( result ) => {
+				// A newer render started, or the component unmounted.
+				if ( cancelled ) {
+					return;
+				}
 
-			if ( result.error ) {
-				setSvg( '' );
-				setError( result.error );
-			} else {
-				setSvg( result.svg );
-				setError( null );
+				if ( result.error ) {
+					setSvg( '' );
+					setError( result.error );
+				} else {
+					setSvg( result.svg );
+					setError( null );
+				}
 			}
-		} );
+		);
 
 		return () => {
 			cancelled = true;
@@ -110,7 +123,10 @@ export default function MermaidDiagram( { code, className } ) {
 	}
 
 	return (
-		<div className={ `mermaid-container ${ className || '' }` }>
+		<div
+			ref={ containerRef }
+			className={ `mermaid-container ${ className || '' }` }
+		>
 			{ error ? (
 				<Notice status="error" isDismissible={ false }>
 					<strong>{ heading }</strong>
