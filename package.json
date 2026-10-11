@@ -11,16 +11,24 @@
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js ./src",
 		"lint:php": "composer cs",
+		"test:unit": "wp-scripts test-unit-js",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start": "wp-scripts start",
 		"prepare": "husky install"
 	},
 	"files": [
-		"assets", "build", "mermaid-blocks.php", "readme.txt", "LICENSE.txt"
+		"build",
+		"mermaid-blocks.php",
+		"readme.txt",
+		"LICENSE.txt"
 	],
 	"devDependencies": {
 		"@wordpress/scripts": "^30.7.0",
+		"copy-webpack-plugin": "^10.2.4",
 		"husky": "^9.1.7"
+	},
+	"dependencies": {
+		"mermaid": "12.1.0"
 	}
 }

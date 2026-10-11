@@ -1,8 +1,33 @@
 /**
  * The following styles get applied both on the front of your site
- * and in the editor.
+ * and in the editor. The source/canvas elements only exist on the front end,
+ * so these selectors do not affect the editor.
  */
 
-pre.wp-block-mermaid-blocks-diagram {
-	font-size: 0;
+/*
+ * Hide the raw source until it is rendered, without flashing it on normal
+ * loads. If JavaScript never renders the block (blocked, failed, disabled),
+ * the code is revealed after a few seconds as a fallback.
+ */
+.wp-block-mermaid-blocks-diagram:not(.is-rendered):not(.has-error)
+.mermaid-blocks-diagram__source {
+	visibility: hidden;
+	animation: mermaid-blocks-reveal-source 0s linear 5s forwards;
+}
+
+/* Themes often set `pre { display: block }`, which defeats `hidden`. */
+.wp-block-mermaid-blocks-diagram .mermaid-blocks-diagram__source[hidden] {
+	display: none;
+}
+
+.wp-block-mermaid-blocks-diagram .mermaid-blocks-diagram__canvas svg {
+	max-width: 100%;
+	height: auto;
+}
+
+@keyframes mermaid-blocks-reveal-source {
+
+	to {
+		visibility: visible;
+	}
 }

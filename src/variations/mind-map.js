@@ -1,7 +1,12 @@
+import { __ } from '@wordpress/i18n';
+
 const mindMap = {
 	name: 'mindmap',
-	title: 'Mind Map',
-	description: 'A preconfigured MermaidJS block for creating mind maps.',
+	title: __( 'Mind Map', 'mermaid-blocks' ),
+	description: __(
+		'A preconfigured MermaidJS block for creating mind maps.',
+		'mermaid-blocks'
+	),
 	attributes: {
 		code: `mindmap
 Origins
@@ -19,7 +24,11 @@ Origins
       Pen and paper
       Mermaid`,
 	},
-	keywords: [ 'mindmap', 'diagram', 'mermaid' ],
+	keywords: [
+		__( 'mindmap', 'mermaid-blocks' ),
+		__( 'diagram', 'mermaid-blocks' ),
+		__( 'mermaid', 'mermaid-blocks' ),
+	],
 	icon: 'admin-users',
 	scope: 'transform',
 };

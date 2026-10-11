@@ -1,8 +1,12 @@
+import { __ } from '@wordpress/i18n';
+
 const sequenceDiagram = {
 	name: 'sequence-diagram',
-	title: 'Sequence Diagram',
-	description:
+	title: __( 'Sequence Diagram', 'mermaid-blocks' ),
+	description: __(
 		'A preconfigured MermaidJS block for creating sequence diagrams.',
+		'mermaid-blocks'
+	),
 	attributes: {
 		code: `sequenceDiagram
 Alice->>John: Hello John, how are you?
@@ -14,7 +18,11 @@ John-->>Alice: Great!
 John->>Bob: How about you?
 Bob-->>John: Jolly good!`,
 	},
-	keywords: [ 'sequence', 'diagram', 'mermaid' ],
+	keywords: [
+		__( 'sequence', 'mermaid-blocks' ),
+		__( 'diagram', 'mermaid-blocks' ),
+		__( 'mermaid', 'mermaid-blocks' ),
+	],
 	icon: 'networking',
 	scope: 'transform',
 };
