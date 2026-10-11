@@ -77,6 +77,20 @@ describe( 'renderDiagram', () => {
 		expect( document.getElementById( 'dother' ) ).not.toBeNull();
 	} );
 
+	it( 'removes leftovers from the document Mermaid rendered in', async () => {
+		const frameDocument = document.implementation.createHTMLDocument();
+		const orphan = frameDocument.createElement( 'div' );
+		orphan.id = 'dframe';
+		frameDocument.body.appendChild( orphan );
+		const mermaid = {
+			render: jest.fn().mockRejectedValue( new Error( 'bad' ) ),
+		};
+
+		await renderDiagram( mermaid, 'frame', 'bad', frameDocument );
+
+		expect( frameDocument.getElementById( 'dframe' ) ).toBeNull();
+	} );
+
 	it( 'does not throw when there is nothing to clean up', async () => {
 		const mermaid = {
 			render: jest.fn().mockRejectedValue( new Error( 'bad' ) ),

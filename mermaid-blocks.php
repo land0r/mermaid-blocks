@@ -45,6 +45,18 @@ function enqueue_mermaid_blocks_assets() {
 		$mermaid_version,
 		true
 	);
+
+	/*
+	 * Load Mermaid inside the editor canvas iframe, so previews are measured
+	 * and rendered in the document they are shown in, as on the front end.
+	 * WordPress collects the iframe's assets by firing `enqueue_block_assets`
+	 * with block editor scripts switched off, which is the only admin context
+	 * where this condition holds. The admin window keeps its own copy through
+	 * the editor script's dependency, for editors that are not iframed.
+	 */
+	if ( is_admin() && ! wp_should_load_block_editor_scripts_and_styles() ) {
+		wp_enqueue_script( 'mermaid-js' );
+	}
 }
 add_action( 'enqueue_block_assets', 'enqueue_mermaid_blocks_assets' );
 add_action( 'enqueue_block_editor_assets', 'enqueue_mermaid_blocks_assets' );

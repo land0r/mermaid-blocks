@@ -1,54 +1,41 @@
 /**
- * DOM Ready utility for WordPress.
- * Ensures the provided callback runs once the DOM is fully loaded.
- *
- * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-dom-ready/
+ * Shared Mermaid configuration (same as the front end).
  */
-import domReady from '@wordpress/dom-ready';
+import MERMAID_CONFIG from './mermaid-config';
 
 /**
- * Initializes Mermaid.js globally.
+ * Mermaid instances that have already been initialised. Each window that loads
+ * the library (the admin page and the editor canvas iframe) has its own.
  *
- * This function ensures that Mermaid.js is initialized only once during the
- * lifetime of the application. If Mermaid.js is not available on the global
- * `window` object, it silently exits. A custom `isInitialized` flag is used to
- * prevent redundant initializations.
- *
- * @see https://mermaid-js.github.io/mermaid/#/Setup
+ * @type {WeakSet<Object>}
  */
-export function initializeMermaid() {
-	try {
-		// Check if Mermaid.js is loaded globally
-		if ( typeof window.mermaid === 'undefined' ) {
-			// Mermaid.js is not loaded, silently exit
-			return;
-		}
+const initialized = new WeakSet();
 
-		// Check if Mermaid has already been initialized
-		if ( ! window.mermaid.isInitialized ) {
-			// Initialize Mermaid.js with default options
-			window.mermaid.initialize( {
-				startOnLoad: false, // Disable auto-rendering on page load  securityLevel: 'loose',
-				htmlLabels: false, // Fix incompatibility with Gutenberg.
-				flowchart: {
-					htmlLabels: false, // Fix incompatibility with Gutenberg.
-				},
-			} );
+/**
+ * Returns the Mermaid instance to render an editor preview with, initialised
+ * with the front-end configuration.
+ *
+ * The editor canvas is an iframe that loads its own copy of Mermaid, so a
+ * diagram is measured in the same document it is displayed in, as on the front
+ * end. Editors that are not iframed fall back to the copy in the admin window.
+ *
+ * @param {Window} [view] The window the preview is displayed in.
+ *
+ * @return {{mermaid: Object, document: Document}|null} The Mermaid instance and
+ * the document it renders in, or null when Mermaid is not loaded.
+ */
+export function getMermaid( view ) {
+	const owner = view && view.mermaid ? view : window;
+	const { mermaid } = owner;
 
-			// Mark Mermaid as initialized to avoid re-initialization
-			window.mermaid.isInitialized = true;
-		}
-	} catch ( error ) {
-		// Log the error to the console for debugging
-		// eslint-disable-next-line no-console
-		console.error( 'Error during Mermaid.js initialization:', error );
+	if ( ! mermaid ) {
+		return null;
 	}
-}
 
-/**
- * Executes Mermaid.js initialization when the DOM is fully loaded.
- * This ensures that Mermaid is set up after all elements in the DOM are available.
- */
-domReady( () => {
-	initializeMermaid();
-} );
+	if ( ! initialized.has( mermaid ) ) {
+		mermaid.initialize( MERMAID_CONFIG );
+		initialized.add( mermaid );
+	}
+
+	return { mermaid, document: owner.document };
+}

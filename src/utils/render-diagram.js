@@ -32,15 +32,15 @@ function getErrorLine( error ) {
  * fails.
  *
  * Mermaid appends a `<div id="d{renderId}">` (and possibly an element with the
- * render id itself) to the `document` of the window it runs in. In the block
- * editor that is the parent admin window, not the editor iframe, so the global
- * `document` is used on purpose.
+ * render id itself) to the `document` of the window it runs in, which is not
+ * necessarily the document running this script.
  *
- * @param {string} renderId The id passed to `mermaid.render()`.
+ * @param {string}   renderId The id passed to `mermaid.render()`.
+ * @param {Document} doc      The document Mermaid rendered in.
  */
-function removeLeftovers( renderId ) {
+function removeLeftovers( renderId, doc ) {
 	[ `d${ renderId }`, renderId ].forEach( ( id ) => {
-		const element = document.getElementById( id );
+		const element = doc.getElementById( id );
 		if ( element && element.parentNode ) {
 			element.parentNode.removeChild( element );
 		}
@@ -50,19 +50,20 @@ function removeLeftovers( renderId ) {
 /**
  * Renders Mermaid code to SVG and never throws.
  *
- * @param {Object} mermaid  The Mermaid API object (`window.mermaid`).
- * @param {string} renderId A unique element id for this render call.
- * @param {string} code     The Mermaid source.
+ * @param {Object}   mermaid  The Mermaid API object.
+ * @param {string}   renderId A unique element id for this render call.
+ * @param {string}   code     The Mermaid source.
+ * @param {Document} [doc]    The document of the window Mermaid runs in.
  *
  * @return {Promise<{svg: string}|{error: {message: string, line: (number|null)}}>}
  * The SVG markup, or a normalised error. Leftover DOM is removed on failure.
  */
-export async function renderDiagram( mermaid, renderId, code ) {
+export async function renderDiagram( mermaid, renderId, code, doc = document ) {
 	try {
 		const { svg } = await mermaid.render( renderId, code );
 		return { svg };
 	} catch ( error ) {
-		removeLeftovers( renderId );
+		removeLeftovers( renderId, doc );
 
 		const message =
 			( error && error.message ) ||
