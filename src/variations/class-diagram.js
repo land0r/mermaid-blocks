@@ -1,7 +1,12 @@
+import { __ } from '@wordpress/i18n';
+
 const classDiagram = {
 	name: 'class-diagram',
-	title: 'Class Diagram',
-	description: 'A preconfigured MermaidJS block for creating class diagrams.',
+	title: __( 'Class Diagram', 'mermaid-blocks' ),
+	description: __(
+		'A preconfigured MermaidJS block for creating class diagrams.',
+		'mermaid-blocks'
+	),
 	attributes: {
 		code: `classDiagram
 Class01 <|-- AveryLongClass : Cool
@@ -20,7 +25,11 @@ class Class10 {
   size()
 }`,
 	},
-	keywords: [ 'class', 'diagram', 'mermaid' ],
+	keywords: [
+		__( 'class', 'mermaid-blocks' ),
+		__( 'diagram', 'mermaid-blocks' ),
+		__( 'mermaid', 'mermaid-blocks' ),
+	],
 	icon: 'database',
 	scope: 'transform',
 };

@@ -41,3 +41,6 @@ jobs:
 
       - name: Run CSS Linter
         run: npm run lint:css
+
+      - name: Run unit tests
+        run: npm run test:unit

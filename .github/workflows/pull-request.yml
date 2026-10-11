@@ -48,6 +48,10 @@ jobs:
       - name: Run CSS Linter
         run: npm run lint:css
 
+      # Run unit tests
+      - name: Run unit tests
+        run: npm run test:unit
+
       # Step 9: Build the plugin
       - name: Build Plugin
         run: npm run build
