@@ -30,8 +30,17 @@ if ( '' === trim( $mermaid_blocks_code ) ) {
  *   double-encode, so a literal `&amp;` or `&lt;` typed by the user would come
  *   back from `textContent` as `&` / `<`. esc_textarea() double-encodes, so
  *   `textContent` equals the stored source exactly.
+ * - Square brackets are output as numeric entities: `do_shortcode` also runs
+ *   over block output, so a node such as `A[gallery]` or `B[audio]` would be
+ *   replaced by the shortcode's output. The browser decodes the entities back
+ *   to brackets before the front-end script reads the source.
  */
+$mermaid_blocks_source = str_replace(
+	array( '[', ']' ),
+	array( '&#91;', '&#93;' ),
+	esc_textarea( $mermaid_blocks_code )
+);
 ?>
 <div <?php echo get_block_wrapper_attributes(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by core. ?>>
-	<pre class="mermaid-blocks-diagram__source"><?php echo esc_textarea( $mermaid_blocks_code ); ?></pre>
+	<pre class="mermaid-blocks-diagram__source"><?php echo $mermaid_blocks_source; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped with esc_textarea() above. ?></pre>
 </div>
