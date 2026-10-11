@@ -1,1 +1,1 @@
-pre.wp-block-mermaid-blocks-diagram{font-size:0}
+.wp-block-mermaid-blocks-diagram:not(.is-rendered):not(.has-error) .mermaid-blocks-diagram__source{animation:mermaid-blocks-reveal-source 0s linear 5s forwards;visibility:hidden}.wp-block-mermaid-blocks-diagram .mermaid-blocks-diagram__source[hidden]{display:none}.wp-block-mermaid-blocks-diagram .mermaid-blocks-diagram__canvas svg{height:auto;max-width:100%}@keyframes mermaid-blocks-reveal-source{to{visibility:visible}}

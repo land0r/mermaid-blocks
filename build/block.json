@@ -23,5 +23,6 @@
   "viewScript": [
     "mermaid-js",
     "file:./view.js"
-  ]
+  ],
+  "render": "file:./render.php"
 }
