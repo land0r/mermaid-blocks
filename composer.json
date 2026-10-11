@@ -9,8 +9,8 @@
 		}
 	},
 	"scripts": {
-		"cs": "phpcs .",
-		"cbf": "phpcbf .",
+		"cs": "phpcs --extensions=php .",
+		"cbf": "phpcbf --extensions=php .",
 		"config": "phpcs --config-show"
 	}
 }
