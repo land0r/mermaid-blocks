@@ -41,7 +41,11 @@ import { TextareaControl, PanelBody, PanelRow } from '@wordpress/components';
  * @see https://react.dev/reference/react/useEffect
  * @see https://react.dev/reference/react/useRef
  */
-import { useEffect, useRef } from '@wordpress/element';
+import {
+	createInterpolateElement,
+	useEffect,
+	useRef,
+} from '@wordpress/element';
 
 /**
  * Initializes MermaidJS globally.
@@ -124,11 +128,19 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<div { ...useBlockProps() }>
 			<InspectorControls>
-				<PanelBody title="Instructions" initialOpen={ true }>
+				<PanelBody
+					title={ __( 'Instructions', 'mermaid-blocks' ) }
+					initialOpen={ true }
+				>
 					<PanelRow>
 						<p>
-							Use <strong>MermaidJS syntax</strong> to create
-							diagrams. For example:
+							{ createInterpolateElement(
+								__(
+									'Use <strong>MermaidJS syntax</strong> to create diagrams. For example:',
+									'mermaid-blocks'
+								),
+								{ strong: <strong /> }
+							) }
 						</p>
 					</PanelRow>
 					<PanelRow>
@@ -145,17 +157,26 @@ export default function Edit( { attributes, setAttributes } ) {
 					</PanelRow>
 					<PanelRow>
 						<p>
-							Supported diagram types: flowchart, sequence
-							diagram, Gantt chart, class, and many other
-							diagrams. Visit&nbsp;
-							<a
-								href="https://mermaid.js.org/intro/"
-								target="_blank"
-								rel="noopener noreferrer"
-							>
-								MermaidJS Documentation
-							</a>
-							&nbsp;for details.
+							{ __(
+								'Supported diagram types: flowchart, sequence diagram, Gantt chart, class, and many other diagrams.',
+								'mermaid-blocks'
+							) }{ ' ' }
+							{ createInterpolateElement(
+								__(
+									'Visit <a>MermaidJS Documentation</a> for details.',
+									'mermaid-blocks'
+								),
+								{
+									a: (
+										// eslint-disable-next-line jsx-a11y/anchor-has-content
+										<a
+											href="https://mermaid.js.org/intro/"
+											target="_blank"
+											rel="noopener noreferrer"
+										/>
+									),
+								}
+							) }
 						</p>
 					</PanelRow>
 				</PanelBody>

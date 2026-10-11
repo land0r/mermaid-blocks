@@ -1,7 +1,12 @@
+import { __ } from '@wordpress/i18n';
+
 const stateDiagram = {
 	name: 'state-diagram',
-	title: 'State Diagram',
-	description: 'A preconfigured MermaidJS block for creating state diagrams.',
+	title: __( 'State Diagram', 'mermaid-blocks' ),
+	description: __(
+		'A preconfigured MermaidJS block for creating state diagrams.',
+		'mermaid-blocks'
+	),
 	attributes: {
 		code: `stateDiagram-v2
 [*] --> Still
@@ -11,7 +16,11 @@ Moving --> Still
 Moving --> Crash
 Crash --> [*]`,
 	},
-	keywords: [ 'state', 'diagram', 'mermaid' ],
+	keywords: [
+		__( 'state', 'mermaid-blocks' ),
+		__( 'diagram', 'mermaid-blocks' ),
+		__( 'mermaid', 'mermaid-blocks' ),
+	],
 	icon: 'controls-play',
 	scope: 'transform',
 };
