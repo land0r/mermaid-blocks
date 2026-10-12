@@ -12,7 +12,7 @@ let counter = 0;
  *
  * @return {HTMLElement[]} The diagram elements.
  */
-function findDiagrams( root ) {
+export function findDiagrams( root ) {
 	const diagrams = Array.from( root.querySelectorAll( DIAGRAM_SELECTOR ) );
 
 	if ( root.matches && root.matches( DIAGRAM_SELECTOR ) ) {

@@ -1,7 +1,8 @@
 /**
  * Extends the @wordpress/scripts webpack config to build the front-end
- * renderer and to ship the minified Mermaid build (installed from npm)
- * alongside the block assets in `build/`.
+ * renderer and to ship Mermaid (installed from npm) alongside the block assets
+ * in `build/`: the minified build for the editor, and the code-split ES module
+ * build that the front end loads on demand.
  */
 const fs = require( 'fs' );
 const path = require( 'path' );
@@ -13,12 +14,46 @@ const mermaidVersion = JSON.parse(
 	fs.readFileSync( path.join( mermaidDir, 'package.json' ), 'utf8' )
 ).version;
 
+/**
+ * Rewrites the imports between the files of Mermaid's ES module build from
+ * `.mjs` to `.js`, to match the files' new names.
+ *
+ * Browsers only run a module served with a JavaScript MIME type, and not every
+ * server maps `.mjs` to one (WordPress ships its own modules as `.js` too).
+ *
+ * @param {Buffer} content      The file's content.
+ * @param {string} absoluteFrom The file's path.
+ *
+ * @return {string} The content with `.js` imports.
+ */
+const toJsImports = ( content, absoluteFrom ) => {
+	const code = content
+		.toString()
+		.replace( /("\.\.?\/[^"]+)\.mjs"/g, '$1.js"' );
+
+	if ( /\.mjs["'`]/.test( code ) ) {
+		throw new Error(
+			`Unexpected .mjs reference left in ${ absoluteFrom }. Update toJsImports() in webpack.config.js.`
+		);
+	}
+
+	return code;
+};
+
 const mermaidCopyPlugin = new CopyWebpackPlugin( {
 	patterns: [
 		{
 			from: path.join( mermaidDir, 'dist', 'mermaid.min.js' ),
 			to: 'mermaid.min.js',
 			// Already minified upstream; keep Terser from re-processing it.
+			info: { minimized: true },
+		},
+		{
+			// The entry and the chunks it imports, keeping their relative paths.
+			context: path.join( mermaidDir, 'dist' ),
+			from: '{mermaid.esm.min.mjs,chunks/mermaid.esm.min/*.mjs}',
+			to: 'mermaid/[path][name].js',
+			transform: toJsImports,
 			info: { minimized: true },
 		},
 		{

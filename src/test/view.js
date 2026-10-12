@@ -1,14 +1,50 @@
-import MERMAID_CONFIG from '../utils/mermaid-config';
+const MERMAID_URL = 'https://example.test/mermaid.esm.min.js?ver=1';
 
 const DIAGRAM =
 	'<div class="mermaid-blocks-diagram"><pre class="mermaid-blocks-diagram__source">graph LR\nA--&gt;B</pre></div>';
 
+const mockLoadMermaid = jest.fn();
+
+jest.mock( '../frontend/load-mermaid', () => ( {
+	__esModule: true,
+	default: ( ...args ) => mockLoadMermaid( ...args ),
+} ) );
+
 const fakeMermaid = () => ( {
-	initialize: jest.fn(),
 	render: jest.fn( async () => ( { svg: '<svg></svg>' } ) ),
 } );
 
-// Lets the render started on load finish.
+/**
+ * Stands in for the browser's IntersectionObserver, which jsdom lacks.
+ * `scrollIntoView()` reports a diagram as intersecting.
+ */
+class FakeIntersectionObserver {
+	static instance = null;
+
+	constructor( callback ) {
+		this.callback = callback;
+		this.targets = new Set();
+		FakeIntersectionObserver.instance = this;
+	}
+
+	observe( target ) {
+		this.targets.add( target );
+	}
+
+	unobserve( target ) {
+		this.targets.delete( target );
+	}
+}
+
+function scrollIntoView( diagram ) {
+	const observer = FakeIntersectionObserver.instance;
+
+	if ( observer.targets.has( diagram ) ) {
+		observer.callback( [ { target: diagram, isIntersecting: true } ] );
+	}
+}
+
+// Lets the renders started so far finish.
 const settle = () => new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 function loadViewScript() {
@@ -17,53 +53,134 @@ function loadViewScript() {
 	} );
 }
 
+const diagrams = () =>
+	Array.from( document.querySelectorAll( '.mermaid-blocks-diagram' ) );
+
 describe( 'view script', () => {
+	let mermaid;
+
+	beforeEach( () => {
+		mermaid = fakeMermaid();
+		mockLoadMermaid.mockReset();
+		mockLoadMermaid.mockResolvedValue( mermaid );
+		window.mermaidBlocksSettings = { mermaidUrl: MERMAID_URL };
+		window.IntersectionObserver = FakeIntersectionObserver;
+	} );
+
 	afterEach( () => {
-		delete window.mermaid;
 		delete window.mermaidBlocks;
+		delete window.mermaidBlocksSettings;
+		delete window.IntersectionObserver;
+		FakeIntersectionObserver.instance = null;
 		document.body.innerHTML = '';
 		jest.restoreAllMocks();
 	} );
 
-	it( 'renders the diagrams on the page once loaded', async () => {
-		window.mermaid = fakeMermaid();
+	it( 'loads Mermaid only once a diagram scrolls into view', async () => {
 		document.body.innerHTML = DIAGRAM;
 
 		loadViewScript();
 		await settle();
 
-		expect( window.mermaid.initialize ).toHaveBeenCalledWith(
-			MERMAID_CONFIG
-		);
-		expect(
-			document
-				.querySelector( '.mermaid-blocks-diagram' )
-				.classList.contains( 'is-rendered' )
-		).toBe( true );
+		const [ diagram ] = diagrams();
+		expect( mockLoadMermaid ).not.toHaveBeenCalled();
+		expect( diagram.classList.contains( 'is-pending' ) ).toBe( true );
+
+		scrollIntoView( diagram );
+		await settle();
+
+		expect( mockLoadMermaid ).toHaveBeenCalledWith( MERMAID_URL );
+		expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
+		expect( diagram.classList.contains( 'is-pending' ) ).toBe( false );
 	} );
 
-	it( 'exposes render() for diagrams added later', async () => {
-		window.mermaid = fakeMermaid();
-		window.mermaidBlocks = { existing: true };
+	it( 'renders each diagram when it scrolls into view', async () => {
+		document.body.innerHTML = DIAGRAM + DIAGRAM;
+
+		loadViewScript();
+		const [ first, second ] = diagrams();
+		scrollIntoView( first );
+		await settle();
+
+		expect( first.classList.contains( 'is-rendered' ) ).toBe( true );
+		expect( second.classList.contains( 'is-rendered' ) ).toBe( false );
+		expect( second.classList.contains( 'is-pending' ) ).toBe( true );
+		expect( mermaid.render ).toHaveBeenCalledTimes( 1 );
+
+		scrollIntoView( second );
+		await settle();
+
+		expect( second.classList.contains( 'is-rendered' ) ).toBe( true );
+	} );
+
+	it( 'renders right away without IntersectionObserver', async () => {
+		delete window.IntersectionObserver;
+		document.body.innerHTML = DIAGRAM;
 
 		loadViewScript();
 		await settle();
 
+		expect( diagrams()[ 0 ].classList.contains( 'is-rendered' ) ).toBe(
+			true
+		);
+	} );
+
+	it( 'exposes render() for diagrams added later', async () => {
+		window.mermaidBlocks = { existing: true };
+
+		loadViewScript();
+
 		const container = document.createElement( 'div' );
 		container.innerHTML = DIAGRAM;
 		document.body.appendChild( container );
-		await window.mermaidBlocks.render( container );
+		window.mermaidBlocks.render( container );
+
+		const [ diagram ] = diagrams();
+		scrollIntoView( diagram );
+		await settle();
 
 		expect( window.mermaidBlocks.existing ).toBe( true );
-		expect(
-			container
-				.querySelector( '.mermaid-blocks-diagram' )
-				.classList.contains( 'is-rendered' )
-		).toBe( true );
+		expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
 	} );
 
-	it( 'warns and renders nothing without Mermaid', async () => {
+	it( 'skips diagrams that are rendered or already waiting', async () => {
+		document.body.innerHTML = DIAGRAM + DIAGRAM;
+
+		loadViewScript();
+		const [ first, second ] = diagrams();
+		scrollIntoView( first );
+		await settle();
+
+		const observe = jest.spyOn(
+			FakeIntersectionObserver.instance,
+			'observe'
+		);
+		window.mermaidBlocks.render();
+
+		expect( observe ).not.toHaveBeenCalled();
+		expect( first.classList.contains( 'is-pending' ) ).toBe( false );
+		expect( second.classList.contains( 'is-pending' ) ).toBe( true );
+	} );
+
+	it( 'shows the source when Mermaid fails to load', async () => {
+		jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+		mockLoadMermaid.mockRejectedValue( new Error( 'Network error' ) );
+		document.body.innerHTML = DIAGRAM;
+
+		loadViewScript();
+		const [ diagram ] = diagrams();
+		scrollIntoView( diagram );
+		await settle();
+
+		expect( diagram.classList.contains( 'has-error' ) ).toBe( true );
+		expect( diagram.classList.contains( 'is-pending' ) ).toBe( false );
+		// eslint-disable-next-line no-console
+		expect( console.error ).toHaveBeenCalled();
+	} );
+
+	it( 'warns and leaves diagrams alone without the URL of Mermaid', async () => {
 		jest.spyOn( console, 'warn' ).mockImplementation( () => {} );
+		delete window.mermaidBlocksSettings;
 		document.body.innerHTML = DIAGRAM;
 
 		loadViewScript();
@@ -71,10 +188,9 @@ describe( 'view script', () => {
 
 		// eslint-disable-next-line no-console
 		expect( console.warn ).toHaveBeenCalled();
-		expect(
-			document
-				.querySelector( '.mermaid-blocks-diagram' )
-				.classList.contains( 'is-rendered' )
-		).toBe( false );
+		expect( diagrams()[ 0 ].classList.contains( 'is-pending' ) ).toBe(
+			false
+		);
+		expect( mockLoadMermaid ).not.toHaveBeenCalled();
 	} );
 } );

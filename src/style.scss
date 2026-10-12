@@ -6,12 +6,18 @@
 
 /*
  * Hide the raw source until it is rendered, without flashing it on normal
- * loads. If JavaScript never renders the block (blocked, failed, disabled),
- * the code is revealed after a few seconds as a fallback.
+ * loads. If JavaScript never picks the block up (blocked, failed, disabled),
+ * the code is revealed after a few seconds as a fallback. Once the script has
+ * picked it up (`is-pending`), it stays hidden until it renders as it scrolls
+ * into view, or fails.
  */
 .mermaid-blocks-diagram:not(.is-rendered):not(.has-error)
 .mermaid-blocks-diagram__source {
 	visibility: hidden;
+}
+
+.mermaid-blocks-diagram:not(.is-rendered):not(.has-error):not(.is-pending)
+.mermaid-blocks-diagram__source {
 	animation: mermaid-blocks-reveal-source 0s linear 5s forwards;
 }
 
@@ -23,6 +29,15 @@
 .mermaid-blocks-diagram .mermaid-blocks-diagram__canvas svg {
 	max-width: 100%;
 	height: auto;
+}
+
+/* Print the source of diagrams that never scrolled into view. */
+@media print {
+
+	.mermaid-blocks-diagram:not(.is-rendered):not(.has-error)
+	.mermaid-blocks-diagram__source {
+		visibility: visible;
+	}
 }
 
 @keyframes mermaid-blocks-reveal-source {
