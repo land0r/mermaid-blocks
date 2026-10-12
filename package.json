@@ -15,7 +15,7 @@
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start": "wp-scripts start",
-		"prepare": "husky install"
+		"prepare": "husky"
 	},
 	"files": [
 		"build",

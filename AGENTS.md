@@ -1,0 +1,71 @@
+# Mermaid Blocks
+
+A WordPress block plugin with one dynamic block, `mermaid-blocks/diagram`. Its only attribute is `code`, the Mermaid source. The editor shows a live SVG preview. The server outputs the source in a `<pre>`, and the front end replaces it with an SVG rendered by the bundled Mermaid library.
+
+Supports WordPress 6.6+ and PHP 7.4+ (header of `mermaid-blocks.php`).
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `npm ci && composer install` | Install dependencies |
+| `npm start` | Rebuild `build/` on every change |
+| `npm run build` | Production build into `build/` |
+| `npm run lint:js` | ESLint on `src/` |
+| `npm run lint:css` | Stylelint |
+| `npm run lint:php` | PHPCS: WordPress standards, PHP 7.4 compatibility, text domain |
+| `composer cbf` | Auto-fix PHPCS issues |
+| `npm run format` | Prettier on `src/` |
+| `npm run test:unit` | Jest unit tests |
+| `npm run plugin-zip` | Release zip, built from the `files` list in `package.json` |
+
+The pre-commit hook runs the three linters. CI (`.github/workflows/ci.yml`) runs all of the above and fails when `build/` doesn't match a fresh build.
+
+To try a change in WordPress, use any local install with this directory in `wp-content/plugins/`, or run `npx @wp-playground/cli@latest start` here.
+
+## Layout
+
+- `mermaid-blocks.php`: registers the block from `build/` and the `mermaid-js` script, including loading it into the editor iframe.
+- `src/block.json`: block metadata and asset declarations.
+- `src/edit.js`, `src/components/mermaid-diagram.js`: editor UI and live preview.
+- `src/utils/`: `getMermaid()` returns the Mermaid instance of a given window, `renderDiagram()` renders without throwing, and `mermaid-config.js` is the shared config.
+- `src/render.php`: server-side markup.
+- `src/view.js`, `src/frontend/render-blocks.js`: front-end rendering.
+- `src/save.js` returns `null` because the block is dynamic. `src/deprecated.js` migrates older saved markup.
+- `src/transforms.js`: turns selected blocks holding a fenced `mermaid` code block (for example, pasted from Obsidian) into a diagram block.
+- `src/variations/`: one variation per diagram type, with starter code.
+- `build/`: generated, but committed.
+- `.wordpress-org/`: plugin directory banners, icons and screenshots. Not part of the zip.
+
+## Invariants
+
+None of these is obvious from the code, and each has broken before.
+
+- **The editor canvas is an iframe.** Previews must render with the Mermaid copy loaded in that iframe, found with `getMermaid( element.ownerDocument.defaultView )`. Rendering in the parent window measures labels against the wrong CSS. Don't import `mermaid` into the editor bundle: it is the separate `mermaid-js` script (`build/mermaid.min.js`), wired up in `block.json` and `mermaid-blocks.php`.
+- **One Mermaid config.** The editor and the front end share `src/utils/mermaid-config.js`, so the preview matches the published diagram. Don't set `htmlLabels: false`: SVG text labels show `&amp;` literally and drop `>` (#7).
+- **The escaping in `render.php` is deliberate.** `esc_textarea()` round-trips the source exactly, and `[` and `]` become `&#91;` and `&#93;` so `do_shortcode()` doesn't expand diagram text such as `A[gallery]`. Don't switch to `esc_html()` or drop the bracket encoding.
+- **Saved markup is versioned.** When the output of `save.js` or the block's attributes change, add an entry to `deprecated.js` with a test. Without one, existing posts show "This block contains unexpected or invalid content".
+- **`renderDiagram()` never throws.** It returns `{ svg }` or `{ error: { message, line } }`, and it removes the elements Mermaid leaves in the document after a failed render. Callers rely on that contract.
+- **`build/` is committed** because the Playground blueprint (`blueprint.json`) installs the plugin straight from this repository. Never edit it by hand: run `npm run build` and commit the result together with the source change.
+- **Mermaid is pinned to an exact version** in `package.json`. An upgrade needs a check of the bundle size (`build/mermaid.min.js`), of security advisories, and of every diagram type in both the editor and the front end.
+- **The version lives in four places**, which must match: the `mermaid-blocks.php` header, "Stable tag" in `readme.txt`, `package.json` and `src/block.json`. WordPress uses the `block.json` version to cache-bust the block stylesheet.
+
+## Conventions
+
+- WordPress coding standards throughout. The linters are the source of truth.
+- Every user-facing string is translatable with the `mermaid-blocks` text domain. ESLint and PHPCS enforce it.
+- Unit tests live next to the code they cover, in `test/` directories.
+- Commit subjects start with `FEATURE:`, `FIX:` or `UPDATE:`.
+
+## Workflow
+
+- Branch from `main`. `main` is protected: changes land through a reviewed pull request, and commits must be signed.
+- Agents may push feature branches and open draft pull requests that link their issue (`Fixes #N`). Agents never push to `main`, force-push or merge.
+- The changelog lives only in `readme.txt` and is written at release time from the merged pull requests. Pull requests don't add changelog entries, and there is no `CHANGELOG.md`.
+
+## Definition of done
+
+- `npm run lint:js`, `npm run lint:css`, `npm run lint:php` and `npm run test:unit` pass.
+- Every bug fix comes with a test that fails without it.
+- `build/` is rebuilt and committed whenever `src/` changed.
+- Anything that changes rendering has been checked in the editor and on the front end.

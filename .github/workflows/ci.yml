@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      - name: Install Composer dependencies
+        run: composer install --no-scripts --no-interaction --prefer-dist
+
+      - name: Run PHP linter
+        run: npm run lint:php
+
+      - name: Run JS linter
+        run: npm run lint:js
+
+      - name: Run CSS linter
+        run: npm run lint:css
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
+
+      # build/ is committed because the Playground blueprint installs the
+      # plugin straight from this repository.
+      - name: Check that build/ is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- build/)" ]; then
+            git status --short -- build/
+            echo "::error::build/ is out of date. Run 'npm run build' and commit the result."
+            exit 1
+          fi
+
+      - name: Plugin ZIP
+        run: npm run plugin-zip
