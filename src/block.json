@@ -43,6 +43,5 @@
 	"editorScript": [ "mermaid-js", "file:./index.js" ],
 	"editorStyle": "file:./index.css",
 	"style": "mermaid-blocks-diagram",
-	"viewScript": "mermaid-blocks-diagram",
-	"render": "file:./render.php"
+	"viewScript": "mermaid-blocks-diagram"
 }

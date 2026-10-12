@@ -67,7 +67,7 @@ const mermaidCopyPlugin = new CopyWebpackPlugin( {
 } );
 
 // block.json refers to the front-end renderer by its script handle, which
-// includes/diagram.php registers so other integrations can load it too. The
+// includes/Assets.php registers so other integrations can load it too. The
 // build only finds entries through `file:` paths in block.json, so add it here.
 const withRendererAndMermaid = ( config ) => ( {
 	...config,

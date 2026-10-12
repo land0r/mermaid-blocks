@@ -1,6 +1,6 @@
 /**
  * Renders Mermaid diagrams on the front end: the block's, and those of any
- * other integration that outputs the same markup (see includes/diagram.php).
+ * other integration that outputs the same markup (see includes/Diagram.php).
  * Registered as the `mermaid-blocks-diagram` script.
  *
  * Each diagram renders when it scrolls into view, and Mermaid is loaded when
@@ -26,7 +26,7 @@ import watchSurface from './utils/watch-surface';
 // time it scrolls into view.
 const ROOT_MARGIN = '100% 0px';
 
-// Printed before this script by includes/diagram.php.
+// Printed before this script by includes/Assets.php.
 const { mermaidUrl, i18n } = window.mermaidBlocksSettings || {};
 
 // Whether the page is watched for turning dark or light.

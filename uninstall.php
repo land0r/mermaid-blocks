@@ -1,7 +1,7 @@
 <?php
 /**
  * Removes what the plugin stored when it is deleted: its one option (see
- * includes/settings.php). Diagrams stay in the posts they were written in.
+ * MermaidBlocks\Settings). Diagrams stay in the posts they were written in.
  *
  * @package MermaidBlocks
  */

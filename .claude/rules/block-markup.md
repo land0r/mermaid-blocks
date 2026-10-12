@@ -1,10 +1,10 @@
 ---
 paths:
-  - "includes/diagram.php"
+  - "includes/Diagram.php"
+  - "includes/Block.php"
   - "src/block.json"
   - "src/save.js"
   - "src/deprecated.js"
-  - "src/render.php"
   - "src/view.js"
   - "src/frontend/**"
   - "src/style.scss"
@@ -15,11 +15,11 @@ paths:
 Existing posts store this block's attributes and saved markup, and visitors' browsers render whatever the server outputs, for the block and for every other integration. When you change these files:
 
 - **Saved markup or attributes changed** (`save.js`, the `attributes` in `block.json`): add a deprecation to `deprecated.js`, newest first, with a test that migrates the old markup.
-- **Server markup changed** (`includes/diagram.php`, `render.php`): `src/frontend/render-diagrams.js` finds diagrams by `.mermaid-blocks-diagram` and `.mermaid-blocks-diagram__source`, and `src/style.scss` styles them. Keep all three in step, update `src/frontend/test/`, and update "Reusing the renderer" in `AGENTS.md` if the contract changes.
+- **Server markup changed** (`includes/Diagram.php`, `Block::render()`): `src/frontend/render-diagrams.js` finds diagrams by `.mermaid-blocks-diagram` and `.mermaid-blocks-diagram__source`, and `src/style.scss` styles them. Keep all three in step, update `src/frontend/test/`, and update "Reusing the renderer" in `AGENTS.md` if the contract changes.
 - **State classes changed** (`is-pending`, `is-rendered`, `has-error`): `src/view.js` and `render-diagrams.js` set them, and `src/style.scss` uses them to decide when the source is visible. A diagram must never stay hidden after it failed.
-- **Controls changed** (the `data-mermaid-controls` attribute, with `zoom` and `download`): `render.php` writes it from the block's attributes, other integrations pass it themselves, and `src/frontend/controls.js` reads it. A diagram without the attribute gets no controls, so pages cached before an update stay as they were.
-- **Theme changed** (the `data-mermaid-theme` attribute): `render.php` and `mermaid_blocks_get_diagram_markup()` write the diagram's theme, or else the site's, and `render-diagrams.js` reads it. A diagram without the attribute follows the page. The canvas has the same attribute for what it was drawn in, `auto-light` or `auto-dark` for a diagram that follows the page: `src/view.js` compares the two to know when to draw again. The themes are listed in `includes/diagram.php` and in `src/utils/themes.js`: change both, and `src/utils/test/themes.js` tells when they differ.
-- **Text for assistive technology changed** (`data-mermaid-title`, `data-mermaid-description`): `render.php` writes them, and `src/utils/accessible-text.js` puts them into the SVG, on the front end and in the editor's preview.
+- **Controls changed** (the `data-mermaid-controls` attribute, with `zoom` and `download`): `Block::render()` writes it from the block's attributes, other integrations pass it themselves, and `src/frontend/controls.js` reads it. A diagram without the attribute gets no controls, so pages cached before an update stay as they were.
+- **Theme changed** (the `data-mermaid-theme` attribute): `Block::render()` and `Diagram::get_markup()` write the diagram's theme, or else the site's, and `render-diagrams.js` reads it. A diagram without the attribute follows the page. The canvas has the same attribute for what it was drawn in, `auto-light` or `auto-dark` for a diagram that follows the page: `src/view.js` compares the two to know when to draw again. The themes are listed in `includes/Themes.php` and in `src/utils/themes.js`: change both, and `src/utils/test/themes.js` tells when they differ.
+- **Text for assistive technology changed** (`data-mermaid-title`, `data-mermaid-description`): `Block::render()` writes them, and `src/utils/accessible-text.js` puts them into the SVG, on the front end and in the editor's preview.
 - **Caption changed**: a diagram with a caption is a `<figure>`, and the canvas goes in place of the source, above the `<figcaption>`.
 - **Check the result** in the editor and on the front end, with a valid diagram, one with a syntax error, and one whose labels contain `& < > " ' [ ]`.
 - **`block.json` changed**: run `npm run build`. WordPress reads `build/block.json`, not the copy in `src/`.

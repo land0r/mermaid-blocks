@@ -114,11 +114,12 @@ describe( 'the themes', () => {
 
 	it( 'are the themes that have a label, in the same order', () => {
 		const php = readFileSync(
-			join( __dirname, '../../../includes/diagram.php' ),
+			join( __dirname, '../../../includes/Themes.php' ),
 			'utf8'
 		);
-		const [ list ] =
-			/function mermaid_blocks_get_themes\(\) \{[\s\S]*?\n\}/.exec( php );
+		const [ list ] = /function get_all\(\)[^{]*\{[\s\S]*?\n\t\}/.exec(
+			php
+		);
 		const names = Array.from(
 			list.matchAll( /'([\w-]+)'\s*=> __\(/g ),
 			( [ , name ] ) => name

@@ -1,4 +1,13 @@
 {
+	"name": "land0r/mermaid-blocks",
+	"description": "Mermaid diagrams in the WordPress block editor.",
+	"type": "wordpress-plugin",
+	"license": "GPL-3.0-or-later",
+	"autoload": {
+		"psr-4": {
+			"MermaidBlocks\\": "includes/"
+		}
+	},
 	"require-dev": {
 		"wp-coding-standards/wpcs": "^3.4.1",
 		"squizlabs/php_codesniffer": "^3.13.6",
@@ -9,7 +18,8 @@
 	"config": {
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true
-		}
+		},
+		"platform-check": false
 	},
 	"scripts": {
 		"cs": "phpcs --extensions=php .",

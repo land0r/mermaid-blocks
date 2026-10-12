@@ -17,7 +17,7 @@ const STATUS_CLASS = 'mermaid-blocks-diagram__status';
 // How long a message, such as a failed download, stays.
 const STATUS_DURATION = 5000;
 
-// The labels come translated from includes/diagram.php. These stand in when a
+// The labels come translated from includes/Assets.php. These stand in when a
 // page was printed without them.
 const DEFAULT_LABELS = {
 	controls: 'Diagram controls',
