@@ -28,8 +28,8 @@ To try a change in WordPress, use any local install with this directory in `wp-c
 - `mermaid-blocks.php`: registers the block from `build/` and loads Mermaid into the editor iframe.
 - `includes/diagram.php`: rendering shared by the block and other integrations. Registers the `mermaid-js` and `mermaid-blocks-diagram` assets, passes the URL of Mermaid's ES module build to the latter, and outputs the diagram markup.
 - `src/block.json`: block metadata. It refers to the shared assets by handle.
-- `src/edit.js`, `src/components/mermaid-diagram.js`: editor UI and live preview.
-- `src/utils/`: `getMermaid()` returns the Mermaid instance of a given window, `renderDiagram()` renders without throwing, and `mermaid-config.js` is the shared config.
+- `src/edit.js`, `src/components/`: editor UI. `code-input.js` is the code field (line numbers, Tab indentation, the marked error line) and `mermaid-diagram.js` the live preview.
+- `src/utils/`: `getMermaid()` returns the Mermaid instance of a given window, `renderDiagram()` renders without throwing, `toSourceLine()` maps Mermaid's error lines back to the source, `getIndentEdit()` works out what Tab and Shift+Tab change, and `mermaid-config.js` is the shared config.
 - `src/render.php`: the block's server-side markup, built with `includes/diagram.php`.
 - `src/view.js`, `src/frontend/`: front-end rendering, for every integration. Each diagram renders when it scrolls into view, and `load-mermaid.js` loads Mermaid when the first one does. `view.js` is an explicit entry in `webpack.config.js`, because `block.json` refers to it by handle.
 - `src/save.js` returns `null` because the block is dynamic. `src/deprecated.js` migrates older saved markup.
@@ -48,8 +48,10 @@ None of these is obvious from the code, and each has broken before.
 - **The escaping in `mermaid_blocks_get_diagram_source_markup()` is deliberate.** `esc_textarea()` round-trips the source exactly, and `[` and `]` become `&#91;` and `&#93;` so `do_shortcode()` doesn't expand diagram text such as `A[gallery]`. Don't switch to `esc_html()` or drop the bracket encoding.
 - **Saved markup is versioned.** When the output of `save.js` or the block's attributes change, add an entry to `deprecated.js` with a test. Without one, existing posts show "This block contains unexpected or invalid content".
 - **`renderDiagram()` never throws.** It returns `{ svg }` or `{ error: { message, line } }`, and it removes the elements Mermaid leaves in the document after a failed render. Callers rely on that contract.
+- **Error lines are lines of the source, not Mermaid's.** Mermaid removes the front matter, directives, comment lines and leading blank lines before parsing, and numbers the lines that are left. `toSourceLine()` applies the same removals to map a line back, so it mirrors `preprocessDiagram()` of the pinned Mermaid version. Mermaid's own "Parse error on line N" is dropped from the message for the same reason.
+- **Tab in the code field must not trap the keyboard.** Tab and Shift+Tab indent and outdent, and Escape lets the next Tab move focus; the field's help text says so. The handler runs in the capture phase, because the block editor's own Tab handler, on an ancestor, moves focus out of the block unless the key is already handled.
 - **`build/` is committed** because the Playground blueprint (`blueprint.json`) installs the plugin straight from this repository. Never edit it by hand: run `npm run build` and commit the result together with the source change.
-- **Mermaid is pinned to an exact version** in `package.json`. An upgrade needs a check of the bundle sizes (`build/mermaid.min.js` and `build/mermaid/`), of security advisories, and of every diagram type in both the editor and the front end.
+- **Mermaid is pinned to an exact version** in `package.json`. An upgrade needs a check of the bundle sizes (`build/mermaid.min.js` and `build/mermaid/`), of security advisories, of every diagram type in both the editor and the front end, and of the error line mapping against what the new version removes before parsing.
 - **The version lives in four places**, which must match: the `mermaid-blocks.php` header, "Stable tag" in `readme.txt`, `package.json` and `src/block.json`.
 
 ## Reusing the renderer
