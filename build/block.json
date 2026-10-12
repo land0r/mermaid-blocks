@@ -19,10 +19,7 @@
     "mermaid-js",
     "file:./index.js"
   ],
-  "style": "file:./style-index.css",
-  "viewScript": [
-    "mermaid-js",
-    "file:./view.js"
-  ],
+  "style": "mermaid-blocks-diagram",
+  "viewScript": "mermaid-blocks-diagram",
   "render": "file:./render.php"
 }

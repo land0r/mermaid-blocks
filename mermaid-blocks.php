@@ -17,6 +17,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
+define( 'MERMAID_BLOCKS_PLUGIN_FILE', __FILE__ );
+
+require_once __DIR__ . '/includes/diagram.php';
+
 /**
  * Registers the block using the metadata loaded from the `block.json` file.
  * Behind the scenes, it registers also all assets so they can be enqueued
@@ -30,22 +34,10 @@ function create_block_mermaid_blocks_block_init() {
 add_action( 'init', 'create_block_mermaid_blocks_block_init' );
 
 /**
- * Register block assets.
+ * Enqueues Mermaid in the editor canvas. The `mermaid-js` handle is
+ * registered in includes/diagram.php.
  */
 function enqueue_mermaid_blocks_assets() {
-	$mermaid_js_path = plugin_dir_url( __FILE__ ) . 'build/mermaid.min.js';
-	$asset_file      = plugin_dir_path( __FILE__ ) . 'build/mermaid.asset.php';
-	$asset           = file_exists( $asset_file ) ? include $asset_file : array();
-	$mermaid_version = isset( $asset['version'] ) ? $asset['version'] : false;
-
-	wp_register_script(
-		'mermaid-js',
-		$mermaid_js_path,
-		array(),
-		$mermaid_version,
-		true
-	);
-
 	/*
 	 * Load Mermaid inside the editor canvas iframe, so previews are measured
 	 * and rendered in the document they are shown in, as on the front end.
@@ -59,4 +51,3 @@ function enqueue_mermaid_blocks_assets() {
 	}
 }
 add_action( 'enqueue_block_assets', 'enqueue_mermaid_blocks_assets' );
-add_action( 'enqueue_block_editor_assets', 'enqueue_mermaid_blocks_assets' );

@@ -1,4 +1,4 @@
-import renderBlocks from '../render-blocks';
+import renderDiagrams from '../render-diagrams';
 
 const CODE = 'graph TD\nA["x & y <b> &amp; z"] --> B';
 
@@ -6,7 +6,7 @@ function setup( codes = [ CODE ] ) {
 	document.body.innerHTML = '';
 	codes.forEach( ( code ) => {
 		const block = document.createElement( 'div' );
-		block.className = 'wp-block-mermaid-blocks-diagram';
+		block.className = 'mermaid-blocks-diagram';
 		const pre = document.createElement( 'pre' );
 		pre.className = 'mermaid-blocks-diagram__source';
 		// Mimic esc_textarea() output: parsed back through the HTML parser.
@@ -23,20 +23,20 @@ const fake = ( impl ) => ( {
 	render: jest.fn( impl || ( async () => ( { svg: '<svg></svg>' } ) ) ),
 } );
 
-describe( 'renderBlocks', () => {
+describe( 'renderDiagrams', () => {
 	beforeEach( () => {
 		jest.spyOn( console, 'error' ).mockImplementation( () => {} );
 	} );
 	afterEach( () => jest.restoreAllMocks() );
 
-	it( 'renders blocks and hides the source', async () => {
+	it( 'renders diagrams and hides the source', async () => {
 		setup( [ CODE, 'graph LR\nA-->B' ] );
 		const bindFunctions = jest.fn();
 		const m = fake( async () => ( { svg: '<svg></svg>', bindFunctions } ) );
-		await renderBlocks( m );
+		await renderDiagrams( m );
 
 		document
-			.querySelectorAll( '.wp-block-mermaid-blocks-diagram' )
+			.querySelectorAll( '.mermaid-blocks-diagram' )
 			.forEach( ( block ) => {
 				expect( block.classList.contains( 'is-rendered' ) ).toBe(
 					true
@@ -55,7 +55,7 @@ describe( 'renderBlocks', () => {
 	it( 'passes the exact textContent', async () => {
 		setup();
 		const m = fake();
-		await renderBlocks( m );
+		await renderDiagrams( m );
 		expect( m.render ).toHaveBeenCalledWith( expect.any( String ), CODE );
 	} );
 
@@ -70,10 +70,10 @@ describe( 'renderBlocks', () => {
 			}
 			return { svg: '<svg></svg>' };
 		} );
-		await renderBlocks( m );
+		await renderDiagrams( m );
 
 		const [ bad, good ] = document.querySelectorAll(
-			'.wp-block-mermaid-blocks-diagram'
+			'.mermaid-blocks-diagram'
 		);
 		expect( bad.classList.contains( 'has-error' ) ).toBe( true );
 		expect( bad.classList.contains( 'is-rendered' ) ).toBe( false );
@@ -95,8 +95,39 @@ describe( 'renderBlocks', () => {
 			}
 			return { svg: '<svg></svg>' };
 		} );
-		await renderBlocks( m );
-		await renderBlocks( m );
+		await renderDiagrams( m );
+		await renderDiagrams( m );
 		expect( m.render ).toHaveBeenCalledTimes( 2 );
+	} );
+
+	it( 'renders only the diagrams inside the given root', async () => {
+		setup( [ 'outside', 'inside' ] );
+		const [ outside, inside ] = document.querySelectorAll(
+			'.mermaid-blocks-diagram'
+		);
+		const container = document.createElement( 'section' );
+		container.appendChild( inside );
+		document.body.appendChild( container );
+		const m = fake();
+
+		await renderDiagrams( m, container );
+
+		expect( m.render ).toHaveBeenCalledTimes( 1 );
+		expect( m.render ).toHaveBeenCalledWith(
+			expect.any( String ),
+			'inside'
+		);
+		expect( inside.classList.contains( 'is-rendered' ) ).toBe( true );
+		expect( outside.classList.contains( 'is-rendered' ) ).toBe( false );
+	} );
+
+	it( 'renders the root itself when it is a diagram', async () => {
+		setup( [ 'graph LR\nA-->B' ] );
+		const diagram = document.querySelector( '.mermaid-blocks-diagram' );
+		const m = fake();
+
+		await renderDiagrams( m, diagram );
+
+		expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
 	} );
 } );

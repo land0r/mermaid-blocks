@@ -55,13 +55,14 @@ function removeLeftovers( renderId, doc ) {
  * @param {string}   code     The Mermaid source.
  * @param {Document} [doc]    The document of the window Mermaid runs in.
  *
- * @return {Promise<{svg: string}|{error: {message: string, line: (number|null)}}>}
- * The SVG markup, or a normalised error. Leftover DOM is removed on failure.
+ * @return {Promise<{svg: string, bindFunctions: (Function|undefined)}|{error: {message: string, line: (number|null)}}>}
+ * The SVG markup and Mermaid's function that binds its event handlers once the
+ * SVG is in the page, or a normalised error. Leftover DOM is removed on failure.
  */
 export async function renderDiagram( mermaid, renderId, code, doc = document ) {
 	try {
-		const { svg } = await mermaid.render( renderId, code );
-		return { svg };
+		const { svg, bindFunctions } = await mermaid.render( renderId, code );
+		return { svg, bindFunctions };
 	} catch ( error ) {
 		removeLeftovers( renderId, doc );
 

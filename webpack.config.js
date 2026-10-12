@@ -1,6 +1,7 @@
 /**
- * Extends the @wordpress/scripts webpack config to ship the minified Mermaid
- * build (installed from npm) alongside the block assets in `build/`.
+ * Extends the @wordpress/scripts webpack config to build the front-end
+ * renderer and to ship the minified Mermaid build (installed from npm)
+ * alongside the block assets in `build/`.
  */
 const fs = require( 'fs' );
 const path = require( 'path' );
@@ -30,17 +31,25 @@ const mermaidCopyPlugin = new CopyWebpackPlugin( {
 	],
 } );
 
+// block.json refers to the front-end renderer by its script handle, which
+// includes/diagram.php registers so other integrations can load it too. The
+// build only finds entries through `file:` paths in block.json, so add it here.
+const withRendererAndMermaid = ( config ) => ( {
+	...config,
+	entry: () => ( {
+		...( typeof config.entry === 'function'
+			? config.entry()
+			: config.entry ),
+		view: path.resolve( __dirname, 'src/view.js' ),
+	} ),
+	plugins: [ ...config.plugins, mermaidCopyPlugin ],
+} );
+
 // The default config is an array when module (view script module) builds are
-// enabled; copy the files once, from the first (classic script) config only.
+// enabled; extend the first (classic script) config only.
 if ( Array.isArray( defaultConfig ) ) {
 	const [ first, ...rest ] = defaultConfig;
-	module.exports = [
-		{ ...first, plugins: [ ...first.plugins, mermaidCopyPlugin ] },
-		...rest,
-	];
+	module.exports = [ withRendererAndMermaid( first ), ...rest ];
 } else {
-	module.exports = {
-		...defaultConfig,
-		plugins: [ ...defaultConfig.plugins, mermaidCopyPlugin ],
-	};
+	module.exports = withRendererAndMermaid( defaultConfig );
 }
