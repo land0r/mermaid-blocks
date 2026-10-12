@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'MERMAID_BLOCKS_PLUGIN_FILE', __FILE__ );
 
 require_once __DIR__ . '/includes/diagram.php';
+require_once __DIR__ . '/includes/settings.php';
 
 /**
  * Registers the block using the metadata loaded from the `block.json` file.
@@ -51,3 +52,32 @@ function enqueue_mermaid_blocks_assets() {
 	}
 }
 add_action( 'enqueue_block_assets', 'enqueue_mermaid_blocks_assets' );
+
+/**
+ * Tells the editor the themes a diagram can have, the site's theme, which the
+ * preview of a block without a theme of its own is drawn in, and, to those
+ * who may change that one, where.
+ */
+function mermaid_blocks_add_editor_settings() {
+	$block_type = WP_Block_Type_Registry::get_instance()->get_registered( 'mermaid-blocks/diagram' );
+
+	if ( ! $block_type ) {
+		return;
+	}
+
+	$settings = array(
+		'themes'      => mermaid_blocks_get_themes(),
+		'theme'       => mermaid_blocks_get_diagram_theme(),
+		'settingsUrl' => current_user_can( 'manage_options' ) ? mermaid_blocks_get_settings_url() : '',
+	);
+
+	// The block's own editor script: `mermaid-js` is the library.
+	foreach ( array_diff( $block_type->editor_script_handles, array( 'mermaid-js' ) ) as $handle ) {
+		wp_add_inline_script(
+			$handle,
+			'var mermaidBlocksEditorSettings = ' . wp_json_encode( $settings ) . ';',
+			'before'
+		);
+	}
+}
+add_action( 'enqueue_block_editor_assets', 'mermaid_blocks_add_editor_settings' );

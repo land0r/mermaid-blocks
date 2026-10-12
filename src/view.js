@@ -7,14 +7,20 @@
  * the first one does, so a page whose diagrams are never seen never loads it.
  * A diagram inside a hidden element, such as a closed tab, renders when it is
  * shown, at its real size. Once rendered, a diagram gets the controls its
- * markup asks for: zoom, download.
+ * markup asks for: zoom, download. A diagram that follows the page is drawn
+ * again, in the other theme, when the page turns dark or light.
  *
  * Also exposes `window.mermaidBlocks.render( element )` for diagrams added to
  * the page after it loaded, such as a widget a page builder re-renders.
  */
-import renderDiagrams, { findDiagrams } from './frontend/render-diagrams';
+import renderDiagrams, {
+	findDiagrams,
+	isOutdated,
+	redrawDiagram,
+} from './frontend/render-diagrams';
 import loadMermaid from './frontend/load-mermaid';
 import addControls from './frontend/controls';
+import watchSurface from './utils/watch-surface';
 
 // Start a viewport's height ahead, so a diagram is usually rendered by the
 // time it scrolls into view.
@@ -22,6 +28,34 @@ const ROOT_MARGIN = '100% 0px';
 
 // Printed before this script by includes/diagram.php.
 const { mermaidUrl, i18n } = window.mermaidBlocksSettings || {};
+
+// Whether the page is watched for turning dark or light.
+let watching = false;
+
+/**
+ * Draws again the rendered diagrams that are in another theme than the one
+ * they would get now, and gives them their controls back.
+ */
+function redrawOutdated() {
+	findDiagrams( document )
+		.filter( isOutdated )
+		.forEach( ( diagram ) => {
+			loadMermaid( mermaidUrl )
+				.then( ( mermaid ) => redrawDiagram( mermaid, diagram ) )
+				.then( ( redrawn ) => {
+					if ( redrawn ) {
+						addControls( diagram, i18n );
+					}
+				} )
+				.catch( ( error ) => {
+					// eslint-disable-next-line no-console
+					console.error(
+						'Mermaid Blocks: failed to render diagram.',
+						error
+					);
+				} );
+		} );
+}
 
 /**
  * Loads Mermaid if needed, renders one diagram and adds its controls.
@@ -42,6 +76,11 @@ function renderNow( diagram ) {
 			diagram.classList.remove( 'is-pending' );
 			// Only a rendered diagram gets any.
 			addControls( diagram, i18n );
+
+			if ( ! watching ) {
+				watching = true;
+				watchSurface( redrawOutdated );
+			}
 		} );
 }
 

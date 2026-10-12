@@ -3,18 +3,20 @@
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-i18n/
  */
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 /**
  * React hook used to mark the block wrapper element. It provides necessary props
- * such as class names, styles, and more.
+ * such as class names, styles, and more. RichText is the field of the caption.
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-block-editor/#useblockprops
+ * @see https://developer.wordpress.org/block-editor/reference-guides/richtext/
  */
 import {
 	useBlockProps,
 	BlockControls,
 	InspectorControls,
+	RichText,
 } from '@wordpress/block-editor';
 
 /**
@@ -37,13 +39,21 @@ import { useDebouncedInput, useInstanceId } from '@wordpress/compose';
 /**
  * Components for the block's sidebar and toolbar.
  *
+ * @see https://developer.wordpress.org/block-editor/reference-guides/components/external-link/
  * @see https://developer.wordpress.org/block-editor/reference-guides/components/panel/
+ * @see https://developer.wordpress.org/block-editor/reference-guides/components/select-control/
+ * @see https://developer.wordpress.org/block-editor/reference-guides/components/text-control/
+ * @see https://developer.wordpress.org/block-editor/reference-guides/components/textarea-control/
  * @see https://developer.wordpress.org/block-editor/reference-guides/components/toggle-control/
  * @see https://developer.wordpress.org/block-editor/reference-guides/components/toolbar-dropdown-menu/
  */
 import {
+	ExternalLink,
 	PanelBody,
 	PanelRow,
+	SelectControl,
+	TextControl,
+	TextareaControl,
 	ToggleControl,
 	ToolbarDropdownMenu,
 } from '@wordpress/components';
@@ -87,6 +97,40 @@ import MermaidDiagram from './components/mermaid-diagram';
 import { downloadDiagram } from './utils/export-diagram';
 
 /**
+ * The themes a diagram can be drawn in.
+ */
+import { AUTO_THEME, THEMES } from './utils/themes';
+
+/*
+ * Printed before this script by mermaid-blocks.php: the labels of the themes,
+ * by name and in the order they are offered; the site's theme, which a block
+ * without a theme of its own is drawn in; and the URL of the page that theme
+ * is set on, for those who may change it.
+ */
+const {
+	themes: themeLabels = Object.fromEntries(
+		[ AUTO_THEME, ...THEMES ].map( ( name ) => [ name, name ] )
+	),
+	theme: siteTheme = AUTO_THEME,
+	settingsUrl = '',
+} = window.mermaidBlocksEditorSettings || {};
+
+const THEME_OPTIONS = [
+	{
+		value: '',
+		label: sprintf(
+			/* translators: %s: name of the theme set for the whole site, such as "Automatic" or "Forest". */
+			__( 'Site default (%s)', 'mermaid-blocks' ),
+			themeLabels[ siteTheme ] || siteTheme
+		),
+	},
+	...Object.entries( themeLabels ).map( ( [ value, label ] ) => ( {
+		value,
+		label,
+	} ) ),
+];
+
+/**
  * Edit function for the block. This is the interface that will appear in the
  * WordPress editor when the block is used. It allows users to input MermaidJS
  * code and provides a live preview of the diagram.
@@ -94,19 +138,30 @@ import { downloadDiagram } from './utils/export-diagram';
  * @param {Object}   props               The block properties.
  * @param {Object}   props.attributes    The attributes for the block.
  * @param {Function} props.setAttributes The function to update block attributes.
+ * @param {boolean}  props.isSelected    Whether the block is selected.
  *
  * @return {Element} The rendered block editor interface.
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#edit
  */
-export default function Edit( { attributes, setAttributes } ) {
+export default function Edit( { attributes, setAttributes, isSelected } ) {
 	/**
 	 * Destructure the block attributes.
 	 * - `code`: The MermaidJS code for the diagram.
 	 * - `zoom`, `download`: Whether visitors get the zoom controls and the
 	 *   download buttons.
+	 * - `theme`: The theme the diagram is drawn in. Without one, the site's.
+	 * - `caption`: The text shown under the diagram.
+	 * - `accTitle`, `accDescr`: The title and the description of the diagram
+	 *   for assistive technology.
 	 */
-	const { code, zoom, download } = attributes;
+	const { code, zoom, download, theme, caption, accTitle, accDescr } =
+		attributes;
+
+	// A theme that isn't offered counts as none, as it does on the front end.
+	const ownTheme = THEME_OPTIONS.some( ( { value } ) => value === theme )
+		? theme
+		: '';
 
 	/**
 	 * Debounced input handling for the MermaidJS code.
@@ -204,6 +259,35 @@ export default function Edit( { attributes, setAttributes } ) {
 			</BlockControls>
 			<InspectorControls>
 				<PanelBody title={ __( 'Settings', 'mermaid-blocks' ) }>
+					<SelectControl
+						__nextHasNoMarginBottom
+						__next40pxDefaultSize
+						label={ __( 'Theme', 'mermaid-blocks' ) }
+						help={
+							<>
+								{ __(
+									'Automatic is the theme Mermaid picks for each type of diagram, or its dark counterpart on a dark background. A theme set in the code of the diagram takes precedence.',
+									'mermaid-blocks'
+								) }
+								{ settingsUrl && (
+									<>
+										{ ' ' }
+										<ExternalLink href={ settingsUrl }>
+											{ __(
+												'Change the site default',
+												'mermaid-blocks'
+											) }
+										</ExternalLink>
+									</>
+								) }
+							</>
+						}
+						value={ ownTheme }
+						options={ THEME_OPTIONS }
+						onChange={ ( value ) =>
+							setAttributes( { theme: value || undefined } )
+						}
+					/>
 					<ToggleControl
 						__nextHasNoMarginBottom
 						label={ __( 'Zoom controls', 'mermaid-blocks' ) }
@@ -226,6 +310,33 @@ export default function Edit( { attributes, setAttributes } ) {
 						checked={ !! download }
 						onChange={ ( value ) =>
 							setAttributes( { download: value } )
+						}
+					/>
+				</PanelBody>
+				<PanelBody title={ __( 'Accessibility', 'mermaid-blocks' ) }>
+					<TextControl
+						__nextHasNoMarginBottom
+						__next40pxDefaultSize
+						label={ __( 'Title', 'mermaid-blocks' ) }
+						help={ __(
+							'A short name for the diagram, read out by screen readers.',
+							'mermaid-blocks'
+						) }
+						value={ accTitle || '' }
+						onChange={ ( value ) =>
+							setAttributes( { accTitle: value || undefined } )
+						}
+					/>
+					<TextareaControl
+						__nextHasNoMarginBottom
+						label={ __( 'Description', 'mermaid-blocks' ) }
+						help={ __(
+							'What the diagram shows, for people who cannot see it.',
+							'mermaid-blocks'
+						) }
+						value={ accDescr || '' }
+						onChange={ ( value ) =>
+							setAttributes( { accDescr: value || undefined } )
 						}
 					/>
 				</PanelBody>
@@ -299,13 +410,30 @@ export default function Edit( { attributes, setAttributes } ) {
 				errorId={ error ? errorId : undefined }
 			/>
 			{ /* Display the live preview of the Mermaid diagram */ }
-			<div ref={ previewRef } style={ { marginTop: '20px' } }>
+			<figure ref={ previewRef } className="mermaid-blocks-preview">
 				<MermaidDiagram
 					code={ debouncedValue }
+					theme={ ownTheme || siteTheme }
+					title={ accTitle }
+					description={ accDescr }
 					onError={ setError }
 					errorId={ errorId }
 				/>
-			</div>
+				{ /* The caption: offered while the block is selected */ }
+				{ ( isSelected || ! RichText.isEmpty( caption ) ) && (
+					<RichText
+						identifier="caption"
+						tagName="figcaption"
+						className="mermaid-blocks-diagram__caption wp-element-caption"
+						aria-label={ __( 'Diagram caption', 'mermaid-blocks' ) }
+						placeholder={ __( 'Add caption', 'mermaid-blocks' ) }
+						value={ caption }
+						onChange={ ( value ) =>
+							setAttributes( { caption: value || undefined } )
+						}
+					/>
+				) }
+			</figure>
 		</div>
 	);
 }

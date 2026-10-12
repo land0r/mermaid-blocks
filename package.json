@@ -21,6 +21,7 @@
 		"build",
 		"includes",
 		"mermaid-blocks.php",
+		"uninstall.php",
 		"readme.txt",
 		"LICENSE.txt"
 	],

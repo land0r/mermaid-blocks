@@ -7,7 +7,12 @@
 	"category": "widgets",
 	"description": "MermaidJS diagram: flowcharts, Gantt charts, sequence diagrams, and more.",
 	"supports": {
-		"html": false
+		"html": false,
+		"align": [ "center", "wide", "full" ],
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
 	},
 	"attributes": {
 		"code": {
@@ -20,6 +25,18 @@
 		"download": {
 			"type": "boolean",
 			"default": false
+		},
+		"theme": {
+			"type": "string"
+		},
+		"caption": {
+			"type": "string"
+		},
+		"accTitle": {
+			"type": "string"
+		},
+		"accDescr": {
+			"type": "string"
 		}
 	},
 	"textdomain": "mermaid-blocks",
