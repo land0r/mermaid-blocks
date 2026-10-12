@@ -20,7 +20,7 @@ Supports WordPress 6.6+ and PHP 7.4+ (header of `mermaid-blocks.php`).
 | `npm run test:php` | PHPUnit tests, on WordPress's test library. They need a MySQL database of their own: its tables are dropped. Set `WP_TESTS_DB_NAME`, `WP_TESTS_DB_USER`, `WP_TESTS_DB_PASSWORD` and `WP_TESTS_DB_HOST` (defaults: `wordpress_tests`, `root`, empty, `127.0.0.1`) |
 | `npm run plugin-zip` | Release zip: a fresh build, the autoloader without development dependencies, and the `files` listed in `package.json` |
 
-The pre-commit hook runs the three linters. CI (`.github/workflows/ci.yml`) runs the linters and both test suites, the PHP one on a MySQL service, makes the release zip, checks that it holds the build and an autoloader that loads every class, and attaches it to the run.
+The pre-commit hook runs the three linters. CI (`.github/workflows/ci.yml`) runs the linters and both test suites, the PHP one on a MySQL service and again on PHP 7.4, makes the release zip, checks that it holds the build and an autoloader that loads every class, and attaches it to the run.
 
 `build/` and `vendor/` are generated and not committed. To try a change in WordPress, run `composer install` and `npm run build`, then use any local install with this directory in `wp-content/plugins/`, or run `npx @wp-playground/cli@latest start` here.
 
@@ -79,6 +79,7 @@ None of these is obvious from the code, and each has broken before.
 - **The variations come from PHP.** `Block` registers them with a `variation_callback` from `DiagramTypes`, so the editor and the `list-diagram-types` ability show the same starter code. Don't add variations in JavaScript.
 - **The attributes are listed twice.** `src/block.json` defines them, and `PostDiagrams::ATTRIBUTES` lists those the abilities may set, with their types. A new attribute needs both, and the schema in `DiagramAbility::get_attributes_schema()`.
 - **Mermaid is pinned to an exact version** in `package.json`. An upgrade needs a check of the bundle sizes (`build/mermaid.min.js` and `build/mermaid/`), of security advisories, of every diagram type in both the editor and the front end, of the error line mapping against what the new version removes before parsing, and of its themes: the unit tests fail when it adds one, or picks one per diagram type that has no dark counterpart in `src/utils/themes.js`.
+- **The minimum PHP version lives in four places**, which must match: "Requires PHP" in the `mermaid-blocks.php` header (and `readme.txt`), `testVersion` in `phpcs.xml`, `config.platform.php` in `composer.json`, and the `php-minimum` job in `ci.yml`. Composer resolves the lock for that version, so it installs on every PHP the plugin supports. Without it, a lock made on a newer PHP picks packages CI's PHP can't install.
 - **The version lives in four places**, which must match: the `mermaid-blocks.php` header, "Stable tag" in `readme.txt`, `package.json` and `src/block.json`.
 
 ## Reusing the renderer
