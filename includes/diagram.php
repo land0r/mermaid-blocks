@@ -41,8 +41,10 @@ function mermaid_blocks_get_build_asset( $name ) {
  * Registers the Mermaid library, and the script and style that turn diagram
  * markup into SVGs.
  *
- * - `mermaid-js`: the Mermaid library. The editor and the renderer use it.
- * - `mermaid-blocks-diagram` (script): renders every diagram on the page.
+ * - `mermaid-js`: the Mermaid library, for the editor.
+ * - `mermaid-blocks-diagram` (script): renders each diagram on the page when
+ *   it scrolls into view. It loads Mermaid's ES module build from
+ *   `build/mermaid/` on demand, so Mermaid isn't one of its dependencies.
  * - `mermaid-blocks-diagram` (style): hides the source until it renders.
  */
 function mermaid_blocks_register_diagram_assets() {
@@ -62,9 +64,18 @@ function mermaid_blocks_register_diagram_assets() {
 	wp_register_script(
 		'mermaid-blocks-diagram',
 		$build_url . 'view.js',
-		array_merge( $view['dependencies'], array( 'mermaid-js' ) ),
+		$view['dependencies'],
 		$view['version'],
 		true
+	);
+
+	$settings = array(
+		'mermaidUrl' => add_query_arg( 'ver', $mermaid['version'], $build_url . 'mermaid/mermaid.esm.min.js' ),
+	);
+	wp_add_inline_script(
+		'mermaid-blocks-diagram',
+		'var mermaidBlocksSettings = ' . wp_json_encode( $settings ) . ';',
+		'before'
 	);
 
 	$style_file = $build_dir . 'style-index.css';

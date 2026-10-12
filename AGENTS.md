@@ -26,12 +26,12 @@ To try a change in WordPress, use any local install with this directory in `wp-c
 ## Layout
 
 - `mermaid-blocks.php`: registers the block from `build/` and loads Mermaid into the editor iframe.
-- `includes/diagram.php`: rendering shared by the block and other integrations. Registers the `mermaid-js` and `mermaid-blocks-diagram` assets and outputs the diagram markup.
+- `includes/diagram.php`: rendering shared by the block and other integrations. Registers the `mermaid-js` and `mermaid-blocks-diagram` assets, passes the URL of Mermaid's ES module build to the latter, and outputs the diagram markup.
 - `src/block.json`: block metadata. It refers to the shared assets by handle.
 - `src/edit.js`, `src/components/mermaid-diagram.js`: editor UI and live preview.
 - `src/utils/`: `getMermaid()` returns the Mermaid instance of a given window, `renderDiagram()` renders without throwing, and `mermaid-config.js` is the shared config.
 - `src/render.php`: the block's server-side markup, built with `includes/diagram.php`.
-- `src/view.js`, `src/frontend/render-diagrams.js`: front-end rendering, for every integration. `view.js` is an explicit entry in `webpack.config.js`, because `block.json` refers to it by handle.
+- `src/view.js`, `src/frontend/`: front-end rendering, for every integration. Each diagram renders when it scrolls into view, and `load-mermaid.js` loads Mermaid when the first one does. `view.js` is an explicit entry in `webpack.config.js`, because `block.json` refers to it by handle.
 - `src/save.js` returns `null` because the block is dynamic. `src/deprecated.js` migrates older saved markup.
 - `src/transforms.js`: turns selected blocks holding a fenced `mermaid` code block (for example, pasted from Obsidian) into a diagram block.
 - `src/variations/`: one variation per diagram type, with starter code.
@@ -43,12 +43,13 @@ To try a change in WordPress, use any local install with this directory in `wp-c
 None of these is obvious from the code, and each has broken before.
 
 - **The editor canvas is an iframe.** Previews must render with the Mermaid copy loaded in that iframe, found with `getMermaid( element.ownerDocument.defaultView )`. Rendering in the parent window measures labels against the wrong CSS. Don't import `mermaid` into the editor bundle: it is the separate `mermaid-js` script (`build/mermaid.min.js`), wired up in `block.json` and `mermaid-blocks.php`.
+- **The front end loads Mermaid on demand.** `load-mermaid.js` imports Mermaid's ES module build (`build/mermaid/`) by URL at runtime, so it's never bundled, and the build loads each diagram type's code on first use. Don't make the `mermaid-blocks-diagram` script depend on `mermaid-js`. `webpack.config.js` copies the build with `.mjs` renamed to `.js`, because not every server serves `.mjs` as JavaScript, and fails if an import it can't rewrite is left.
 - **One Mermaid config.** The editor and the front end share `src/utils/mermaid-config.js`, so the preview matches the published diagram. Don't set `htmlLabels: false`: SVG text labels show `&amp;` literally and drop `>` (#7).
 - **The escaping in `mermaid_blocks_get_diagram_source_markup()` is deliberate.** `esc_textarea()` round-trips the source exactly, and `[` and `]` become `&#91;` and `&#93;` so `do_shortcode()` doesn't expand diagram text such as `A[gallery]`. Don't switch to `esc_html()` or drop the bracket encoding.
 - **Saved markup is versioned.** When the output of `save.js` or the block's attributes change, add an entry to `deprecated.js` with a test. Without one, existing posts show "This block contains unexpected or invalid content".
 - **`renderDiagram()` never throws.** It returns `{ svg }` or `{ error: { message, line } }`, and it removes the elements Mermaid leaves in the document after a failed render. Callers rely on that contract.
 - **`build/` is committed** because the Playground blueprint (`blueprint.json`) installs the plugin straight from this repository. Never edit it by hand: run `npm run build` and commit the result together with the source change.
-- **Mermaid is pinned to an exact version** in `package.json`. An upgrade needs a check of the bundle size (`build/mermaid.min.js`), of security advisories, and of every diagram type in both the editor and the front end.
+- **Mermaid is pinned to an exact version** in `package.json`. An upgrade needs a check of the bundle sizes (`build/mermaid.min.js` and `build/mermaid/`), of security advisories, and of every diagram type in both the editor and the front end.
 - **The version lives in four places**, which must match: the `mermaid-blocks.php` header, "Stable tag" in `readme.txt`, `package.json` and `src/block.json`.
 
 ## Reusing the renderer
@@ -57,7 +58,7 @@ The block is one integration of a shared renderer, so other editors, such as a s
 
 1. Outputs `mermaid_blocks_get_diagram_markup( $code, $attributes )`: a `.mermaid-blocks-diagram` wrapper around the escaped source. It also enqueues the assets.
 2. Declares the `mermaid-blocks-diagram` script and style handles as its dependencies if it renders outside a normal page load, such as over AJAX, where enqueueing has no effect.
-3. Calls `window.mermaidBlocks.render( element )` for diagrams added after the page loaded, such as a widget a page builder re-renders in its preview. Already rendered diagrams are skipped.
+3. Calls `window.mermaidBlocks.render( element )` for diagrams added after the page loaded, such as a widget a page builder re-renders in its preview. Each one renders when it scrolls into view. Already rendered diagrams are skipped.
 
 Page builder previews are iframes, like the block editor canvas: load the assets into the preview and call `render()` from inside it.
 
