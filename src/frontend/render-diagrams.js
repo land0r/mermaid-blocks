@@ -107,7 +107,7 @@ async function createCanvas( mermaid, diagram, source, mermaidDocument ) {
 
 /**
  * Renders every not-yet-processed diagram under `root`: the block's, and any
- * other integration's that outputs the same markup (see includes/diagram.php).
+ * other integration's that outputs the same markup (see includes/Diagram.php).
  *
  * @param {Object}               mermaid           The Mermaid library object.
  * @param {Document|HTMLElement} [root]            Where to look for diagrams.

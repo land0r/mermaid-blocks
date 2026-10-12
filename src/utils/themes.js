@@ -4,8 +4,8 @@
 import { getSurface } from './surface';
 
 // The themes of the bundled Mermaid, all of them. A unit test compares the
-// list with Mermaid's own, and with mermaid_blocks_get_themes() in
-// includes/diagram.php, which has their labels.
+// list with Mermaid's own, and with Themes::get_all() in
+// includes/Themes.php, which has their labels.
 export const THEMES = [
 	'default',
 	'neutral',

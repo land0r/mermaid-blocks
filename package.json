@@ -13,7 +13,7 @@
 		"lint:php": "composer cs",
 		"test:unit": "wp-scripts test-unit-js",
 		"packages-update": "wp-scripts packages-update",
-		"plugin-zip": "wp-scripts plugin-zip",
+		"plugin-zip": "composer install --no-dev --optimize-autoloader --no-interaction && npm run build && wp-scripts plugin-zip && composer install --no-interaction",
 		"start": "wp-scripts start",
 		"prepare": "husky"
 	},
@@ -22,6 +22,7 @@
 		"includes",
 		"mermaid-blocks.php",
 		"uninstall.php",
+		"vendor",
 		"readme.txt",
 		"LICENSE.txt"
 	],

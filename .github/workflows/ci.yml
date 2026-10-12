@@ -50,18 +50,38 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
-      - name: Build
-        run: npm run build
-
-      # build/ is committed because the Playground blueprint installs the
-      # plugin straight from this repository.
-      - name: Check that build/ is up to date
-        run: |
-          if [ -n "$(git status --porcelain -- build/)" ]; then
-            git status --short -- build/
-            echo "::error::build/ is out of date. Run 'npm run build' and commit the result."
-            exit 1
-          fi
-
+      # The zip holds what the repository doesn't: the build, and the
+      # autoloader without development dependencies.
       - name: Plugin ZIP
         run: npm run plugin-zip
+
+      - name: Check the plugin ZIP
+        run: |
+          unzip -q mermaid-blocks.zip -d plugin-zip
+          cd plugin-zip/mermaid-blocks
+          if [ ! -f build/block.json ] || [ ! -f vendor/autoload.php ]; then
+            echo "::error::The plugin ZIP has no build/ or no autoloader."
+            exit 1
+          fi
+          if [ -d vendor/squizlabs ]; then
+            echo "::error::The plugin ZIP holds development dependencies."
+            exit 1
+          fi
+          # Every class must load through the zipped autoloader.
+          php -r '
+            define( "ABSPATH", getcwd() . "/" );
+            require "vendor/autoload.php";
+            foreach ( glob( "includes/[A-Z]*.php" ) as $file ) {
+              $class = "MermaidBlocks\\" . basename( $file, ".php" );
+              if ( ! class_exists( $class ) ) {
+                echo "::error::$class does not load from the plugin ZIP.\n";
+                exit( 1 );
+              }
+            }
+          '
+
+      - name: Upload the plugin ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: mermaid-blocks
+          path: mermaid-blocks.zip
