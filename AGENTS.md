@@ -17,9 +17,10 @@ Supports WordPress 6.6+ and PHP 7.4+ (header of `mermaid-blocks.php`).
 | `composer cbf` | Auto-fix PHPCS issues |
 | `npm run format` | Prettier on `src/` |
 | `npm run test:unit` | Jest unit tests |
+| `npm run test:php` | PHPUnit tests, on WordPress's test library. They need a MySQL database of their own: its tables are dropped. Set `WP_TESTS_DB_NAME`, `WP_TESTS_DB_USER`, `WP_TESTS_DB_PASSWORD` and `WP_TESTS_DB_HOST` (defaults: `wordpress_tests`, `root`, empty, `127.0.0.1`) |
 | `npm run plugin-zip` | Release zip: a fresh build, the autoloader without development dependencies, and the `files` listed in `package.json` |
 
-The pre-commit hook runs the three linters. CI (`.github/workflows/ci.yml`) runs the linters and the tests, makes the release zip, checks that it holds the build and an autoloader that loads every class, and attaches it to the run.
+The pre-commit hook runs the three linters. CI (`.github/workflows/ci.yml`) runs the linters and both test suites, the PHP one on a MySQL service, makes the release zip, checks that it holds the build and an autoloader that loads every class, and attaches it to the run.
 
 `build/` and `vendor/` are generated and not committed. To try a change in WordPress, run `composer install` and `npm run build`, then use any local install with this directory in `wp-content/plugins/`, or run `npx @wp-playground/cli@latest start` here.
 
@@ -33,13 +34,17 @@ The pre-commit hook runs the three linters. CI (`.github/workflows/ci.yml`) runs
   - `Diagram`: the diagram markup, shared by the block and other integrations, and the theme a diagram is drawn in.
   - `Themes`: the themes a diagram can be drawn in.
   - `Settings`: the settings page, Settings > Mermaid Blocks. Its one setting is the theme of diagrams that have none of their own, stored in the `mermaid_blocks_theme` option, which `uninstall.php` deletes.
+  - `DiagramTypes`: the diagram types with starter code, the one source of the block's variations and of the `list-diagram-types` ability, and the detection of a diagram's type from its first keyword.
+  - `PostDiagrams`: the diagrams in the content of posts. It finds them by index, creates diagram blocks, and adds, replaces and removes them.
+  - `Abilities/`: the abilities of the WordPress Abilities API (WordPress 6.9+), one class per ability. `Ability` is the abstract base: a subclass defines the name, texts, schemas, annotations, permission check and execute callback, and `get_args()` puts them together for `wp_register_ability()`. `DiagramAbility` is the base of the abilities that work on diagrams, with their shared schemas and permission check. `AbilitiesRegistrar` registers the abilities `Plugin` gives it, and their `mermaid-blocks` category, and loads the client-side abilities in the block editor.
+- `src/abilities/`: the abilities that run in the browser, a script module (WordPress 7.0+): `mermaid-blocks/validate-diagram` parses a diagram with the editor's Mermaid. The server can't parse Mermaid.
 - `src/block.json`: block metadata. It refers to the shared assets by handle.
 - `src/edit.js`, `src/components/`: editor UI. `code-input.js` is the code field (line numbers, Tab indentation, the marked error line) and `mermaid-diagram.js` the live preview. `edit.js` has the theme, the toggles for the visitors' controls, the accessible title and description, the caption, and a toolbar menu that downloads the preview.
 - `src/utils/`: `getMermaid()` returns the Mermaid instance of a given window, `renderDiagram()` renders in a theme without throwing, `toSourceLine()` maps Mermaid's error lines back to the source, `getIndentEdit()` works out what Tab and Shift+Tab change, `export-diagram.js` turns a rendered diagram into an SVG or PNG file, and `mermaid-config.js` is the shared config. For themes: `themes.js` lists them, and turns the theme a diagram asks for into what it is drawn in (`resolveTheme()`) and into Mermaid configuration (`getThemeConfig()`); `getSurface()` tells whether an element sits on something dark; `watchSurface()` tells when that may have changed. `accessible-text.js` writes a title and a description into a rendered SVG.
 - `src/view.js`, `src/frontend/`: front-end rendering, for every integration. Each diagram renders when it scrolls into view, and `load-mermaid.js` loads Mermaid when the first one does. `controls.js` then adds the buttons the diagram asks for, and `zoom.js` zooms and pans it. A diagram that follows the page is drawn again when the page turns dark or light. `view.js` is an explicit entry in `webpack.config.js`, because `block.json` refers to it by handle.
 - `src/save.js` returns `null` because the block is dynamic. `src/deprecated.js` migrates older saved markup.
 - `src/transforms.js`: turns selected blocks holding a fenced `mermaid` code block (for example, pasted from Obsidian) into a diagram block.
-- `src/variations/`: one variation per diagram type, with starter code.
+- `tests/`: the PHPUnit tests, with WordPress from Composer (`vendor/roots/wordpress-no-content/`) and its test library (`wp-phpunit/wp-phpunit`).
 - `build/`: generated by `npm run build`. `vendor/`: generated by `composer install`. Neither is committed.
 - `.wordpress-org/`: plugin directory banners, icons and screenshots. Not part of the zip.
 
@@ -66,6 +71,13 @@ None of these is obvious from the code, and each has broken before.
 - **`build/` and `vendor/` are generated, and only releases ship them.** A copy of the repository can't run until `composer install` and `npm run build` ran: `mermaid-blocks.php` checks for both and shows a notice instead of loading. The Playground blueprint (`blueprint.json`) installs the zip attached to the latest GitHub release, so each release needs `mermaid-blocks.zip` attached. Never edit `build/` by hand.
 - **The release zip gets the production autoloader.** `npm run plugin-zip` installs Composer's packages without development dependencies before it zips `vendor/`, then installs them again. Zipping `vendor/` any other way ships PHPCS.
 - **Classes are autoloaded, so a class's file is named after it.** Composer maps `MermaidBlocks\` to `includes/`. A new class needs no `require`, but its file name must match the class name, case included: macOS doesn't mind a mismatch, Linux servers do. `includes/functions.php` holds the only global function, `mermaid_blocks()`, and `mermaid-blocks.php` requires it.
+- **A diagram in a post is addressed by its index and its hash.** Blocks have no ids. The index counts the diagram blocks of a post in document order, nested ones included, from 0, and the hash is the MD5 of the serialized block. `PostDiagrams` refuses a change whose hash doesn't match (409), so an edit made in the meantime, or another diagram moving to that index, is never overwritten. Removing a nested block also removes its `null` from the parent's `innerContent`, or the parent no longer serializes.
+- **Writes go through `wp_update_post()`, after `wp_save_post_revision()`.** WordPress saves a revision of what a post becomes, so a post that was never updated has no revision of what it was. Saving one first makes every change by an ability undoable from the revisions screen.
+- **The abilities' permissions are the editor's.** A user works with the diagrams of the posts they may edit (`edit_post`): contributors their drafts, authors their own posts, editors and administrators all, subscribers and visitors none. Reading needs the same, because it returns the source. Only post types edited in the block editor are reached, and not posts in the trash.
+- **Read-only abilities run over GET.** The REST API picks the method from the annotations: GET for `readonly`, DELETE for `destructive` and `idempotent`, POST otherwise. An ability that changes its annotations changes how clients call it.
+- **The client-side abilities are a script module.** `@wordpress/abilities` exists only as a module, so `src/abilities/` is built by the module half of `wp-scripts build --experimental-modules`, and `webpack.config.js` tells it to import the two WordPress modules rather than bundle them. A module can't read translations: `AbilitiesRegistrar` passes its texts as script module data. With the flag, wp-scripts no longer empties `build/`, so `npm run build` does it first (`prebuild`).
+- **The variations come from PHP.** `Block` registers them with a `variation_callback` from `DiagramTypes`, so the editor and the `list-diagram-types` ability show the same starter code. Don't add variations in JavaScript.
+- **The attributes are listed twice.** `src/block.json` defines them, and `PostDiagrams::ATTRIBUTES` lists those the abilities may set, with their types. A new attribute needs both, and the schema in `DiagramAbility::get_attributes_schema()`.
 - **Mermaid is pinned to an exact version** in `package.json`. An upgrade needs a check of the bundle sizes (`build/mermaid.min.js` and `build/mermaid/`), of security advisories, of every diagram type in both the editor and the front end, of the error line mapping against what the new version removes before parsing, and of its themes: the unit tests fail when it adds one, or picks one per diagram type that has no dark counterpart in `src/utils/themes.js`.
 - **The version lives in four places**, which must match: the `mermaid-blocks.php` header, "Stable tag" in `readme.txt`, `package.json` and `src/block.json`.
 
@@ -87,7 +99,8 @@ Page builder previews are iframes, like the block editor canvas: load the assets
 - WordPress coding standards throughout. The linters are the source of truth.
 - Every user-facing string is translatable with the `mermaid-blocks` text domain. ESLint and PHPCS enforce it.
 - PHP code lives in classes in `includes/`. A class adds its hooks in a `hooks()` method, which `Plugin::init()` calls, never in its constructor, and gets the other parts it needs through its constructor.
-- Unit tests live next to the code they cover, in `test/` directories.
+- JavaScript unit tests live next to the code they cover, in `test/` directories. PHP tests live in `tests/`, one class per class under test, extending `WP_UnitTestCase`.
+- A new ability is a class in `includes/Abilities/` extending `Ability`, or `DiagramAbility` when it works on diagrams. `Plugin` creates it and passes it to `AbilitiesRegistrar`.
 - Commit subjects start with `FEATURE:`, `FIX:` or `UPDATE:`.
 
 ## Workflow
@@ -98,6 +111,6 @@ Page builder previews are iframes, like the block editor canvas: load the assets
 
 ## Definition of done
 
-- `npm run lint:js`, `npm run lint:css`, `npm run lint:php` and `npm run test:unit` pass.
+- `npm run lint:js`, `npm run lint:css`, `npm run lint:php`, `npm run test:unit` and `npm run test:php` pass.
 - Every bug fix comes with a test that fails without it.
 - Anything that changes rendering has been checked in the editor and on the front end.

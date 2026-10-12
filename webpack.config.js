@@ -80,11 +80,45 @@ const withRendererAndMermaid = ( config ) => ( {
 	plugins: [ ...config.plugins, mermaidCopyPlugin ],
 } );
 
-// The default config is an array when module (view script module) builds are
-// enabled; extend the first (classic script) config only.
+/**
+ * The script modules WordPress provides, which the module build imports
+ * rather than bundles. The default list of the build doesn't know them yet.
+ */
+const WORDPRESS_MODULES = [
+	'@wordpress/abilities',
+	'@wordpress/core-abilities',
+];
+
+// The client-side abilities are a script module: the Abilities API is one.
+const withAbilities = ( config ) => ( {
+	...config,
+	entry: () => ( {
+		...( typeof config.entry === 'function'
+			? config.entry()
+			: config.entry ),
+		abilities: path.resolve( __dirname, 'src/abilities/index.js' ),
+	} ),
+	plugins: config.plugins.map( ( plugin ) =>
+		plugin.constructor.name === 'DependencyExtractionWebpackPlugin'
+			? new plugin.constructor( {
+					...plugin.options,
+					requestToExternalModule: ( request ) =>
+						WORDPRESS_MODULES.includes( request )
+							? `module ${ request }`
+							: undefined,
+			  } )
+			: plugin
+	),
+} );
+
+// `--experimental-modules` makes the default config an array: the classic
+// scripts, then the script modules.
 if ( Array.isArray( defaultConfig ) ) {
-	const [ first, ...rest ] = defaultConfig;
-	module.exports = [ withRendererAndMermaid( first ), ...rest ];
+	const [ scripts, modules ] = defaultConfig;
+	module.exports = [
+		withRendererAndMermaid( scripts ),
+		withAbilities( modules ),
+	];
 } else {
 	module.exports = withRendererAndMermaid( defaultConfig );
 }

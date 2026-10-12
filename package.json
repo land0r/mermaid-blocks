@@ -6,15 +6,17 @@
 	"license": "GPL-3.0-or-later",
 	"main": "build/index.js",
 	"scripts": {
-		"build": "wp-scripts build",
+		"prebuild": "node -e \"require('fs').rmSync('build', { recursive: true, force: true })\"",
+		"build": "wp-scripts build --experimental-modules",
 		"format": "wp-scripts format ./src",
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js ./src",
 		"lint:php": "composer cs",
 		"test:unit": "wp-scripts test-unit-js",
+		"test:php": "composer test",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "composer install --no-dev --optimize-autoloader --no-interaction && npm run build && wp-scripts plugin-zip && composer install --no-interaction",
-		"start": "wp-scripts start",
+		"start": "wp-scripts start --experimental-modules",
 		"prepare": "husky"
 	},
 	"files": [

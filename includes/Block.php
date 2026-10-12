@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Registers the block from its metadata in `build/`, renders it, and gives
- * the editor what its preview needs.
+ * Registers the block from its metadata in `build/`, with a variation per
+ * diagram type, renders it, and gives the editor what its preview needs.
  */
 final class Block {
 
@@ -53,18 +53,27 @@ final class Block {
 	private Settings $settings;
 
 	/**
+	 * The diagram types, which the block's variations start from.
+	 *
+	 * @var DiagramTypes
+	 */
+	private DiagramTypes $types;
+
+	/**
 	 * Sets up the block.
 	 *
-	 * @param Assets   $assets   The assets of diagrams.
-	 * @param Diagram  $diagram  The diagram markup.
-	 * @param Themes   $themes   The themes a diagram can be drawn in.
-	 * @param Settings $settings The settings, which hold the site's theme.
+	 * @param Assets       $assets   The assets of diagrams.
+	 * @param Diagram      $diagram  The diagram markup.
+	 * @param Themes       $themes   The themes a diagram can be drawn in.
+	 * @param Settings     $settings The settings, which hold the site's theme.
+	 * @param DiagramTypes $types    The diagram types, for the variations.
 	 */
-	public function __construct( Assets $assets, Diagram $diagram, Themes $themes, Settings $settings ) {
+	public function __construct( Assets $assets, Diagram $diagram, Themes $themes, Settings $settings, DiagramTypes $types ) {
 		$this->assets   = $assets;
 		$this->diagram  = $diagram;
 		$this->themes   = $themes;
 		$this->settings = $settings;
+		$this->types    = $types;
 	}
 
 	/**
@@ -81,12 +90,18 @@ final class Block {
 	 * Behind the scenes, it registers also all assets so they can be enqueued
 	 * through the block editor in the corresponding context.
 	 *
+	 * The variations are built when the editor asks for them, so their texts
+	 * are translated.
+	 *
 	 * @see https://developer.wordpress.org/reference/functions/register_block_type/
 	 */
 	public function register(): void {
 		register_block_type(
 			$this->assets->get_path(),
-			array( 'render_callback' => array( $this, 'render' ) )
+			array(
+				'render_callback'    => array( $this, 'render' ),
+				'variation_callback' => array( $this->types, 'get_variations' ),
+			)
 		);
 	}
 

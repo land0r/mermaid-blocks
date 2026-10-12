@@ -28,6 +28,20 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - A title and a description of each diagram for screen readers.
 - Simple and intuitive integration with the block editor.
 
+### Abilities for AI agents:
+On WordPress 6.9 and later, the plugin registers abilities with the WordPress Abilities API, in the "Mermaid diagrams" category. AI agents and automation can use them to work with diagrams, for example through the MCP Adapter or the REST API under `wp-abilities/v1`:
+
+- `mermaid-blocks/list-diagram-types`: the diagram types with starter code.
+- `mermaid-blocks/list-diagrams`: the diagrams in one post, or in every post that has some.
+- `mermaid-blocks/get-diagram`: one diagram of a post.
+- `mermaid-blocks/build-block-markup`: the block markup of a diagram, for other abilities that write posts.
+- `mermaid-blocks/insert-diagram`: adds a diagram to a post.
+- `mermaid-blocks/update-diagram`: changes the code or the settings of a diagram.
+- `mermaid-blocks/delete-diagram`: removes a diagram from a post.
+- `mermaid-blocks/validate-diagram`: parses a diagram in the block editor and reports its errors (WordPress 7.0 and later). The server can't parse Mermaid, so the other abilities don't validate code.
+
+A diagram is addressed by the ID of its post and its index among the post's diagrams. Changes need the hash a read returned, so a diagram edited in the meantime is never overwritten, and every change leaves a revision. Each ability is open only to those who could make the same change in the editor: users work with the diagrams of the posts they can edit.
+
 == Installation ==
 
 1. Upload the plugin to the `/wp-content/plugins/mermaid-blocks` directory, or install it through the WordPress plugin screen.

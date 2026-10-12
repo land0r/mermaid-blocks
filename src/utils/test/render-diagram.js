@@ -1,4 +1,4 @@
-import { renderDiagram } from '../render-diagram';
+import { parseDiagram, renderDiagram } from '../render-diagram';
 import MERMAID_CONFIG from '../mermaid-config';
 import { AUTO_DARK, AUTO_LIGHT } from '../themes';
 
@@ -325,5 +325,65 @@ describe( 'renderDiagram themes', () => {
 			error: { message: 'Unknown theme', line: null },
 		} );
 		expect( mermaid.render ).not.toHaveBeenCalled();
+	} );
+} );
+
+describe( 'parseDiagram', () => {
+	it( 'resolves to the type Mermaid detected', async () => {
+		const mermaid = {
+			parse: jest.fn().mockResolvedValue( {
+				diagramType: 'flowchart-v2',
+				config: {},
+			} ),
+		};
+
+		await expect( parseDiagram( mermaid, 'graph TD' ) ).resolves.toEqual( {
+			type: 'flowchart-v2',
+		} );
+		expect( mermaid.parse ).toHaveBeenCalledWith( 'graph TD' );
+	} );
+
+	it( 'returns the message and the line of the source for an error', async () => {
+		const code = '---\ntitle: T\n---\ngraph\nbad';
+		const error = new Error( 'Parse error on line 2:\nboom' );
+		error.hash = { line: 1, loc: { first_line: 2 } };
+		const mermaid = { parse: jest.fn().mockRejectedValue( error ) };
+
+		await expect( parseDiagram( mermaid, code ) ).resolves.toEqual( {
+			error: { message: 'boom', line: 5 },
+		} );
+	} );
+
+	it( 'waits for the render before it', async () => {
+		const calls = [];
+		let finishRender;
+		const mermaid = {
+			initialize: jest.fn(),
+			render: jest.fn( () => {
+				calls.push( 'start render' );
+
+				return new Promise( ( resolve ) => {
+					finishRender = () => {
+						calls.push( 'end render' );
+						resolve( { svg: '<svg></svg>' } );
+					};
+				} );
+			} ),
+			parse: jest.fn( async () => {
+				calls.push( 'parse' );
+				return { diagramType: 'pie' };
+			} ),
+		};
+
+		const rendered = renderDiagram( mermaid, 'a', 'graph' );
+		const parsed = parseDiagram( mermaid, 'pie' );
+
+		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+		expect( calls ).toEqual( [ 'start render' ] );
+
+		finishRender();
+		await Promise.all( [ rendered, parsed ] );
+
+		expect( calls ).toEqual( [ 'start render', 'end render', 'parse' ] );
 	} );
 } );
