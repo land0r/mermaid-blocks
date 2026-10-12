@@ -10,6 +10,9 @@
  * page later, such as a widget a page builder re-renders in its preview, are
  * rendered by calling `window.mermaidBlocks.render( element )`.
  *
+ * A diagram whose wrapper has a `data-mermaid-controls` attribute gets controls
+ * for visitors: `zoom`, `download`, or both, separated by a space.
+ *
  * @package MermaidBlocks
  */
 
@@ -43,9 +46,11 @@ function mermaid_blocks_get_build_asset( $name ) {
  *
  * - `mermaid-js`: the Mermaid library, for the editor.
  * - `mermaid-blocks-diagram` (script): renders each diagram on the page when
- *   it scrolls into view. It loads Mermaid's ES module build from
- *   `build/mermaid/` on demand, so Mermaid isn't one of its dependencies.
- * - `mermaid-blocks-diagram` (style): hides the source until it renders.
+ *   it scrolls into view, and adds its controls. It loads Mermaid's ES module
+ *   build from `build/mermaid/` on demand, so Mermaid isn't one of its
+ *   dependencies.
+ * - `mermaid-blocks-diagram` (style): hides the source until it renders, and
+ *   styles the controls.
  */
 function mermaid_blocks_register_diagram_assets() {
 	$build_dir = plugin_dir_path( MERMAID_BLOCKS_PLUGIN_FILE ) . 'build/';
@@ -69,8 +74,18 @@ function mermaid_blocks_register_diagram_assets() {
 		true
 	);
 
+	// The script has no dependencies, so its few labels are translated here.
 	$settings = array(
 		'mermaidUrl' => add_query_arg( 'ver', $mermaid['version'], $build_url . 'mermaid/mermaid.esm.min.js' ),
+		'i18n'       => array(
+			'controls'      => __( 'Diagram controls', 'mermaid-blocks' ),
+			'zoomIn'        => __( 'Zoom in', 'mermaid-blocks' ),
+			'zoomOut'       => __( 'Zoom out', 'mermaid-blocks' ),
+			'resetZoom'     => __( 'Reset zoom', 'mermaid-blocks' ),
+			'downloadSvg'   => __( 'Download as SVG', 'mermaid-blocks' ),
+			'downloadPng'   => __( 'Download as PNG', 'mermaid-blocks' ),
+			'downloadError' => __( 'The file could not be created.', 'mermaid-blocks' ),
+		),
 	);
 	wp_add_inline_script(
 		'mermaid-blocks-diagram',
@@ -147,7 +162,9 @@ function mermaid_blocks_get_diagram_source_markup( $code ) {
  * @param string $code       Mermaid source.
  * @param array  $attributes Optional. Extra attributes for the wrapper
  *                           element, as name => value. A `class` is added to
- *                           the `mermaid-blocks-diagram` class.
+ *                           the `mermaid-blocks-diagram` class, and
+ *                           `data-mermaid-controls` lists the controls visitors
+ *                           get: `zoom`, `download`, or `zoom download`.
  *
  * @return string The diagram markup, or an empty string when there is no code.
  */

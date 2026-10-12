@@ -6,23 +6,25 @@
  * Each diagram renders when it scrolls into view, and Mermaid is loaded when
  * the first one does, so a page whose diagrams are never seen never loads it.
  * A diagram inside a hidden element, such as a closed tab, renders when it is
- * shown, at its real size.
+ * shown, at its real size. Once rendered, a diagram gets the controls its
+ * markup asks for: zoom, download.
  *
  * Also exposes `window.mermaidBlocks.render( element )` for diagrams added to
  * the page after it loaded, such as a widget a page builder re-renders.
  */
 import renderDiagrams, { findDiagrams } from './frontend/render-diagrams';
 import loadMermaid from './frontend/load-mermaid';
+import addControls from './frontend/controls';
 
 // Start a viewport's height ahead, so a diagram is usually rendered by the
 // time it scrolls into view.
 const ROOT_MARGIN = '100% 0px';
 
 // Printed before this script by includes/diagram.php.
-const { mermaidUrl } = window.mermaidBlocksSettings || {};
+const { mermaidUrl, i18n } = window.mermaidBlocksSettings || {};
 
 /**
- * Loads Mermaid if needed, and renders one diagram.
+ * Loads Mermaid if needed, renders one diagram and adds its controls.
  *
  * @param {HTMLElement} diagram The diagram element.
  *
@@ -36,7 +38,11 @@ function renderNow( diagram ) {
 			// eslint-disable-next-line no-console
 			console.error( 'Mermaid Blocks: failed to render diagram.', error );
 		} )
-		.then( () => diagram.classList.remove( 'is-pending' ) );
+		.then( () => {
+			diagram.classList.remove( 'is-pending' );
+			// Only a rendered diagram gets any.
+			addControls( diagram, i18n );
+		} );
 }
 
 const observer =

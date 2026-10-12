@@ -20,7 +20,21 @@ $mermaid_blocks_code = isset( $attributes['code'] ) ? (string) $attributes['code
 if ( '' === trim( $mermaid_blocks_code ) ) {
 	return;
 }
+
+$mermaid_blocks_wrapper = array( 'class' => 'mermaid-blocks-diagram' );
+
+// The controls visitors get. The front-end script adds them to the rendered diagram.
+$mermaid_blocks_controls = array();
+foreach ( array( 'zoom', 'download' ) as $mermaid_blocks_control ) {
+	if ( ! empty( $attributes[ $mermaid_blocks_control ] ) ) {
+		$mermaid_blocks_controls[] = $mermaid_blocks_control;
+	}
+}
+
+if ( $mermaid_blocks_controls ) {
+	$mermaid_blocks_wrapper['data-mermaid-controls'] = implode( ' ', $mermaid_blocks_controls );
+}
 ?>
-<div <?php echo get_block_wrapper_attributes( array( 'class' => 'mermaid-blocks-diagram' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by core. ?>>
+<div <?php echo get_block_wrapper_attributes( $mermaid_blocks_wrapper ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by core. ?>>
 	<?php echo mermaid_blocks_get_diagram_source_markup( $mermaid_blocks_code ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the function. ?>
 </div>

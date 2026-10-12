@@ -12,6 +12,14 @@
   "attributes": {
     "code": {
       "type": "string"
+    },
+    "zoom": {
+      "type": "boolean",
+      "default": false
+    },
+    "download": {
+      "type": "boolean",
+      "default": false
     }
   },
   "textdomain": "mermaid-blocks",

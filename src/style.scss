@@ -31,8 +31,110 @@
 	height: auto;
 }
 
+/*
+ * The controls a diagram asks for (see frontend/controls.js): a row of buttons
+ * above it. They take the colour of the text around the diagram, so they suit
+ * any theme.
+ */
+.mermaid-blocks-diagram__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+	justify-content: flex-end;
+	margin-bottom: 8px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1;
+}
+
+/* Tells when a download failed. Empty, it sets the download buttons apart. */
+.mermaid-blocks-diagram__status {
+	margin-inline: 4px;
+	font-weight: 400;
+}
+
+/* Doubled class: themes style `button`. */
+.mermaid-blocks-diagram .mermaid-blocks-diagram__button {
+	all: unset;
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-width: 32px;
+	height: 32px;
+	padding: 0 7px;
+	border: 1px solid;
+	border-color: color-mix(in srgb, currentcolor 35%, transparent);
+	border-radius: 4px;
+	letter-spacing: 0.02em;
+	cursor: pointer;
+	opacity: 0.75;
+
+	&:hover,
+	&:focus-visible {
+		opacity: 1;
+	}
+
+	&:focus-visible {
+		outline: 2px solid;
+		outline-offset: 1px;
+	}
+
+	&[aria-disabled="true"] {
+		cursor: default;
+		opacity: 0.3;
+	}
+
+	svg {
+		width: 16px;
+		height: 16px;
+		fill: none;
+		stroke: currentcolor;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+}
+
+/*
+ * A zoomed diagram is wider than its canvas, which scrolls: that is how the
+ * diagram is panned. The canvas grows with the diagram, up to most of the
+ * window's height.
+ */
+.mermaid-blocks-diagram.is-zoomed .mermaid-blocks-diagram__canvas {
+	overflow: auto;
+	max-height: 80vh;
+	box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.4);
+	cursor: grab;
+	user-select: none;
+}
+
+.mermaid-blocks-diagram.is-panning .mermaid-blocks-diagram__canvas {
+	cursor: grabbing;
+}
+
+/*
+ * Focus shows for the keyboard only: some themes outline every focused
+ * element, a dragged diagram included.
+ */
+.mermaid-blocks-diagram.is-zoomed .mermaid-blocks-diagram__canvas:focus {
+	outline: none;
+}
+
+.mermaid-blocks-diagram.is-zoomed .mermaid-blocks-diagram__canvas:focus-visible {
+	outline: 2px solid;
+	outline-offset: 2px;
+}
+
 /* Print the source of diagrams that never scrolled into view. */
 @media print {
+
+	.mermaid-blocks-diagram__toolbar {
+		display: none;
+	}
 
 	.mermaid-blocks-diagram:not(.is-rendered):not(.has-error)
 	.mermaid-blocks-diagram__source {
