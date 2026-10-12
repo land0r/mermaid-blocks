@@ -9,6 +9,12 @@
 
 $mermaid_blocks_root = dirname( __DIR__ );
 
+// Without its build, the plugin shows a notice instead of loading, and every test fails for that.
+if ( ! file_exists( $mermaid_blocks_root . '/build/block.json' ) ) {
+	echo 'The plugin has no build: run `npm run build` before the PHP tests.' . PHP_EOL; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Console output.
+	exit( 1 );
+}
+
 // The test library reads this configuration through its own, which finds it in the environment.
 putenv( 'WP_PHPUNIT__TESTS_CONFIG=' . __DIR__ . '/wp-tests-config.php' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv
 
