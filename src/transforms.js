@@ -4,6 +4,31 @@ import { createBlock } from '@wordpress/blocks';
 // Import decodeEntities to decode HTML entities (e.g., &gt; → >)
 import { decodeEntities } from '@wordpress/html-entities';
 
+/**
+ * Returns the text of a block: the HTML in its `content` attribute.
+ *
+ * The transform below is offered for every block type, and most of them have
+ * no such attribute, or keep something other than text in it.
+ *
+ * @param {Object} attributes The attributes of the block.
+ *
+ * @return {string|null} The text, or null for a block that has none.
+ */
+const getContent = ( attributes ) => {
+	const content = attributes?.content;
+
+	if ( typeof content === 'string' ) {
+		return content;
+	}
+
+	// A rich text attribute holds a RichTextData object, not a string.
+	if ( typeof content?.toHTMLString === 'function' ) {
+		return content.toHTMLString();
+	}
+
+	return null;
+};
+
 const transforms = {
 	from: [
 		{
@@ -12,26 +37,29 @@ const transforms = {
 			isMultiBlock: true,
 			/**
 			 * Checks if the selected blocks match the pattern for a MermaidJS code block.
-			 * The first block must start with "```mermaid", and the last block must end with "```".
+			 * Every block must hold text. The first block must start with "```mermaid",
+			 * and the last block must end with "```".
 			 *
-			 * @param {Array} blocks The array of selected blocks to check.
+			 * @param {Array} blocks The attributes of each selected block.
 			 *
 			 * @return {boolean} Whether the selected blocks match the MermaidJS syntax pattern.
 			 */
 			isMatch: ( blocks ) => {
-				if ( ! blocks.length ) {
+				const contents = blocks.map( getContent );
+
+				// A block without text can't be part of the code
+				if ( ! contents.length || contents.includes( null ) ) {
 					return false;
 				}
 
 				// Trim content for the first and last block
-				const firstBlockContent = blocks[ 0 ]?.content.trim();
-				const lastBlockContent =
-					blocks[ blocks.length - 1 ]?.content.trim();
+				const firstBlockContent = contents[ 0 ].trim();
+				const lastBlockContent = contents[ contents.length - 1 ].trim();
 
 				// Check if the first block starts with "```mermaid" and the last block ends with "```"
 				return (
-					firstBlockContent?.startsWith( '```mermaid' ) &&
-					lastBlockContent?.endsWith( '```' )
+					firstBlockContent.startsWith( '```mermaid' ) &&
+					lastBlockContent.endsWith( '```' )
 				);
 			},
 
@@ -39,7 +67,7 @@ const transforms = {
 			 * Transforms the selected paragraph blocks into a MermaidJS block.
 			 * Combines the content of all selected blocks into a single MermaidJS code string.
 			 *
-			 * @param {Array} blocks - The array of selected blocks to transform.
+			 * @param {Array} blocks - The attributes of each selected block.
 			 *
 			 * @return {Object} The new MermaidJS block.
 			 */
@@ -48,7 +76,7 @@ const transforms = {
 				const mergedContent = blocks
 					.map( ( block ) => {
 						const content = decodeEntities(
-							block?.content.trim() || ''
+							( getContent( block ) || '' ).trim()
 						);
 
 						if ( content.startsWith( 'title:' ) ) {

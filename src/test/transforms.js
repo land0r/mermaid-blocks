@@ -33,6 +33,9 @@ const { isMatch, transform } = transforms.from[ 0 ];
 
 const para = ( content ) => ( { content } );
 
+// What a rich text attribute, such as a paragraph's content, holds.
+const richText = ( html ) => ( { content: { toHTMLString: () => html } } );
+
 describe( 'transforms.from[0] (markdown to Mermaid block)', () => {
 	describe( 'isMatch', () => {
 		it( 'returns false for an empty array', () => {
@@ -73,7 +76,38 @@ describe( 'transforms.from[0] (markdown to Mermaid block)', () => {
 			);
 		} );
 
-		it.todo( 'does not throw for blocks without a content attribute (#6)' );
+		it( 'matches rich text values', () => {
+			expect(
+				isMatch( [
+					richText( '```mermaid' ),
+					richText( 'flowchart LR' ),
+					richText( '```' ),
+				] )
+			).toBe( true );
+		} );
+
+		it( 'does not match a block without a content attribute (#6)', () => {
+			expect( isMatch( [ {} ] ) ).toBe( false );
+			expect( isMatch( [ { url: 'image.png' }, {} ] ) ).toBe( false );
+		} );
+
+		it.each( [
+			[ 'an array', [ '```mermaid', '```' ] ],
+			[ 'an object', { text: '```mermaid```' } ],
+			[ 'a number', 42 ],
+			[ 'null', null ],
+		] )(
+			'does not match a block whose content is %s (#6)',
+			( _, content ) => {
+				expect( isMatch( [ { content } ] ) ).toBe( false );
+			}
+		);
+
+		it( 'does not match when a block between the fences has no text', () => {
+			expect(
+				isMatch( [ para( '```mermaid' ), {}, para( '```' ) ] )
+			).toBe( false );
+		} );
 	} );
 
 	describe( 'transform', () => {
@@ -126,6 +160,16 @@ describe( 'transforms.from[0] (markdown to Mermaid block)', () => {
 			expect( attributes.code ).toBe(
 				'---\ntitle: My diagram\n---\nflowchart LR'
 			);
+		} );
+
+		it( 'reads rich text values', () => {
+			const { attributes } = transform( [
+				richText( '```mermaid' ),
+				richText( 'graph TD' ),
+				richText( 'A --&gt; B' ),
+				richText( '```' ),
+			] );
+			expect( attributes.code ).toBe( 'graph TD\nA --> B' );
 		} );
 
 		it( 'trims the resulting code', () => {
