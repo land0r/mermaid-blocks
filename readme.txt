@@ -23,6 +23,9 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - **Supported diagram types:** Flowcharts, Sequence Diagrams, Gantt Charts, Class Diagrams.
 - Real-time preview of MermaidJS diagrams in the editor.
 - Optional zoom controls for large diagrams, and buttons to download a diagram as an SVG or PNG file.
+- Every Mermaid theme: one for the whole site under Settings → Mermaid Blocks, and one per diagram where you need it. The automatic theme follows the page, dark mode included.
+- Alignment (centre, wide and full width), spacing, and an optional caption.
+- A title and a description of each diagram for screen readers.
 - Simple and intuitive integration with the block editor.
 
 == Installation ==

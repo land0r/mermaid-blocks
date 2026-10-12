@@ -1,4 +1,6 @@
 import { renderDiagram } from '../render-diagram';
+import MERMAID_CONFIG from '../mermaid-config';
+import { AUTO_DARK, AUTO_LIGHT } from '../themes';
 
 describe( 'renderDiagram', () => {
 	afterEach( () => {
@@ -168,5 +170,160 @@ describe( 'renderDiagram', () => {
 		await expect(
 			renderDiagram( mermaid, 'missing', 'bad' )
 		).resolves.toHaveProperty( 'error' );
+	} );
+} );
+
+describe( 'renderDiagram themes', () => {
+	const fakeMermaid = () => ( {
+		initialize: jest.fn(),
+		render: jest.fn().mockResolvedValue( { svg: '<svg></svg>' } ),
+		mermaidAPI: {
+			defaultConfig: {
+				theme: 'default',
+				flowchart: { theme: 'redux-color' },
+			},
+		},
+	} );
+
+	it( 'leaves Mermaid as it was initialised without a theme', async () => {
+		const mermaid = fakeMermaid();
+
+		await renderDiagram( mermaid, 'a', 'graph' );
+		await renderDiagram( mermaid, 'b', 'graph', document, AUTO_LIGHT );
+
+		expect( mermaid.initialize ).not.toHaveBeenCalled();
+		expect( mermaid.render ).toHaveBeenCalledTimes( 2 );
+	} );
+
+	it( 'initialises Mermaid with the theme before rendering in it', async () => {
+		const mermaid = fakeMermaid();
+		const calls = [];
+		mermaid.initialize.mockImplementation( () =>
+			calls.push( 'initialize' )
+		);
+		mermaid.render.mockImplementation( async () => {
+			calls.push( 'render' );
+			return { svg: '<svg></svg>' };
+		} );
+
+		await renderDiagram( mermaid, 'a', 'graph', document, 'forest' );
+
+		expect( mermaid.initialize ).toHaveBeenCalledWith( {
+			...MERMAID_CONFIG,
+			theme: 'forest',
+		} );
+		expect( calls ).toEqual( [ 'initialize', 'render' ] );
+	} );
+
+	it( 'initialises Mermaid again only when the theme changes', async () => {
+		const mermaid = fakeMermaid();
+
+		await renderDiagram( mermaid, 'a', 'graph', document, 'forest' );
+		await renderDiagram( mermaid, 'b', 'graph', document, 'forest' );
+
+		expect( mermaid.initialize ).toHaveBeenCalledTimes( 1 );
+
+		await renderDiagram( mermaid, 'c', 'graph', document, AUTO_DARK );
+
+		expect( mermaid.initialize ).toHaveBeenLastCalledWith( {
+			...MERMAID_CONFIG,
+			theme: 'dark',
+			flowchart: { theme: 'redux-dark-color' },
+		} );
+
+		// Back to what Mermaid picks: no theme is named.
+		await renderDiagram( mermaid, 'd', 'graph', document, AUTO_LIGHT );
+
+		expect( mermaid.initialize ).toHaveBeenCalledTimes( 3 );
+		expect( mermaid.initialize ).toHaveBeenLastCalledWith( MERMAID_CONFIG );
+	} );
+
+	it( 'keeps the theme of each Mermaid instance apart', async () => {
+		const first = fakeMermaid();
+		const second = fakeMermaid();
+
+		await renderDiagram( first, 'a', 'graph', document, 'dark' );
+		await renderDiagram( second, 'b', 'graph', document, 'dark' );
+
+		expect( first.initialize ).toHaveBeenCalledTimes( 1 );
+		expect( second.initialize ).toHaveBeenCalledTimes( 1 );
+	} );
+
+	it( 'does not change the theme while another diagram renders', async () => {
+		const mermaid = fakeMermaid();
+		const calls = [];
+		let finishFirst;
+
+		mermaid.initialize.mockImplementation( ( { theme } ) =>
+			calls.push( `initialize ${ theme }` )
+		);
+		mermaid.render.mockImplementation( ( id ) => {
+			calls.push( `start ${ id }` );
+
+			return new Promise( ( resolve ) => {
+				const finish = () => {
+					calls.push( `end ${ id }` );
+					resolve( { svg: '<svg></svg>' } );
+				};
+
+				if ( id === 'a' ) {
+					finishFirst = finish;
+				} else {
+					finish();
+				}
+			} );
+		} );
+
+		const first = renderDiagram( mermaid, 'a', 'graph', document, 'dark' );
+		const second = renderDiagram(
+			mermaid,
+			'b',
+			'graph',
+			document,
+			'forest'
+		);
+
+		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+		expect( calls ).toEqual( [ 'initialize dark', 'start a' ] );
+
+		finishFirst();
+		await Promise.all( [ first, second ] );
+
+		expect( calls ).toEqual( [
+			'initialize dark',
+			'start a',
+			'end a',
+			'initialize forest',
+			'start b',
+			'end b',
+		] );
+	} );
+
+	it( 'renders the next diagram after one that failed', async () => {
+		const mermaid = fakeMermaid();
+		mermaid.render.mockRejectedValueOnce( new Error( 'bad' ) );
+
+		const [ first, second ] = await Promise.all( [
+			renderDiagram( mermaid, 'a', 'bad' ),
+			renderDiagram( mermaid, 'b', 'graph' ),
+		] );
+
+		expect( first ).toHaveProperty( 'error' );
+		expect( second ).toEqual( { svg: '<svg></svg>' } );
+	} );
+
+	it( 'does not throw when Mermaid cannot be initialised', async () => {
+		const mermaid = fakeMermaid();
+		mermaid.initialize.mockImplementation( () => {
+			throw new Error( 'Unknown theme' );
+		} );
+
+		await expect(
+			renderDiagram( mermaid, 'a', 'graph', document, 'forest' )
+		).resolves.toEqual( {
+			error: { message: 'Unknown theme', line: null },
+		} );
+		expect( mermaid.render ).not.toHaveBeenCalled();
 	} );
 } );

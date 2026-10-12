@@ -2,6 +2,7 @@
  * Turns a rendered diagram into a file: the SVG itself, or a PNG drawn from
  * it. Used by the download buttons on the front end and in the editor.
  */
+import { getSurface } from './surface';
 
 const FILE_NAME = 'mermaid-diagram';
 
@@ -10,6 +11,11 @@ const FILE_NAME = 'mermaid-diagram';
 const PNG_SCALE = 2;
 const PNG_MAX_AREA = 16777216;
 const PNG_MAX_SIDE = 16384;
+
+// The background of a PNG. A diagram is transparent, and a PNG can land
+// anywhere: it brings a background its text can be read on.
+const PNG_BACKGROUND = '#fff';
+const PNG_DARK_BACKGROUND = '#333';
 
 // How long a download may take to start before its data is released.
 const RELEASE_DELAY = 40000;
@@ -116,8 +122,26 @@ function loadImage( url ) {
 }
 
 /**
- * Draws a diagram as a PNG, on a white background: a diagram is transparent,
- * and its dark text would be unreadable wherever the PNG lands on a dark one.
+ * Returns the background of the PNG of a diagram: white, or, for a diagram on
+ * a dark surface, which is drawn with light text, the colour of that surface.
+ *
+ * @param {SVGSVGElement} svg The rendered diagram, on the page.
+ *
+ * @return {string} A CSS colour.
+ */
+export function getPngBackground( svg ) {
+	const { isDark, color } = getSurface( svg );
+
+	if ( ! isDark ) {
+		return PNG_BACKGROUND;
+	}
+
+	return color || PNG_DARK_BACKGROUND;
+}
+
+/**
+ * Draws a diagram as a PNG, on a background its text can be read on: see
+ * getPngBackground().
  *
  * The SVG is loaded from a `data:` URL. From a `blob:` URL, Chromium refuses
  * to read back a canvas that an SVG with HTML labels was drawn on.
@@ -139,7 +163,7 @@ export async function getPngBlob( svg ) {
 	canvas.height = height;
 
 	const context = canvas.getContext( '2d' );
-	context.fillStyle = '#fff';
+	context.fillStyle = getPngBackground( svg );
 	context.fillRect( 0, 0, width, height );
 	context.drawImage( image, 0, 0, width, height );
 

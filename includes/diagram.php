@@ -13,6 +13,11 @@
  * A diagram whose wrapper has a `data-mermaid-controls` attribute gets controls
  * for visitors: `zoom`, `download`, or both, separated by a space.
  *
+ * `data-mermaid-theme` names the theme the diagram is drawn in, one of
+ * mermaid_blocks_get_themes(); without it the diagram follows the page.
+ * `data-mermaid-title` and `data-mermaid-description` give the rendered SVG a
+ * title and a description for assistive technology.
+ *
  * @package MermaidBlocks
  */
 
@@ -121,6 +126,67 @@ function mermaid_blocks_enqueue_diagram_assets() {
 }
 
 /**
+ * Returns the themes a diagram can be drawn in, in the order they are offered.
+ *
+ * `auto` follows the page: the theme Mermaid picks for the diagram's type, or
+ * the dark counterpart of that theme where the diagram sits on a dark
+ * background. The others are the themes of the bundled Mermaid, all of them.
+ * THEMES in src/utils/themes.js lists the same names: a unit test compares
+ * the two, and both with Mermaid.
+ *
+ * @return array Labels of the themes, by name.
+ */
+function mermaid_blocks_get_themes() {
+	return array(
+		'auto'             => __( 'Automatic', 'mermaid-blocks' ),
+		'default'          => __( 'Default', 'mermaid-blocks' ),
+		'neutral'          => __( 'Neutral', 'mermaid-blocks' ),
+		'dark'             => __( 'Dark', 'mermaid-blocks' ),
+		'forest'           => __( 'Forest', 'mermaid-blocks' ),
+		'base'             => __( 'Base', 'mermaid-blocks' ),
+		'neo'              => __( 'Neo', 'mermaid-blocks' ),
+		'neo-dark'         => __( 'Neo Dark', 'mermaid-blocks' ),
+		'redux'            => __( 'Redux', 'mermaid-blocks' ),
+		'redux-dark'       => __( 'Redux Dark', 'mermaid-blocks' ),
+		'redux-color'      => __( 'Redux Color', 'mermaid-blocks' ),
+		'redux-dark-color' => __( 'Redux Dark Color', 'mermaid-blocks' ),
+	);
+}
+
+/**
+ * Returns the theme a diagram is drawn in: its own, or else the site's, set
+ * under Settings > Mermaid Blocks (see includes/settings.php).
+ *
+ * @param string $theme Optional. The theme chosen for the diagram.
+ *
+ * @return string A name from mermaid_blocks_get_themes().
+ */
+function mermaid_blocks_get_diagram_theme( $theme = '' ) {
+	$themes = mermaid_blocks_get_themes();
+
+	if ( is_string( $theme ) && isset( $themes[ $theme ] ) ) {
+		return $theme;
+	}
+
+	$theme = get_option( 'mermaid_blocks_theme', 'auto' );
+
+	return is_string( $theme ) && isset( $themes[ $theme ] ) ? $theme : 'auto';
+}
+
+/**
+ * Encodes the square brackets in escaped text or attributes, so
+ * do_shortcode(), which runs over post content and over the attributes of
+ * its tags, leaves them alone. The browser decodes them back to brackets.
+ *
+ * @param string $html Escaped text, or the attributes of a tag.
+ *
+ * @return string The same, with its brackets as numeric entities.
+ */
+function mermaid_blocks_encode_brackets( $html ) {
+	return str_replace( array( '[', ']' ), array( '&#91;', '&#93;' ), $html );
+}
+
+/**
  * Returns the diagram source, escaped for the page.
  *
  * Output it as the content of an element with the `mermaid-blocks-diagram`
@@ -136,20 +202,40 @@ function mermaid_blocks_enqueue_diagram_assets() {
  * - Square brackets are output as numeric entities: do_shortcode() also runs
  *   over post content, so a node such as `A[gallery]` or `B[audio]` would be
  *   replaced by the shortcode's output. The browser decodes the entities back
- *   to brackets before the renderer reads the source.
+ *   to brackets before the renderer reads the source. See
+ *   mermaid_blocks_encode_brackets().
  *
  * @param string $code Mermaid source.
  *
  * @return string The `<pre>` element holding the source.
  */
 function mermaid_blocks_get_diagram_source_markup( $code ) {
-	$source = str_replace(
-		array( '[', ']' ),
-		array( '&#91;', '&#93;' ),
-		esc_textarea( (string) $code )
-	);
+	$source = mermaid_blocks_encode_brackets( esc_textarea( (string) $code ) );
 
 	return '<pre class="mermaid-blocks-diagram__source">' . $source . '</pre>';
+}
+
+/**
+ * Returns the caption of a diagram.
+ *
+ * Output it after the source, in a `<figure>` with the
+ * `mermaid-blocks-diagram` class. mermaid_blocks_get_diagram_markup() does
+ * both.
+ *
+ * @param string $caption The caption. It may contain the HTML allowed in
+ *                        post content.
+ *
+ * @return string The `<figcaption>` element, or an empty string when there is
+ *                no caption.
+ */
+function mermaid_blocks_get_diagram_caption_markup( $caption ) {
+	$caption = trim( (string) $caption );
+
+	if ( '' === $caption ) {
+		return '';
+	}
+
+	return '<figcaption class="mermaid-blocks-diagram__caption wp-element-caption">' . wp_kses_post( $caption ) . '</figcaption>';
 }
 
 /**
@@ -162,13 +248,22 @@ function mermaid_blocks_get_diagram_source_markup( $code ) {
  * @param string $code       Mermaid source.
  * @param array  $attributes Optional. Extra attributes for the wrapper
  *                           element, as name => value. A `class` is added to
- *                           the `mermaid-blocks-diagram` class, and
+ *                           the `mermaid-blocks-diagram` class.
  *                           `data-mermaid-controls` lists the controls visitors
  *                           get: `zoom`, `download`, or `zoom download`.
+ *                           `data-mermaid-theme` is the diagram's theme, a name
+ *                           from mermaid_blocks_get_themes(): without one, or
+ *                           with an unknown one, it gets the site's.
+ *                           `data-mermaid-title` and `data-mermaid-description`
+ *                           describe the diagram to assistive technology.
+ * @param string $caption    Optional. A caption, shown under the diagram. It
+ *                           may contain the HTML allowed in post content. With
+ *                           a caption the wrapper is a `<figure>`, without one
+ *                           a `<div>`.
  *
  * @return string The diagram markup, or an empty string when there is no code.
  */
-function mermaid_blocks_get_diagram_markup( $code, $attributes = array() ) {
+function mermaid_blocks_get_diagram_markup( $code, $attributes = array(), $caption = '' ) {
 	$code = (string) $code;
 
 	if ( '' === trim( $code ) ) {
@@ -177,6 +272,9 @@ function mermaid_blocks_get_diagram_markup( $code, $attributes = array() ) {
 
 	$class               = isset( $attributes['class'] ) ? $attributes['class'] : '';
 	$attributes['class'] = trim( 'mermaid-blocks-diagram ' . $class );
+
+	$theme                            = isset( $attributes['data-mermaid-theme'] ) ? $attributes['data-mermaid-theme'] : '';
+	$attributes['data-mermaid-theme'] = mermaid_blocks_get_diagram_theme( $theme );
 
 	$attribute_markup = '';
 	foreach ( $attributes as $name => $value ) {
@@ -187,7 +285,16 @@ function mermaid_blocks_get_diagram_markup( $code, $attributes = array() ) {
 		$attribute_markup .= sprintf( ' %s="%s"', $name, esc_attr( $value ) );
 	}
 
+	$caption_markup = mermaid_blocks_get_diagram_caption_markup( $caption );
+	$tag            = '' === $caption_markup ? 'div' : 'figure';
+
 	mermaid_blocks_enqueue_diagram_assets();
 
-	return '<div' . $attribute_markup . '>' . mermaid_blocks_get_diagram_source_markup( $code ) . '</div>';
+	return sprintf(
+		'<%1$s%2$s>%3$s%4$s</%1$s>',
+		$tag,
+		mermaid_blocks_encode_brackets( $attribute_markup ),
+		mermaid_blocks_get_diagram_source_markup( $code ),
+		$caption_markup
+	);
 }

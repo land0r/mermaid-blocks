@@ -1,4 +1,18 @@
+import MERMAID_CONFIG from './mermaid-config';
+import { AUTO_LIGHT, getThemeConfig } from './themes';
 import { toSourceLine } from './source-line';
+
+/*
+ * Mermaid has one configuration per window, and no theme per render. A
+ * diagram is drawn in its own theme by initialising Mermaid again before it
+ * renders, and no other diagram may render in the meantime: Mermaid reads its
+ * configuration all through a render.
+ *
+ * Kept for each Mermaid instance: the theme it was last initialised with, and
+ * its last render, which the next one waits for.
+ */
+const themes = new WeakMap();
+const renders = new WeakMap();
 
 /**
  * Returns the errors of a diagram type whose parser lists them: pie, gitGraph
@@ -95,20 +109,27 @@ function removeLeftovers( renderId, doc ) {
 }
 
 /**
- * Renders Mermaid code to SVG and never throws.
+ * Renders Mermaid code to SVG, once the renders before it are done.
  *
  * @param {Object}   mermaid  The Mermaid API object.
  * @param {string}   renderId A unique element id for this render call.
  * @param {string}   code     The Mermaid source.
- * @param {Document} [doc]    The document of the window Mermaid runs in.
+ * @param {Document} doc      The document of the window Mermaid runs in.
+ * @param {string}   theme    What to draw the diagram in.
  *
- * @return {Promise<{svg: string, bindFunctions: (Function|undefined)}|{error: {message: string, line: (number|null)}}>}
- * The SVG markup and Mermaid's function that binds its event handlers once the
- * SVG is in the page, or a normalised error: its message, and the 1-based line
- * of `code` it points at when known. Leftover DOM is removed on failure.
+ * @return {Promise<Object>} The result: see renderDiagram().
  */
-export async function renderDiagram( mermaid, renderId, code, doc = document ) {
+async function renderInTheme( mermaid, renderId, code, doc, theme ) {
 	try {
+		// Mermaid starts out in AUTO_LIGHT: mermaid-config.js names no theme.
+		if ( ( themes.get( mermaid ) || AUTO_LIGHT ) !== theme ) {
+			mermaid.initialize( {
+				...MERMAID_CONFIG,
+				...getThemeConfig( mermaid, theme ),
+			} );
+			themes.set( mermaid, theme );
+		}
+
 		const { svg, bindFunctions } = await mermaid.render( renderId, code );
 		return { svg, bindFunctions };
 	} catch ( error ) {
@@ -123,4 +144,38 @@ export async function renderDiagram( mermaid, renderId, code, doc = document ) {
 			},
 		};
 	}
+}
+
+/**
+ * Renders Mermaid code to SVG and never throws.
+ *
+ * The source decides before the theme does: a theme set in its front matter
+ * or in a directive wins.
+ *
+ * @param {Object}   mermaid  The Mermaid API object.
+ * @param {string}   renderId A unique element id for this render call.
+ * @param {string}   code     The Mermaid source.
+ * @param {Document} [doc]    The document of the window Mermaid runs in.
+ * @param {string}   [theme]  What to draw the diagram in, as resolveTheme()
+ *                            returns it. Defaults to what Mermaid picks.
+ *
+ * @return {Promise<{svg: string, bindFunctions: (Function|undefined)}|{error: {message: string, line: (number|null)}}>}
+ * The SVG markup and Mermaid's function that binds its event handlers once the
+ * SVG is in the page, or a normalised error: its message, and the 1-based line
+ * of `code` it points at when known. Leftover DOM is removed on failure.
+ */
+export function renderDiagram(
+	mermaid,
+	renderId,
+	code,
+	doc = document,
+	theme = AUTO_LIGHT
+) {
+	const result = ( renders.get( mermaid ) || Promise.resolve() ).then( () =>
+		renderInTheme( mermaid, renderId, code, doc, theme )
+	);
+
+	renders.set( mermaid, result );
+
+	return result;
 }

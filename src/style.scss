@@ -32,6 +32,25 @@
 }
 
 /*
+ * Centre alignment centres a diagram narrower than its column, and its
+ * caption. A zoomed diagram wider than its canvas doesn't fit the line, which
+ * then starts at the canvas's edge, so all of it can be scrolled to.
+ */
+.mermaid-blocks-diagram.aligncenter .mermaid-blocks-diagram__canvas,
+.mermaid-blocks-diagram.aligncenter .mermaid-blocks-diagram__caption {
+	text-align: center;
+}
+
+/*
+ * The caption, spaced as under an image. Themes style `.wp-element-caption`,
+ * and `:where()` lets any of their rules win.
+ */
+:where(.mermaid-blocks-diagram__caption) {
+	margin-top: 0.5em;
+	margin-bottom: 1em;
+}
+
+/*
  * The controls a diagram asks for (see frontend/controls.js): a row of buttons
  * above it. They take the colour of the text around the diagram, so they suit
  * any theme.

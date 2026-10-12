@@ -94,6 +94,25 @@
 	tab-size: 4;
 }
 
+/*
+ * The preview: a figure, for its caption. Doubled class: themes style
+ * `figure` in the editor canvas.
+ */
+.wp-block-mermaid-blocks-diagram .mermaid-blocks-preview {
+	margin: 20px 0 0;
+}
+
+/*
+ * Centre alignment, as on the front end. Where the editor doesn't know the
+ * theme's layout, the alignment is on an element around the block.
+ */
+.wp-block-mermaid-blocks-diagram.aligncenter .mermaid-container__diagram,
+.wp-block-mermaid-blocks-diagram.aligncenter .mermaid-blocks-diagram__caption,
+.wp-block[data-align="center"] > .wp-block-mermaid-blocks-diagram .mermaid-container__diagram,
+.wp-block[data-align="center"] > .wp-block-mermaid-blocks-diagram .mermaid-blocks-diagram__caption {
+	text-align: center;
+}
+
 /* The message of a syntax error, in the notice that replaces the preview. */
 .mermaid-container__error {
 	margin: 8px 0 0;

@@ -75,6 +75,7 @@ describe( 'view script', () => {
 		delete window.IntersectionObserver;
 		FakeIntersectionObserver.instance = null;
 		document.body.innerHTML = '';
+		document.body.removeAttribute( 'style' );
 		jest.restoreAllMocks();
 	} );
 
@@ -158,6 +159,37 @@ describe( 'view script', () => {
 
 		expect( diagram.classList.contains( 'has-error' ) ).toBe( true );
 		expect( diagram.querySelector( 'button' ) ).toBeNull();
+	} );
+
+	it( 'draws a diagram that follows the page again when the page turns dark', async () => {
+		mermaid.initialize = jest.fn();
+		document.body.innerHTML = DIAGRAM + DIAGRAM;
+		const [ following, themed ] = diagrams();
+		following.dataset.mermaidControls = 'zoom';
+		themed.dataset.mermaidTheme = 'forest';
+		const canvas = ( diagram ) =>
+			diagram.querySelector( '.mermaid-blocks-diagram__canvas' );
+
+		loadViewScript();
+		scrollIntoView( following );
+		scrollIntoView( themed );
+		await settle();
+
+		const before = [ canvas( following ), canvas( themed ) ];
+		expect( before[ 0 ].dataset.mermaidTheme ).toBe( 'auto-light' );
+
+		// What a dark mode switch does, to the body or the root element.
+		document.body.style.backgroundColor = 'rgb(17, 24, 39)';
+		await new Promise( ( resolve ) => setTimeout( resolve, 150 ) );
+		await settle();
+
+		expect( canvas( following ) ).not.toBe( before[ 0 ] );
+		expect( canvas( following ).dataset.mermaidTheme ).toBe( 'auto-dark' );
+		expect( following.querySelectorAll( 'button' ) ).toHaveLength( 3 );
+		expect(
+			following.querySelectorAll( '.mermaid-blocks-diagram__canvas' )
+		).toHaveLength( 1 );
+		expect( canvas( themed ) ).toBe( before[ 1 ] );
 	} );
 
 	it( 'exposes render() for diagrams added later', async () => {

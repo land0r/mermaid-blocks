@@ -1,6 +1,7 @@
 import {
 	downloadDiagram,
 	getDiagramSize,
+	getPngBackground,
 	getPngSize,
 	getSvgMarkup,
 } from '../export-diagram';
@@ -65,6 +66,38 @@ describe( 'getPngSize', () => {
 			width: 16384,
 			height: 54,
 		} );
+	} );
+} );
+
+describe( 'getPngBackground', () => {
+	const PLAIN = '<svg viewBox="0 0 300 150"></svg>';
+
+	it( 'is white for a diagram on a light surface', () => {
+		expect( getPngBackground( createDiagram( PLAIN ) ) ).toBe( '#fff' );
+
+		const section = createDiagram(
+			`<section style="background-color: rgb(249, 246, 238)">${ PLAIN }</section>`
+		);
+
+		expect( getPngBackground( section.firstElementChild ) ).toBe( '#fff' );
+	} );
+
+	it( 'is the colour of a dark surface, which the diagram is drawn for', () => {
+		const section = createDiagram(
+			`<section style="background-color: rgb(17, 24, 39)">${ PLAIN }</section>`
+		);
+
+		expect( getPngBackground( section.firstElementChild ) ).toBe(
+			'rgb(17, 24, 39)'
+		);
+	} );
+
+	it( 'is dark for a diagram on a dark surface of an unknown colour', () => {
+		const section = createDiagram(
+			'<section style="background-image: url(photo.jpg)"><svg viewBox="0 0 300 150" style="color: rgb(241, 245, 249)"></svg></section>'
+		);
+
+		expect( getPngBackground( section.firstElementChild ) ).toBe( '#333' );
 	} );
 } );
 
@@ -203,6 +236,17 @@ describe( 'downloadDiagram', () => {
 		expect( context.fillRect ).toHaveBeenCalledWith( 0, 0, 600, 301 );
 		expect( window.URL.createObjectURL ).toHaveBeenCalledWith( pngBlob );
 		expect( downloads[ 0 ].name ).toBe( 'mermaid-diagram.png' );
+	} );
+
+	it( 'gives the PNG of a diagram on a dark surface the colour of that surface', async () => {
+		const section = createDiagram(
+			'<section style="background-color: rgb(17, 24, 39)"><svg viewBox="0 0 300 150"></svg></section>'
+		);
+
+		await downloadDiagram( section.firstElementChild, 'png' );
+
+		expect( context.fillStyle ).toBe( 'rgb(17, 24, 39)' );
+		expect( context.fillRect ).toHaveBeenCalledWith( 0, 0, 600, 300 );
 	} );
 
 	it( 'draws the PNG from an SVG of the same size, in a data URL', async () => {
