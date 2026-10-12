@@ -2,6 +2,7 @@
 paths:
   - "includes/Diagram.php"
   - "includes/Block.php"
+  - "includes/PostDiagrams.php"
   - "src/block.json"
   - "src/save.js"
   - "src/deprecated.js"
@@ -14,7 +15,7 @@ paths:
 
 Existing posts store this block's attributes and saved markup, and visitors' browsers render whatever the server outputs, for the block and for every other integration. When you change these files:
 
-- **Saved markup or attributes changed** (`save.js`, the `attributes` in `block.json`): add a deprecation to `deprecated.js`, newest first, with a test that migrates the old markup.
+- **Saved markup or attributes changed** (`save.js`, the `attributes` in `block.json`): add a deprecation to `deprecated.js`, newest first, with a test that migrates the old markup. A new attribute the abilities may set also goes in `PostDiagrams::ATTRIBUTES` and `DiagramAbility::get_attributes_schema()`.
 - **Server markup changed** (`includes/Diagram.php`, `Block::render()`): `src/frontend/render-diagrams.js` finds diagrams by `.mermaid-blocks-diagram` and `.mermaid-blocks-diagram__source`, and `src/style.scss` styles them. Keep all three in step, update `src/frontend/test/`, and update "Reusing the renderer" in `AGENTS.md` if the contract changes.
 - **State classes changed** (`is-pending`, `is-rendered`, `has-error`): `src/view.js` and `render-diagrams.js` set them, and `src/style.scss` uses them to decide when the source is visible. A diagram must never stay hidden after it failed.
 - **Controls changed** (the `data-mermaid-controls` attribute, with `zoom` and `download`): `Block::render()` writes it from the block's attributes, other integrations pass it themselves, and `src/frontend/controls.js` reads it. A diagram without the attribute gets no controls, so pages cached before an update stay as they were.

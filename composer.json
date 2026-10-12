@@ -13,17 +13,25 @@
 		"squizlabs/php_codesniffer": "^3.13.6",
 		"phpcompatibility/phpcompatibility-wp": "^3.0@alpha",
 		"phpcompatibility/php-compatibility": "^10.0@alpha",
-		"phpcompatibility/phpcompatibility-paragonie": "^2.0@alpha"
+		"phpcompatibility/phpcompatibility-paragonie": "^2.0@alpha",
+		"phpunit/phpunit": "^9.6",
+		"yoast/phpunit-polyfills": "^4.0",
+		"wp-phpunit/wp-phpunit": "^7.1",
+		"roots/wordpress-no-content": "^7.1"
 	},
 	"config": {
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"platform": {
+			"php": "7.4"
 		},
 		"platform-check": false
 	},
 	"scripts": {
 		"cs": "phpcs --extensions=php .",
 		"cbf": "phpcbf --extensions=php .",
-		"cs:config": "phpcs --config-show"
+		"cs:config": "phpcs --config-show",
+		"test": "phpunit"
 	}
 }

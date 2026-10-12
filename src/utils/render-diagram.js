@@ -179,3 +179,39 @@ export function renderDiagram(
 
 	return result;
 }
+
+/**
+ * Parses Mermaid code without rendering it, and never throws. It waits for
+ * the renders before it, as renderDiagram() does: Mermaid applies the code's
+ * own configuration while it parses.
+ *
+ * @param {Object} mermaid The Mermaid API object.
+ * @param {string} code    The Mermaid source.
+ *
+ * @return {Promise<{type: string}|{error: {message: string, line: (number|null)}}>}
+ * The type Mermaid detected, such as `flowchart-v2` or `sequence`, or the
+ * error, normalised as renderDiagram() does.
+ */
+export function parseDiagram( mermaid, code ) {
+	const result = ( renders.get( mermaid ) || Promise.resolve() ).then(
+		async () => {
+			try {
+				const { diagramType } = await mermaid.parse( code );
+				return { type: diagramType };
+			} catch ( error ) {
+				const line = getErrorLine( error );
+
+				return {
+					error: {
+						message: getErrorMessage( error ),
+						line: line === null ? null : toSourceLine( code, line ),
+					},
+				};
+			}
+		}
+	);
+
+	renders.set( mermaid, result );
+
+	return result;
+}

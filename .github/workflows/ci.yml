@@ -16,6 +16,21 @@ jobs:
     name: Lint, test and build
     runs-on: ubuntu-latest
 
+    # The PHP tests run on WordPress, which needs a database.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -50,6 +65,18 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
+      # The plugin loads only with its build.
+      - name: Build
+        run: npm run build
+
+      - name: Run PHP tests
+        run: npm run test:php
+        env:
+          WP_TESTS_DB_NAME: wordpress_tests
+          WP_TESTS_DB_USER: root
+          WP_TESTS_DB_PASSWORD: root
+          WP_TESTS_DB_HOST: 127.0.0.1
+
       # The zip holds what the repository doesn't: the build, and the
       # autoloader without development dependencies.
       - name: Plugin ZIP
@@ -63,7 +90,8 @@ jobs:
             echo "::error::The plugin ZIP has no build/ or no autoloader."
             exit 1
           fi
-          if [ -d vendor/squizlabs ]; then
+          # Nothing but the autoloader: the dependencies are all for development.
+          if [ "$(ls vendor | tr '\n' ' ')" != "autoload.php composer " ]; then
             echo "::error::The plugin ZIP holds development dependencies."
             exit 1
           fi
@@ -71,8 +99,8 @@ jobs:
           php -r '
             define( "ABSPATH", getcwd() . "/" );
             require "vendor/autoload.php";
-            foreach ( glob( "includes/[A-Z]*.php" ) as $file ) {
-              $class = "MermaidBlocks\\" . basename( $file, ".php" );
+            foreach ( array_merge( glob( "includes/[A-Z]*.php" ), glob( "includes/*/[A-Z]*.php" ) ) as $file ) {
+              $class = "MermaidBlocks\\" . str_replace( "/", "\\", substr( $file, 9, -4 ) );
               if ( ! class_exists( $class ) ) {
                 echo "::error::$class does not load from the plugin ZIP.\n";
                 exit( 1 );
@@ -85,3 +113,55 @@ jobs:
         with:
           name: mermaid-blocks
           path: mermaid-blocks.zip
+
+  php-minimum:
+    # The oldest PHP the plugin supports: "Requires PHP" in mermaid-blocks.php.
+    name: PHP tests on PHP 7.4
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      # The plugin loads only with its build.
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: composer
+
+      - name: Install Composer dependencies
+        run: composer install --no-scripts --no-interaction --prefer-dist
+
+      - name: Run PHP tests
+        run: composer test
+        env:
+          WP_TESTS_DB_NAME: wordpress_tests
+          WP_TESTS_DB_USER: root
+          WP_TESTS_DB_PASSWORD: root
+          WP_TESTS_DB_HOST: 127.0.0.1

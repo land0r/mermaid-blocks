@@ -7,6 +7,8 @@
 
 namespace MermaidBlocks;
 
+use MermaidBlocks\Abilities;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -72,6 +74,27 @@ final class Plugin {
 	private Block $block;
 
 	/**
+	 * The diagram types with starter code.
+	 *
+	 * @var DiagramTypes
+	 */
+	private DiagramTypes $diagram_types;
+
+	/**
+	 * The diagrams in posts.
+	 *
+	 * @var PostDiagrams
+	 */
+	private PostDiagrams $post_diagrams;
+
+	/**
+	 * The abilities, with what registers them.
+	 *
+	 * @var Abilities\AbilitiesRegistrar
+	 */
+	private Abilities\AbilitiesRegistrar $abilities;
+
+	/**
 	 * Returns the one instance.
 	 *
 	 * @return Plugin The plugin.
@@ -90,11 +113,23 @@ final class Plugin {
 	 * @param string $plugin_file The main file of the plugin.
 	 */
 	private function __construct( string $plugin_file ) {
-		$this->themes   = new Themes();
-		$this->settings = new Settings( $this->themes, $plugin_file );
-		$this->assets   = new Assets( $plugin_file );
-		$this->diagram  = new Diagram( $this->themes, $this->settings, $this->assets );
-		$this->block    = new Block( $this->assets, $this->diagram, $this->themes, $this->settings );
+		$this->themes        = new Themes();
+		$this->settings      = new Settings( $this->themes, $plugin_file );
+		$this->assets        = new Assets( $plugin_file );
+		$this->diagram       = new Diagram( $this->themes, $this->settings, $this->assets );
+		$this->diagram_types = new DiagramTypes();
+		$this->block         = new Block( $this->assets, $this->diagram, $this->themes, $this->settings, $this->diagram_types );
+		$this->post_diagrams = new PostDiagrams( $this->diagram_types );
+		$this->abilities     = new Abilities\AbilitiesRegistrar(
+			$this->assets,
+			new Abilities\ListDiagramTypes( $this->diagram_types ),
+			new Abilities\ListDiagrams( $this->post_diagrams, $this->themes ),
+			new Abilities\GetDiagram( $this->post_diagrams, $this->themes ),
+			new Abilities\BuildBlockMarkup( $this->post_diagrams, $this->themes ),
+			new Abilities\InsertDiagram( $this->post_diagrams, $this->themes ),
+			new Abilities\UpdateDiagram( $this->post_diagrams, $this->themes ),
+			new Abilities\DeleteDiagram( $this->post_diagrams, $this->themes )
+		);
 	}
 
 	/**
@@ -110,6 +145,7 @@ final class Plugin {
 		$this->assets->hooks();
 		$this->block->hooks();
 		$this->settings->hooks();
+		$this->abilities->hooks();
 	}
 
 	/**
@@ -155,5 +191,32 @@ final class Plugin {
 	 */
 	public function block(): Block {
 		return $this->block;
+	}
+
+	/**
+	 * Returns the diagram types with starter code.
+	 *
+	 * @return DiagramTypes The diagram types.
+	 */
+	public function diagram_types(): DiagramTypes {
+		return $this->diagram_types;
+	}
+
+	/**
+	 * Returns the diagrams in posts.
+	 *
+	 * @return PostDiagrams The diagrams in posts.
+	 */
+	public function post_diagrams(): PostDiagrams {
+		return $this->post_diagrams;
+	}
+
+	/**
+	 * Returns the registrar of the abilities, which lists them.
+	 *
+	 * @return Abilities\AbilitiesRegistrar The registrar.
+	 */
+	public function abilities(): Abilities\AbilitiesRegistrar {
+		return $this->abilities;
 	}
 }

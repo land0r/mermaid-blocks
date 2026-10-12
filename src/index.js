@@ -22,7 +22,6 @@ import save from './save';
 import deprecated from './deprecated';
 import transforms from './transforms';
 import metadata from './block.json';
-import './variations';
 
 import icon from './icon.svg';
 
