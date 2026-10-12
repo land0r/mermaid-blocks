@@ -19,6 +19,7 @@
 	},
 	"files": [
 		"build",
+		"includes",
 		"mermaid-blocks.php",
 		"readme.txt",
 		"LICENSE.txt"
