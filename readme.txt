@@ -22,6 +22,7 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - Add MermaidJS diagrams via a dedicated Gutenberg block.
 - **Supported diagram types:** Flowcharts, Sequence Diagrams, Gantt Charts, Class Diagrams.
 - Real-time preview of MermaidJS diagrams in the editor.
+- Optional zoom controls for large diagrams, and buttons to download a diagram as an SVG or PNG file.
 - Simple and intuitive integration with the block editor.
 
 == Installation ==
@@ -66,5 +67,4 @@ Yes, it is compatible with most modern WordPress themes.
 == Future Plans ==
 
 * Add support for state diagrams, mindmaps, and other MermaidJS types.
-* Provide an option to export diagrams as SVG or PNG.
 * Include pre-designed templates for faster diagram creation.

@@ -154,7 +154,10 @@ export default function MermaidDiagram( {
 				</Notice>
 			) : (
 				// Mermaid's own sanitised SVG output.
-				<div dangerouslySetInnerHTML={ { __html: svg } } />
+				<div
+					className="mermaid-container__diagram"
+					dangerouslySetInnerHTML={ { __html: svg } }
+				/>
 			) }
 		</div>
 	);

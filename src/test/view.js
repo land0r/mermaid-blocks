@@ -11,7 +11,9 @@ jest.mock( '../frontend/load-mermaid', () => ( {
 } ) );
 
 const fakeMermaid = () => ( {
-	render: jest.fn( async () => ( { svg: '<svg></svg>' } ) ),
+	render: jest.fn( async () => ( {
+		svg: '<svg viewBox="0 0 100 50"></svg>',
+	} ) ),
 } );
 
 /**
@@ -123,6 +125,39 @@ describe( 'view script', () => {
 		expect( diagrams()[ 0 ].classList.contains( 'is-rendered' ) ).toBe(
 			true
 		);
+	} );
+
+	it( 'adds the controls a rendered diagram asks for', async () => {
+		window.mermaidBlocksSettings.i18n = { zoomIn: 'Inzoomen' };
+		document.body.innerHTML = DIAGRAM + DIAGRAM;
+		const [ plain, withControls ] = diagrams();
+		withControls.dataset.mermaidControls = 'zoom download';
+
+		loadViewScript();
+		scrollIntoView( plain );
+		scrollIntoView( withControls );
+		await settle();
+
+		expect( plain.querySelector( 'button' ) ).toBeNull();
+		expect( withControls.querySelectorAll( 'button' ) ).toHaveLength( 5 );
+		expect(
+			withControls.querySelector( 'button[aria-label="Inzoomen"]' )
+		).not.toBeNull();
+	} );
+
+	it( 'adds no controls to a diagram that failed', async () => {
+		jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+		mermaid.render.mockRejectedValue( new Error( 'Parse error' ) );
+		document.body.innerHTML = DIAGRAM;
+		const [ diagram ] = diagrams();
+		diagram.dataset.mermaidControls = 'zoom download';
+
+		loadViewScript();
+		scrollIntoView( diagram );
+		await settle();
+
+		expect( diagram.classList.contains( 'has-error' ) ).toBe( true );
+		expect( diagram.querySelector( 'button' ) ).toBeNull();
 	} );
 
 	it( 'exposes render() for diagrams added later', async () => {

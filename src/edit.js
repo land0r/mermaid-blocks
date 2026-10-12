@@ -11,7 +11,11 @@ import { __ } from '@wordpress/i18n';
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-block-editor/#useblockprops
  */
-import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
+import {
+	useBlockProps,
+	BlockControls,
+	InspectorControls,
+} from '@wordpress/block-editor';
 
 /**
  * Processes CSS, SASS, or SCSS files referenced in JavaScript files.
@@ -31,11 +35,26 @@ import './editor.scss';
 import { useDebouncedInput, useInstanceId } from '@wordpress/compose';
 
 /**
- * Panel components for the block's sidebar.
+ * Components for the block's sidebar and toolbar.
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/components/panel/
+ * @see https://developer.wordpress.org/block-editor/reference-guides/components/toggle-control/
+ * @see https://developer.wordpress.org/block-editor/reference-guides/components/toolbar-dropdown-menu/
  */
-import { PanelBody, PanelRow } from '@wordpress/components';
+import {
+	PanelBody,
+	PanelRow,
+	ToggleControl,
+	ToolbarDropdownMenu,
+} from '@wordpress/components';
+
+/**
+ * Notices, to tell that a download failed.
+ *
+ * @see https://developer.wordpress.org/block-editor/reference-guides/data/data-core-notices/
+ */
+import { useDispatch } from '@wordpress/data';
+import { store as noticesStore } from '@wordpress/notices';
 
 /**
  * React hooks for lifecycle events, state and mutable values.
@@ -63,6 +82,11 @@ import CodeInput from './components/code-input';
 import MermaidDiagram from './components/mermaid-diagram';
 
 /**
+ * Turns the preview into a file, as the download buttons on the front end do.
+ */
+import { downloadDiagram } from './utils/export-diagram';
+
+/**
  * Edit function for the block. This is the interface that will appear in the
  * WordPress editor when the block is used. It allows users to input MermaidJS
  * code and provides a live preview of the diagram.
@@ -77,11 +101,12 @@ import MermaidDiagram from './components/mermaid-diagram';
  */
 export default function Edit( { attributes, setAttributes } ) {
 	/**
-	 * Destructure the `code` attribute from the block attributes.
-	 *
-	 * @type {string} code - The MermaidJS code for the diagram.
+	 * Destructure the block attributes.
+	 * - `code`: The MermaidJS code for the diagram.
+	 * - `zoom`, `download`: Whether visitors get the zoom controls and the
+	 *   download buttons.
 	 */
-	const { code } = attributes;
+	const { code, zoom, download } = attributes;
 
 	/**
 	 * Debounced input handling for the MermaidJS code.
@@ -133,9 +158,77 @@ export default function Edit( { attributes, setAttributes } ) {
 	const [ error, setError ] = useState( null );
 	const errorId = useInstanceId( Edit, 'mermaid-blocks-error' );
 
+	/**
+	 * Downloads the previewed diagram, whether or not visitors can. There is
+	 * nothing to download without code, or while it has a syntax error.
+	 */
+	const hasPreview = !! debouncedValue.trim() && ! error;
+	const previewRef = useRef( null );
+	const { createErrorNotice } = useDispatch( noticesStore );
+
+	const downloadPreview = ( format ) => {
+		const svg = previewRef.current.querySelector(
+			'.mermaid-container__diagram > svg'
+		);
+
+		if ( ! svg ) {
+			return;
+		}
+
+		downloadDiagram( svg, format ).catch( () =>
+			createErrorNotice(
+				__( 'The file could not be created.', 'mermaid-blocks' ),
+				{ type: 'snackbar' }
+			)
+		);
+	};
+
 	return (
 		<div { ...useBlockProps() }>
+			<BlockControls group="other">
+				<ToolbarDropdownMenu
+					icon="download"
+					label={ __( 'Download', 'mermaid-blocks' ) }
+					toggleProps={ { disabled: ! hasPreview } }
+					controls={ [
+						{
+							title: __( 'Download as SVG', 'mermaid-blocks' ),
+							onClick: () => downloadPreview( 'svg' ),
+						},
+						{
+							title: __( 'Download as PNG', 'mermaid-blocks' ),
+							onClick: () => downloadPreview( 'png' ),
+						},
+					] }
+				/>
+			</BlockControls>
 			<InspectorControls>
+				<PanelBody title={ __( 'Settings', 'mermaid-blocks' ) }>
+					<ToggleControl
+						__nextHasNoMarginBottom
+						label={ __( 'Zoom controls', 'mermaid-blocks' ) }
+						help={ __(
+							'Visitors can zoom in on the diagram and move around it.',
+							'mermaid-blocks'
+						) }
+						checked={ !! zoom }
+						onChange={ ( value ) =>
+							setAttributes( { zoom: value } )
+						}
+					/>
+					<ToggleControl
+						__nextHasNoMarginBottom
+						label={ __( 'Download buttons', 'mermaid-blocks' ) }
+						help={ __(
+							'Visitors can download the diagram as an SVG or PNG file.',
+							'mermaid-blocks'
+						) }
+						checked={ !! download }
+						onChange={ ( value ) =>
+							setAttributes( { download: value } )
+						}
+					/>
+				</PanelBody>
 				<PanelBody
 					title={ __( 'Instructions', 'mermaid-blocks' ) }
 					initialOpen={ true }
@@ -206,7 +299,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				errorId={ error ? errorId : undefined }
 			/>
 			{ /* Display the live preview of the Mermaid diagram */ }
-			<div style={ { marginTop: '20px' } }>
+			<div ref={ previewRef } style={ { marginTop: '20px' } }>
 				<MermaidDiagram
 					code={ debouncedValue }
 					onError={ setError }
