@@ -87,6 +87,24 @@ describe( 'renderDiagrams', () => {
 		expect( console.error ).toHaveBeenCalled();
 	} );
 
+	it( 'logs the line the error points at', async () => {
+		setup( [ 'graph TD\nbad' ] );
+		const error = new Error( 'Parse error on line 3:\nboom' );
+		error.hash = { loc: { first_line: 2 } };
+
+		await renderDiagrams(
+			fake( async () => {
+				throw error;
+			} )
+		);
+
+		// eslint-disable-next-line no-console
+		expect( console.error ).toHaveBeenCalledWith(
+			'Mermaid Blocks: failed to render diagram.',
+			'Line 2: boom'
+		);
+	} );
+
 	it( 'does not render twice', async () => {
 		setup( [ 'a', 'bad' ] );
 		const m = fake( async ( id, code ) => {

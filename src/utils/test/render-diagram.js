@@ -21,13 +21,16 @@ describe( 'renderDiagram', () => {
 		expect( document.getElementById( 'dabc' ) ).not.toBeNull();
 	} );
 
-	it( 'returns the 1-based line and message for a parse error', async () => {
-		const error = new Error( 'Parse error on line 2:\nboom' );
-		error.hash = { line: 1, loc: { first_line: 2 }, expected: [] };
+	it( 'returns the 1-based line and the message for a parse error', async () => {
+		// Mermaid's own line number is dropped: it can differ from the line.
+		const error = new Error( 'Parse error on line 4:\nboom' );
+		error.hash = { line: 3, loc: { first_line: 2 }, expected: [] };
 		const mermaid = { render: jest.fn().mockRejectedValue( error ) };
 
-		await expect( renderDiagram( mermaid, 'x', 'bad' ) ).resolves.toEqual( {
-			error: { message: 'Parse error on line 2:\nboom', line: 2 },
+		await expect(
+			renderDiagram( mermaid, 'x', 'graph\nbad\nB' )
+		).resolves.toEqual( {
+			error: { message: 'boom', line: 2 },
 		} );
 	} );
 
@@ -36,8 +39,74 @@ describe( 'renderDiagram', () => {
 		error.hash = { line: 3 };
 		const mermaid = { render: jest.fn().mockRejectedValue( error ) };
 
-		const result = await renderDiagram( mermaid, 'x', 'bad' );
+		const result = await renderDiagram( mermaid, 'x', 'a\nb\nc\nbad' );
 		expect( result.error.line ).toBe( 4 );
+	} );
+
+	it( 'points at the line of the source, not of the text Mermaid parsed', async () => {
+		// Mermaid removes the front matter and the comment before parsing.
+		const code = '---\ntitle: T\n---\n%% note\ngraph\nbad';
+		const error = new Error( 'Parse error on line 2:\nboom' );
+		error.hash = { line: 1, loc: { first_line: 2 } };
+		const mermaid = { render: jest.fn().mockRejectedValue( error ) };
+
+		const result = await renderDiagram( mermaid, 'x', code );
+		expect( result.error.line ).toBe( 6 );
+	} );
+
+	it( 'reads the errors of diagram types that list them', async () => {
+		// The shape pie, gitGraph and other newer diagram types reject with.
+		const error = new Error(
+			'Parsing failed:  Parse error on line 3, column 10: Expecting token of type `:` but found `85`.'
+		);
+		error.result = {
+			lexerErrors: [],
+			parserErrors: [
+				{
+					message: 'Expecting token of type `:` but found `85`.',
+					token: { startLine: 3 },
+				},
+			],
+		};
+		const mermaid = { render: jest.fn().mockRejectedValue( error ) };
+
+		await expect(
+			renderDiagram( mermaid, 'x', 'pie\n"Dogs" : 3\n"Cats" 85' )
+		).resolves.toEqual( {
+			error: {
+				message: 'Expecting token of type `:` but found `85`.',
+				line: 3,
+			},
+		} );
+	} );
+
+	it( 'reads a lexing error first, and a line-less error as line null', async () => {
+		const lexing = new Error( 'Parsing failed: …' );
+		lexing.result = {
+			lexerErrors: [ { message: 'unexpected character', line: 2 } ],
+			parserErrors: [ { message: 'later', token: { startLine: 3 } } ],
+		};
+		const atEnd = new Error( 'Parsing failed: …' );
+		atEnd.result = {
+			parserErrors: [ { message: 'early end', token: {} } ],
+		};
+		const mermaid = {
+			render: jest
+				.fn()
+				.mockRejectedValueOnce( lexing )
+				.mockRejectedValueOnce( atEnd ),
+		};
+
+		await expect(
+			renderDiagram( mermaid, 'x', 'pie\n"a" : 1 ^\n"b" 2' )
+		).resolves.toEqual( {
+			error: { message: 'unexpected character\nlater', line: 2 },
+		} );
+		await expect(
+			renderDiagram( mermaid, 'x', 'pie\n"a" :' )
+		).resolves.toEqual( {
+			error: { message: 'early end', line: null },
+		} );
 	} );
 
 	it( 'returns line null for errors without a hash', async () => {

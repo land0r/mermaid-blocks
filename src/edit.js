@@ -22,30 +22,39 @@ import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import './editor.scss';
 
 /**
- * Debounce hook to delay the handling of input changes, reducing frequent updates.
+ * Debounce hook to delay the handling of input changes, reducing frequent updates,
+ * and a hook to generate a unique ID for each block instance.
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-compose/#usedebouncedinput
+ * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-compose/#useinstanceid
  */
-import { useDebouncedInput } from '@wordpress/compose';
+import { useDebouncedInput, useInstanceId } from '@wordpress/compose';
 
 /**
- * A textarea control component for input fields with WordPress UI consistency.
+ * Panel components for the block's sidebar.
  *
- * @see https://developer.wordpress.org/block-editor/reference-guides/components/textareacontrol/
+ * @see https://developer.wordpress.org/block-editor/reference-guides/components/panel/
  */
-import { TextareaControl, PanelBody, PanelRow } from '@wordpress/components';
+import { PanelBody, PanelRow } from '@wordpress/components';
 
 /**
- * React hooks for lifecycle events and mutable values.
+ * React hooks for lifecycle events, state and mutable values.
  *
  * @see https://react.dev/reference/react/useEffect
  * @see https://react.dev/reference/react/useRef
+ * @see https://react.dev/reference/react/useState
  */
 import {
 	createInterpolateElement,
 	useEffect,
 	useRef,
+	useState,
 } from '@wordpress/element';
+
+/**
+ * The field the Mermaid code is written in.
+ */
+import CodeInput from './components/code-input';
 
 /**
  * Component for rendering a Mermaid diagram. This is a custom React component
@@ -117,6 +126,13 @@ export default function Edit( { attributes, setAttributes } ) {
 		}
 	}, [ debouncedValue ] );
 
+	/**
+	 * The error the preview shows, if any, so the code field can mark the line
+	 * it points at and refer to its message.
+	 */
+	const [ error, setError ] = useState( null );
+	const errorId = useInstanceId( Edit, 'mermaid-blocks-error' );
+
 	return (
 		<div { ...useBlockProps() }>
 			<InspectorControls>
@@ -173,25 +189,29 @@ export default function Edit( { attributes, setAttributes } ) {
 					</PanelRow>
 				</PanelBody>
 			</InspectorControls>
-			{ /* Textarea for entering MermaidJS code */ }
-			<TextareaControl
+			{ /* Field for entering MermaidJS code */ }
+			<CodeInput
 				label={ __( 'Mermaid Code', 'mermaid-blocks' ) }
 				help={ __(
-					'Write your MermaidJS code here…',
+					'Tab and Shift+Tab indent and outdent. To leave the field, press Escape, then Tab.',
 					'mermaid-blocks'
 				) }
 				placeholder={ __(
 					'Write your MermaidJS code here…',
 					'mermaid-blocks'
 				) }
-				rows={ 10 }
 				value={ inputValue }
 				onChange={ setInputValue }
-				__nextHasNoMarginBottom
+				errorLine={ error ? error.line : null }
+				errorId={ error ? errorId : undefined }
 			/>
 			{ /* Display the live preview of the Mermaid diagram */ }
 			<div style={ { marginTop: '20px' } }>
-				<MermaidDiagram code={ debouncedValue } />
+				<MermaidDiagram
+					code={ debouncedValue }
+					onError={ setError }
+					errorId={ errorId }
+				/>
 			</div>
 		</div>
 	);

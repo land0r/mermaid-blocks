@@ -63,11 +63,13 @@ export default async function renderDiagrams(
 		);
 
 		if ( result.error ) {
+			const { line, message } = result.error;
+
 			diagram.classList.add( 'has-error' );
 			// eslint-disable-next-line no-console
 			console.error(
 				'Mermaid Blocks: failed to render diagram.',
-				result.error.message
+				line === null ? message : `Line ${ line }: ${ message }`
 			);
 		} else {
 			const canvas = doc.createElement( 'div' );

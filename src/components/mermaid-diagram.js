@@ -39,15 +39,25 @@ import { renderDiagram } from '../utils/render-diagram';
  * message (as text) in place of the diagram. Only the result of the latest
  * render is applied, and nothing is applied after unmount.
  *
- * @param {Object} props             The component props.
- * @param {string} props.code        MermaidJS code to render.
- * @param {string} [props.className] Additional class names for styling the container.
+ * @param {Object}   props             The component props.
+ * @param {string}   props.code        MermaidJS code to render.
+ * @param {string}   [props.className] Additional class names for styling the container.
+ * @param {Function} [props.onError]   Called with the error shown, as
+ *                                     `{ message, line }`, or with null when
+ *                                     there is none.
+ * @param {string}   [props.errorId]   Id for the element holding the error,
+ *                                     so the code field can refer to it.
  *
  * @return {JSX.Element} The rendered Mermaid diagram or an error notice.
  *
  * @see https://mermaid-js.github.io/mermaid/#/
  */
-export default function MermaidDiagram( { code, className } ) {
+export default function MermaidDiagram( {
+	code,
+	className,
+	onError,
+	errorId,
+} ) {
 	const instanceId = useInstanceId( MermaidDiagram );
 
 	// The preview container; its window decides which Mermaid copy renders.
@@ -110,6 +120,12 @@ export default function MermaidDiagram( { code, className } ) {
 		};
 	}, [ code, instanceId ] );
 
+	useEffect( () => {
+		if ( onError ) {
+			onError( error );
+		}
+	}, [ error, onError ] );
+
 	let heading = null;
 	if ( error ) {
 		heading =
@@ -129,18 +145,12 @@ export default function MermaidDiagram( { code, className } ) {
 		>
 			{ error ? (
 				<Notice status="error" isDismissible={ false }>
-					<strong>{ heading }</strong>
-					{ /* Styled inline: the block registers no editor stylesheet. */ }
-					<pre
-						className="mermaid-container__error"
-						style={ {
-							margin: '8px 0 0',
-							whiteSpace: 'pre-wrap',
-							overflowWrap: 'anywhere',
-						} }
-					>
-						{ error.message }
-					</pre>
+					<div id={ errorId }>
+						<strong>{ heading }</strong>
+						<pre className="mermaid-container__error">
+							{ error.message }
+						</pre>
+					</div>
 				</Notice>
 			) : (
 				// Mermaid's own sanitised SVG output.
