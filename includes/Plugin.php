@@ -67,6 +67,13 @@ final class Plugin {
 	private Diagram $diagram;
 
 	/**
+	 * The saved images of diagrams.
+	 *
+	 * @var SavedImages
+	 */
+	private SavedImages $images;
+
+	/**
 	 * The block.
 	 *
 	 * @var Block
@@ -102,6 +109,13 @@ final class Plugin {
 	private Abilities\AbilitiesRegistrar $abilities;
 
 	/**
+	 * What keeps the saved images of a post in step with its diagrams.
+	 *
+	 * @var ImageSync
+	 */
+	private ImageSync $image_sync;
+
+	/**
 	 * Returns the one instance.
 	 *
 	 * @return Plugin The plugin.
@@ -125,7 +139,8 @@ final class Plugin {
 		$this->assets        = new Assets( $plugin_file );
 		$this->diagram       = new Diagram( $this->themes, $this->settings, $this->assets );
 		$this->diagram_types = new DiagramTypes();
-		$this->block         = new Block( $this->assets, $this->diagram, $this->themes, $this->settings, $this->diagram_types );
+		$this->images        = new SavedImages( $this->settings );
+		$this->block         = new Block( $this->assets, $this->diagram, $this->themes, $this->settings, $this->diagram_types, $this->images );
 		$this->shortcode     = new Shortcode( $this->diagram );
 		$this->post_diagrams = new PostDiagrams( $this->diagram_types );
 		$this->abilities     = new Abilities\AbilitiesRegistrar(
@@ -138,6 +153,7 @@ final class Plugin {
 			new Abilities\UpdateDiagram( $this->post_diagrams, $this->themes ),
 			new Abilities\DeleteDiagram( $this->post_diagrams, $this->themes )
 		);
+		$this->image_sync    = new ImageSync( $this->images, $this->post_diagrams, $this->diagram );
 	}
 
 	/**
@@ -155,6 +171,8 @@ final class Plugin {
 		$this->shortcode->hooks();
 		$this->settings->hooks();
 		$this->abilities->hooks();
+		$this->images->hooks();
+		$this->image_sync->hooks();
 	}
 
 	/**
@@ -236,5 +254,24 @@ final class Plugin {
 	 */
 	public function abilities(): Abilities\AbilitiesRegistrar {
 		return $this->abilities;
+	}
+
+	/**
+	 * Returns the saved images of diagrams.
+	 *
+	 * @return SavedImages The images.
+	 */
+	public function images(): SavedImages {
+		return $this->images;
+	}
+
+	/**
+	 * Returns what keeps the saved images of a post in step with its
+	 * diagrams.
+	 *
+	 * @return ImageSync The sync.
+	 */
+	public function image_sync(): ImageSync {
+		return $this->image_sync;
 	}
 }

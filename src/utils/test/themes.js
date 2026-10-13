@@ -7,6 +7,7 @@ import {
 	AUTO_THEME,
 	THEMES,
 	getThemeConfig,
+	isDarkTheme,
 	resolveTheme,
 } from '../themes';
 import { getSurface } from '../surface';
@@ -44,6 +45,24 @@ describe( 'resolveTheme', () => {
 		'counts %p as the automatic theme',
 		( theme ) => {
 			expect( resolveTheme( theme, element ) ).toBe( AUTO_LIGHT );
+		}
+	);
+} );
+
+describe( 'isDarkTheme', () => {
+	it.each( THEMES )( 'tells whether the %s theme is dark', ( theme ) => {
+		expect( isDarkTheme( theme ) ).toBe( theme.includes( 'dark' ) );
+	} );
+
+	it( 'tells what a diagram that follows the page was drawn for', () => {
+		expect( isDarkTheme( AUTO_DARK ) ).toBe( true );
+		expect( isDarkTheme( AUTO_LIGHT ) ).toBe( false );
+	} );
+
+	it.each( [ [ undefined ], [ '' ], [ AUTO_THEME ], [ 'toString' ] ] )(
+		'counts %p as light',
+		( theme ) => {
+			expect( isDarkTheme( theme ) ).toBe( false );
 		}
 	);
 } );

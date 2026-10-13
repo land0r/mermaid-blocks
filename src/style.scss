@@ -32,6 +32,30 @@
 }
 
 /*
+ * The saved image of a diagram (see includes/SavedImages.php), in a
+ * `<noscript>` element before the source: what a browser that runs no
+ * JavaScript shows. It is as large as the diagram, and no wider than its
+ * column.
+ */
+.mermaid-blocks-diagram .mermaid-blocks-diagram__image {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+.mermaid-blocks-diagram.aligncenter .mermaid-blocks-diagram__image {
+	margin-inline: auto;
+}
+
+/* Such a browser shows the image in place of the source, not above it. */
+@media (scripting: none) {
+
+	.mermaid-blocks-diagram.has-image .mermaid-blocks-diagram__source {
+		display: none;
+	}
+}
+
+/*
  * Centre alignment centres a diagram narrower than its column, and its
  * caption. A zoomed diagram wider than its canvas doesn't fit the line, which
  * then starts at the canvas's edge, so all of it can be scrolled to.
