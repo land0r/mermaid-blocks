@@ -29,6 +29,40 @@ const getContent = ( attributes ) => {
 	return null;
 };
 
+// The class that marks a Code block as Mermaid: see includes/CodeBlocks.php.
+const MERMAID_CLASS = 'language-mermaid';
+
+/**
+ * Tells whether a block has the class that marks code as Mermaid among its
+ * additional CSS classes.
+ *
+ * @param {Object} attributes The attributes of the block.
+ *
+ * @return {boolean} Whether the block is marked as Mermaid.
+ */
+const isMarkedAsMermaid = ( attributes ) =>
+	typeof attributes?.className === 'string' &&
+	attributes.className.split( /\s+/ ).includes( MERMAID_CLASS );
+
+/**
+ * Returns the Mermaid source in the content of a Code block: its text, read
+ * as CodeBlocks::get_code() reads it for visitors. Formatting is dropped and
+ * its text kept, a line break element is a line break in a label, and
+ * character references are decoded.
+ *
+ * @param {string} html The content of the block.
+ *
+ * @return {string} The source.
+ */
+const getCode = ( html ) =>
+	decodeEntities(
+		html
+			.replace( /<br\s*\/?>/gi, '&lt;br/&gt;' )
+			.replace( /<\/?[a-z][^>]*>/gi, '' )
+	)
+		.replace( /\u00a0/g, ' ' )
+		.trim();
+
 const transforms = {
 	from: [
 		{
@@ -94,6 +128,35 @@ const transforms = {
 					code: mergedContent.trim(),
 				} );
 			},
+		},
+		{
+			type: 'block',
+			blocks: [ 'core/code' ],
+
+			/**
+			 * Checks if a Code block is marked as Mermaid, with the class the
+			 * site may show as a diagram already, and holds code.
+			 *
+			 * @param {Object} attributes The attributes of the block.
+			 *
+			 * @return {boolean} Whether the block can become a diagram block.
+			 */
+			isMatch: ( attributes ) =>
+				isMarkedAsMermaid( attributes ) &&
+				!! getCode( getContent( attributes ) || '' ),
+
+			/**
+			 * Transforms a Code block marked as Mermaid into a diagram block,
+			 * which has settings of its own.
+			 *
+			 * @param {Object} attributes The attributes of the block.
+			 *
+			 * @return {Object} The new MermaidJS block.
+			 */
+			transform: ( attributes ) =>
+				createBlock( 'mermaid-blocks/diagram', {
+					code: getCode( getContent( attributes ) || '' ),
+				} ),
 		},
 	],
 };

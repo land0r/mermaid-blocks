@@ -81,6 +81,13 @@ final class Plugin {
 	private Shortcode $shortcode;
 
 	/**
+	 * The code marked as Mermaid, shown as diagrams.
+	 *
+	 * @var CodeBlocks
+	 */
+	private CodeBlocks $code_blocks;
+
+	/**
 	 * The diagram types with starter code.
 	 *
 	 * @var DiagramTypes
@@ -127,6 +134,7 @@ final class Plugin {
 		$this->diagram_types = new DiagramTypes();
 		$this->block         = new Block( $this->assets, $this->diagram, $this->themes, $this->settings, $this->diagram_types );
 		$this->shortcode     = new Shortcode( $this->diagram );
+		$this->code_blocks   = new CodeBlocks( $this->diagram, $this->settings );
 		$this->post_diagrams = new PostDiagrams( $this->diagram_types );
 		$this->abilities     = new Abilities\AbilitiesRegistrar(
 			$this->assets,
@@ -153,6 +161,7 @@ final class Plugin {
 		$this->assets->hooks();
 		$this->block->hooks();
 		$this->shortcode->hooks();
+		$this->code_blocks->hooks();
 		$this->settings->hooks();
 		$this->abilities->hooks();
 	}
@@ -209,6 +218,15 @@ final class Plugin {
 	 */
 	public function shortcode(): Shortcode {
 		return $this->shortcode;
+	}
+
+	/**
+	 * Returns the code marked as Mermaid, shown as diagrams.
+	 *
+	 * @return CodeBlocks The code blocks.
+	 */
+	public function code_blocks(): CodeBlocks {
+		return $this->code_blocks;
 	}
 
 	/**
