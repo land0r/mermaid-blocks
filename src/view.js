@@ -7,7 +7,8 @@
  * the first one does, so a page whose diagrams are never seen never loads it.
  * A diagram inside a hidden element, such as a closed tab, renders when it is
  * shown, at its real size. Once rendered, a diagram gets the controls its
- * markup asks for: zoom, download. A diagram that follows the page is drawn
+ * markup asks for: zoom, download, copy, fullscreen. Their code is loaded when
+ * the first diagram asks for one. A diagram that follows the page is drawn
  * again, in the other theme, when the page turns dark or light.
  *
  * Also exposes `window.mermaidBlocks.render( element )` for diagrams added to
@@ -19,7 +20,7 @@ import renderDiagrams, {
 	redrawDiagram,
 } from './frontend/render-diagrams';
 import loadMermaid from './frontend/load-mermaid';
-import addControls from './frontend/controls';
+import loadControls from './frontend/load-controls';
 import watchSurface from './utils/watch-surface';
 
 // Start a viewport's height ahead, so a diagram is usually rendered by the
@@ -27,10 +28,51 @@ import watchSurface from './utils/watch-surface';
 const ROOT_MARGIN = '100% 0px';
 
 // Printed before this script by includes/Assets.php.
-const { mermaidUrl, i18n } = window.mermaidBlocksSettings || {};
+const { mermaidUrl, controlsUrl, i18n } = window.mermaidBlocksSettings || {};
 
 // Whether the page is watched for turning dark or light.
 let watching = false;
+
+/**
+ * Returns the URL of the controls: `build/controls.js`.
+ *
+ * A page that was cached before the controls became a file of their own
+ * doesn't say where it is, but it does say where Mermaid is: in `build/` too.
+ *
+ * @return {string} The URL.
+ */
+function getControlsUrl() {
+	return (
+		controlsUrl ||
+		new URL( '../controls.js', new URL( mermaidUrl, document.baseURI ) )
+			.href
+	);
+}
+
+/**
+ * Gives a rendered diagram the controls its markup asks for, and loads their
+ * code first. A diagram that asks for none loads nothing.
+ *
+ * @param {HTMLElement} diagram The diagram element.
+ */
+function addControls( diagram ) {
+	if (
+		! diagram.classList.contains( 'is-rendered' ) ||
+		! ( diagram.dataset.mermaidControls || '' ).trim()
+	) {
+		return;
+	}
+
+	loadControls( getControlsUrl() )
+		.then( ( add ) => add( diagram, i18n ) )
+		.catch( ( error ) => {
+			// eslint-disable-next-line no-console
+			console.error(
+				'Mermaid Blocks: failed to load the controls of diagrams.',
+				error
+			);
+		} );
+}
 
 /**
  * Draws again the rendered diagrams that are in another theme than the one
@@ -44,7 +86,7 @@ function redrawOutdated() {
 				.then( ( mermaid ) => redrawDiagram( mermaid, diagram ) )
 				.then( ( redrawn ) => {
 					if ( redrawn ) {
-						addControls( diagram, i18n );
+						addControls( diagram );
 					}
 				} )
 				.catch( ( error ) => {
@@ -74,8 +116,7 @@ function renderNow( diagram ) {
 		} )
 		.then( () => {
 			diagram.classList.remove( 'is-pending' );
-			// Only a rendered diagram gets any.
-			addControls( diagram, i18n );
+			addControls( diagram );
 
 			if ( ! watching ) {
 				watching = true;

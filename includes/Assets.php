@@ -125,9 +125,11 @@ final class Assets {
 		);
 
 		// The script has no dependencies, so its few labels are translated here.
+		$controls = $this->get_build_asset( 'controls' );
 		$settings = array(
-			'mermaidUrl' => add_query_arg( 'ver', $mermaid['version'], $this->get_url( 'mermaid/mermaid.esm.min.js' ) ),
-			'i18n'       => array(
+			'mermaidUrl'  => add_query_arg( 'ver', $mermaid['version'], $this->get_url( 'mermaid/mermaid.esm.min.js' ) ),
+			'controlsUrl' => add_query_arg( 'ver', $controls['version'], $this->get_url( 'controls.js' ) ),
+			'i18n'        => array(
 				'controls'       => __( 'Diagram controls', 'mermaid-blocks' ),
 				'zoomIn'         => __( 'Zoom in', 'mermaid-blocks' ),
 				'zoomOut'        => __( 'Zoom out', 'mermaid-blocks' ),
