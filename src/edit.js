@@ -148,15 +148,25 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 	/**
 	 * Destructure the block attributes.
 	 * - `code`: The MermaidJS code for the diagram.
-	 * - `zoom`, `download`: Whether visitors get the zoom controls and the
-	 *   download buttons.
+	 * - `zoom`, `download`, `copy`, `fullscreen`: Whether visitors get the
+	 *   zoom controls, the download buttons, the button that copies the code
+	 *   and the one that shows the diagram over the whole screen.
 	 * - `theme`: The theme the diagram is drawn in. Without one, the site's.
 	 * - `caption`: The text shown under the diagram.
 	 * - `accTitle`, `accDescr`: The title and the description of the diagram
 	 *   for assistive technology.
 	 */
-	const { code, zoom, download, theme, caption, accTitle, accDescr } =
-		attributes;
+	const {
+		code,
+		zoom,
+		download,
+		copy,
+		fullscreen,
+		theme,
+		caption,
+		accTitle,
+		accDescr,
+	} = attributes;
 
 	// A theme that isn't offered counts as none, as it does on the front end.
 	const ownTheme = THEME_OPTIONS.some( ( { value } ) => value === theme )
@@ -310,6 +320,30 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 						checked={ !! download }
 						onChange={ ( value ) =>
 							setAttributes( { download: value } )
+						}
+					/>
+					<ToggleControl
+						__nextHasNoMarginBottom
+						label={ __( 'Copy code button', 'mermaid-blocks' ) }
+						help={ __(
+							'Visitors can copy the Mermaid code of the diagram.',
+							'mermaid-blocks'
+						) }
+						checked={ !! copy }
+						onChange={ ( value ) =>
+							setAttributes( { copy: value } )
+						}
+					/>
+					<ToggleControl
+						__nextHasNoMarginBottom
+						label={ __( 'Fullscreen button', 'mermaid-blocks' ) }
+						help={ __(
+							'Visitors can view the diagram over the whole screen.',
+							'mermaid-blocks'
+						) }
+						checked={ !! fullscreen }
+						onChange={ ( value ) =>
+							setAttributes( { fullscreen: value } )
 						}
 					/>
 				</PanelBody>

@@ -211,32 +211,40 @@ abstract class DiagramAbility extends Ability {
 			'type'                 => 'object',
 			'description'          => __( 'Attributes of the diagram block besides its code. An empty string or false removes an attribute.', 'mermaid-blocks' ),
 			'properties'           => array(
-				'theme'    => array(
+				'theme'      => array(
 					'type'        => 'string',
 					'enum'        => array_merge( array( '' ), array_keys( $this->themes->get_all() ) ),
 					'description' => __( 'The theme of the diagram. Without one, the theme set for the site.', 'mermaid-blocks' ),
 				),
-				'caption'  => array(
+				'caption'    => array(
 					'type'        => 'string',
 					'description' => __( 'A caption shown under the diagram. It may hold the HTML allowed in posts.', 'mermaid-blocks' ),
 				),
-				'zoom'     => array(
+				'zoom'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether visitors get zoom controls.', 'mermaid-blocks' ),
 				),
-				'download' => array(
+				'download'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether visitors get buttons that download the diagram as an SVG or PNG file.', 'mermaid-blocks' ),
 				),
-				'accTitle' => array(
+				'copy'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether visitors get a button that copies the code of the diagram.', 'mermaid-blocks' ),
+				),
+				'fullscreen' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether visitors get a button that shows the diagram over the whole screen.', 'mermaid-blocks' ),
+				),
+				'accTitle'   => array(
 					'type'        => 'string',
 					'description' => __( 'A title of the diagram for screen readers.', 'mermaid-blocks' ),
 				),
-				'accDescr' => array(
+				'accDescr'   => array(
 					'type'        => 'string',
 					'description' => __( 'A description of the diagram for screen readers.', 'mermaid-blocks' ),
 				),
-				'align'    => array(
+				'align'      => array(
 					'type'        => 'string',
 					'enum'        => array( '', 'center', 'wide', 'full' ),
 					'description' => __( 'The alignment of the diagram.', 'mermaid-blocks' ),

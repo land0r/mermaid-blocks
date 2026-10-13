@@ -736,4 +736,69 @@ class AbilitiesTest extends WP_UnitTestCase {
 
 		unregister_post_type( 'mermaid_hidden' );
 	}
+
+	/**
+	 * Every control for visitors can be switched on and off. A value that is
+	 * not on or off is refused.
+	 */
+	public function test_sets_the_controls_of_a_diagram(): void {
+		$post_id = $this->create_post();
+		$diagram = $this->run_ability(
+			'insert-diagram',
+			array(
+				'post_id'    => $post_id,
+				'code'       => 'pie',
+				'attributes' => array(
+					'zoom'       => true,
+					'download'   => true,
+					'copy'       => true,
+					'fullscreen' => true,
+				),
+			)
+		);
+
+		$this->assertEquals(
+			(object) array(
+				'zoom'       => true,
+				'download'   => true,
+				'copy'       => true,
+				'fullscreen' => true,
+			),
+			$diagram['attributes']
+		);
+
+		$updated = $this->run_ability(
+			'update-diagram',
+			array(
+				'post_id'    => $post_id,
+				'index'      => $diagram['index'],
+				'hash'       => $diagram['hash'],
+				'attributes' => array(
+					'copy'       => false,
+					'fullscreen' => false,
+				),
+			)
+		);
+
+		$this->assertEquals(
+			(object) array(
+				'zoom'     => true,
+				'download' => true,
+			),
+			$updated['attributes']
+		);
+
+		$this->assertErrorCode(
+			'ability_invalid_input',
+			$this->run_ability(
+				'update-diagram',
+				array(
+					'post_id'    => $post_id,
+					'index'      => $updated['index'],
+					'hash'       => $updated['hash'],
+					'attributes' => array( 'fullscreen' => 'always' ),
+				)
+			)
+		);
+	}
 }

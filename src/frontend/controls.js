@@ -1,20 +1,22 @@
 /**
- * The controls of a rendered diagram: buttons to zoom, and to download it as
- * an SVG or PNG file.
+ * The controls of a rendered diagram: buttons to zoom, to download it as an
+ * SVG or PNG file, to copy its code, and to show it over the whole screen.
  *
  * A diagram gets the controls its `data-mermaid-controls` attribute lists:
- * `zoom`, `download`, or both, separated by a space. Without the attribute it
- * gets none.
+ * any of `zoom`, `download`, `copy` and `fullscreen`, separated by spaces.
+ * Without the attribute it gets none.
  */
 import createZoom from './zoom';
+import createFullscreen from './fullscreen';
 import { downloadDiagram } from '../utils/export-diagram';
 
 const CANVAS_SELECTOR = '.mermaid-blocks-diagram__canvas';
+const SOURCE_SELECTOR = '.mermaid-blocks-diagram__source';
 const TOOLBAR_CLASS = 'mermaid-blocks-diagram__toolbar';
 const BUTTON_CLASS = 'mermaid-blocks-diagram__button';
 const STATUS_CLASS = 'mermaid-blocks-diagram__status';
 
-// How long a message, such as a failed download, stays.
+// How long a message, such as a failed download or "Copied", stays.
 const STATUS_DURATION = 5000;
 
 // The labels come translated from includes/Assets.php. These stand in when a
@@ -27,6 +29,11 @@ const DEFAULT_LABELS = {
 	downloadSvg: 'Download as SVG',
 	downloadPng: 'Download as PNG',
 	downloadError: 'The file could not be created.',
+	copyCode: 'Copy code',
+	copied: 'Copied.',
+	copyError: 'The code could not be copied.',
+	fullscreen: 'View fullscreen',
+	exitFullscreen: 'Exit fullscreen',
 };
 
 const icon = ( paths ) =>
@@ -39,6 +46,13 @@ const ICONS = {
 		'<path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v5h5"/>'
 	),
 	download: icon( '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>' ),
+	copy: icon(
+		'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>'
+	),
+	fullscreen: icon( '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>' ),
+	exitFullscreen: icon(
+		'<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>'
+	),
 };
 
 /**
@@ -85,6 +99,36 @@ function setEnabled( button, enabled ) {
 }
 
 /**
+ * Creates the place that tells what a button did when that can't be seen: a
+ * download that failed, code that was copied. A message goes after a while.
+ *
+ * @param {Document} doc The document of the diagram.
+ *
+ * @return {{element: HTMLElement, show: Function, clear: Function}} The
+ * element, and what shows a message in it and removes it.
+ */
+function createStatus( doc ) {
+	const element = doc.createElement( 'span' );
+	element.className = STATUS_CLASS;
+	element.setAttribute( 'role', 'status' );
+
+	let timer = null;
+
+	const clear = () => {
+		clearTimeout( timer );
+		element.textContent = '';
+	};
+
+	const show = ( message ) => {
+		clear();
+		element.textContent = message;
+		timer = setTimeout( clear, STATUS_DURATION );
+	};
+
+	return { element, show, clear };
+}
+
+/**
  * Creates the zoom buttons of a diagram, and makes it zoomable.
  *
  * @param {Document}      doc     The document of the diagram.
@@ -93,7 +137,8 @@ function setEnabled( button, enabled ) {
  * @param {SVGSVGElement} svg     The rendered diagram.
  * @param {Object}        text    The labels.
  *
- * @return {HTMLButtonElement[]} The buttons.
+ * @return {{zoom: Object, buttons: HTMLButtonElement[]}} The zoom, and its
+ * buttons.
  */
 function createZoomButtons( doc, diagram, canvas, svg, text ) {
 	const buttons = {};
@@ -126,26 +171,24 @@ function createZoomButtons( doc, diagram, canvas, svg, text ) {
 
 	update( { canZoomIn: true, canZoomOut: false } );
 
-	return [ buttons.zoomOut, buttons.zoomIn, buttons.reset ];
+	return {
+		zoom,
+		buttons: [ buttons.zoomOut, buttons.zoomIn, buttons.reset ],
+	};
 }
 
 /**
- * Creates the download buttons of a diagram, after the place that tells when
- * a download failed.
+ * Creates the download buttons of a diagram.
  *
- * @param {Document}      doc  The document of the diagram.
- * @param {SVGSVGElement} svg  The rendered diagram.
- * @param {Object}        text The labels.
+ * @param {Document}      doc    The document of the diagram.
+ * @param {SVGSVGElement} svg    The rendered diagram.
+ * @param {Object}        status Where to tell that a download failed.
+ * @param {Object}        text   The labels.
  *
- * @return {HTMLElement[]} The status element and the buttons.
+ * @return {HTMLButtonElement[]} The buttons.
  */
-function createDownloadButtons( doc, svg, text ) {
-	const status = doc.createElement( 'span' );
-	status.className = STATUS_CLASS;
-	status.setAttribute( 'role', 'status' );
-
+function createDownloadButtons( doc, svg, status, text ) {
 	let busy = false;
-	let clearStatus = null;
 
 	const download = ( format ) => () => {
 		if ( busy ) {
@@ -153,15 +196,11 @@ function createDownloadButtons( doc, svg, text ) {
 		}
 
 		busy = true;
-		clearTimeout( clearStatus );
-		status.textContent = '';
+		status.clear();
 
 		downloadDiagram( svg, format )
 			.catch( ( error ) => {
-				status.textContent = text.downloadError;
-				clearStatus = setTimeout( () => {
-					status.textContent = '';
-				}, STATUS_DURATION );
+				status.show( text.downloadError );
 				// eslint-disable-next-line no-console
 				console.error(
 					'Mermaid Blocks: failed to create the file.',
@@ -174,7 +213,6 @@ function createDownloadButtons( doc, svg, text ) {
 	};
 
 	return [
-		status,
 		createButton(
 			doc,
 			text.downloadSvg,
@@ -188,6 +226,92 @@ function createDownloadButtons( doc, svg, text ) {
 			download( 'png' )
 		),
 	];
+}
+
+/**
+ * Creates the button that copies the code of a diagram.
+ *
+ * @param {Document}    doc     The document of the diagram.
+ * @param {HTMLElement} diagram The diagram element.
+ * @param {Object}      status  Where to tell that the code was copied, or
+ *                              could not be.
+ * @param {Object}      text    The labels.
+ *
+ * @return {HTMLButtonElement|null} The button, or null where code can't be
+ * copied: the clipboard is only there on pages served over HTTPS.
+ */
+function createCopyButton( doc, diagram, status, text ) {
+	const source = diagram.querySelector( SOURCE_SELECTOR );
+	const { clipboard } = doc.defaultView.navigator;
+
+	if (
+		! source ||
+		! clipboard ||
+		typeof clipboard.writeText !== 'function'
+	) {
+		return null;
+	}
+
+	return createButton( doc, text.copyCode, ICONS.copy, () => {
+		Promise.resolve()
+			.then( () => clipboard.writeText( source.textContent ) )
+			.then(
+				() => status.show( text.copied ),
+				( error ) => {
+					status.show( text.copyError );
+					// eslint-disable-next-line no-console
+					console.error(
+						'Mermaid Blocks: failed to copy the code.',
+						error
+					);
+				}
+			);
+	} );
+}
+
+/**
+ * Creates the button that shows a diagram over the whole screen, and back.
+ *
+ * @param {Document}    doc     The document of the diagram.
+ * @param {HTMLElement} diagram The diagram element.
+ * @param {Object|null} zoom    The zoom of the diagram, when it has one.
+ * @param {Object}      text    The labels.
+ *
+ * @return {HTMLButtonElement} The button.
+ */
+function createFullscreenButton( doc, diagram, zoom, text ) {
+	let fullscreen = null;
+
+	const button = createButton( doc, text.fullscreen, ICONS.fullscreen, () =>
+		fullscreen.toggle()
+	);
+
+	const show = ( active ) => {
+		const label = active ? text.exitFullscreen : text.fullscreen;
+
+		button.title = label;
+		button.setAttribute( 'aria-label', label );
+		button.innerHTML = active ? ICONS.exitFullscreen : ICONS.fullscreen;
+	};
+
+	fullscreen = createFullscreen( diagram, ( active ) => {
+		show( active );
+
+		// The zoom is relative to the size the diagram had.
+		if ( zoom ) {
+			zoom.reset();
+		}
+
+		// Escape leaves fullscreen from anywhere.
+		if ( ! active ) {
+			button.focus();
+		}
+	} );
+
+	// A diagram that was drawn again may still be fullscreen.
+	show( fullscreen.isActive() );
+
+	return button;
 }
 
 /**
@@ -210,13 +334,44 @@ export default function addControls( diagram, labels ) {
 	const text = { ...DEFAULT_LABELS, ...labels };
 	const items = [];
 
+	const status = createStatus( doc );
+	let zoom = null;
+
 	// Zooming scales the drawing through its `viewBox`.
 	if ( controls.includes( 'zoom' ) && svg.hasAttribute( 'viewBox' ) ) {
-		items.push( ...createZoomButtons( doc, diagram, canvas, svg, text ) );
+		const zoomControls = createZoomButtons(
+			doc,
+			diagram,
+			canvas,
+			svg,
+			text
+		);
+
+		zoom = zoomControls.zoom;
+		items.push( ...zoomControls.buttons );
 	}
 
+	const actions = [];
+
 	if ( controls.includes( 'download' ) ) {
-		items.push( ...createDownloadButtons( doc, svg, text ) );
+		actions.push( ...createDownloadButtons( doc, svg, status, text ) );
+	}
+
+	if ( controls.includes( 'copy' ) ) {
+		const copy = createCopyButton( doc, diagram, status, text );
+
+		if ( copy ) {
+			actions.push( copy );
+		}
+	}
+
+	// The status goes before the buttons it speaks for.
+	if ( actions.length ) {
+		items.push( status.element, ...actions );
+	}
+
+	if ( controls.includes( 'fullscreen' ) ) {
+		items.push( createFullscreenButton( doc, diagram, zoom, text ) );
 	}
 
 	if ( ! items.length ) {

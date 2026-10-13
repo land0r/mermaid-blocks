@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * calling `window.mermaidBlocks.render( element )`.
  *
  * A diagram whose wrapper has a `data-mermaid-controls` attribute gets
- * controls for visitors: `zoom`, `download`, or both, separated by a space.
+ * controls for visitors: any of CONTROLS, separated by spaces.
  *
  * `data-mermaid-theme` names the theme the diagram is drawn in, one of
  * Themes::get_all(); without it the diagram follows the page.
@@ -32,6 +32,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * title and a description for assistive technology.
  */
 final class Diagram {
+
+	/**
+	 * The controls a diagram can give visitors: buttons to zoom, to download
+	 * the diagram as an SVG or PNG file, to copy its code, and to show it over
+	 * the whole screen. They are also the block's attributes that switch them
+	 * on.
+	 */
+	const CONTROLS = array( 'zoom', 'download', 'copy', 'fullscreen' );
 
 	/**
 	 * The themes a diagram can be drawn in.
@@ -181,7 +189,8 @@ final class Diagram {
 	 *                           element, as name => value. A `class` is added to
 	 *                           the `mermaid-blocks-diagram` class.
 	 *                           `data-mermaid-controls` lists the controls visitors
-	 *                           get: `zoom`, `download`, or `zoom download`.
+	 *                           get: any of CONTROLS, separated by spaces, such
+	 *                           as `zoom download`.
 	 *                           `data-mermaid-theme` is the diagram's theme, a name
 	 *                           from Themes::get_all(): without one, or with an
 	 *                           unknown one, it gets the site's.
