@@ -22,6 +22,7 @@ import save from './save';
 import deprecated from './deprecated';
 import transforms from './transforms';
 import metadata from './block.json';
+import watchPost from './editor/saved-images';
 
 import icon from './icon.svg';
 
@@ -53,3 +54,11 @@ registerBlockType( metadata.name, {
 	 */
 	deprecated,
 } );
+
+/*
+ * Printed before this script by includes/Block.php: whether the site keeps an
+ * image of each diagram, which only the editor can draw.
+ */
+if ( window.mermaidBlocksEditorSettings?.saveImages ) {
+	watchPost();
+}

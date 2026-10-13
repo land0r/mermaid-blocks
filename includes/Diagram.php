@@ -30,6 +30,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Themes::get_all(); without it the diagram follows the page.
  * `data-mermaid-title` and `data-mermaid-description` give the rendered SVG a
  * title and a description for assistive technology.
+ *
+ * A diagram that has a saved image (see SavedImages) carries it for readers
+ * that run no JavaScript: in a `<noscript>` element before the source, or, in
+ * a feed, in place of the source.
  */
 final class Diagram {
 
@@ -151,6 +155,31 @@ final class Diagram {
 	}
 
 	/**
+	 * Returns the saved image of a diagram.
+	 *
+	 * Pass it to wrap(), which puts it where readers that run no JavaScript
+	 * find it.
+	 *
+	 * @param array  $image The URL of the image, and the width and the height
+	 *                      to show it at, as SavedImages::find() returns them.
+	 * @param string $alt   Optional. What the diagram shows, for those who
+	 *                      can't see the image. Default: that it is a diagram.
+	 *
+	 * @return string The `<img>` element.
+	 */
+	public function get_image_markup( array $image, $alt = '' ): string {
+		$alt = trim( (string) $alt );
+
+		return sprintf(
+			'<img class="mermaid-blocks-diagram__image" src="%s" alt="%s" width="%d" height="%d" loading="lazy" decoding="async" />',
+			esc_url( $image['url'] ),
+			esc_attr( '' === $alt ? __( 'Diagram', 'mermaid-blocks' ) : $alt ),
+			(int) $image['width'],
+			(int) $image['height']
+		);
+	}
+
+	/**
 	 * Returns the source and the caption of a diagram in a wrapper with the
 	 * given attributes: a `<figure>` when there is a caption, a `<div>` without
 	 * one.
@@ -161,22 +190,40 @@ final class Diagram {
 	 *
 	 * @param string $attributes The wrapper's attributes, escaped, such as
 	 *                           get_block_wrapper_attributes() returns them.
-	 *                           They include the `mermaid-blocks-diagram` class.
+	 *                           They include the `mermaid-blocks-diagram` class,
+	 *                           and the `has-image` class for a diagram given an
+	 *                           image.
 	 * @param string $code       Mermaid source.
 	 * @param string $caption    Optional. A caption, shown under the diagram. It
 	 *                           may contain the HTML allowed in post content.
+	 * @param string $image      Optional. The saved image of the diagram, as
+	 *                           get_image_markup() returns it. It goes in a
+	 *                           `<noscript>` element before the source, for
+	 *                           browsers that run no JavaScript.
+	 * @param bool   $image_only Optional. Whether the image takes the place of
+	 *                           the source, as in a feed, where nothing renders
+	 *                           the source. Default false.
 	 *
 	 * @return string The diagram markup.
 	 */
-	public function wrap( string $attributes, $code, $caption = '' ): string {
+	public function wrap( string $attributes, $code, $caption = '', $image = '', $image_only = false ): string {
 		$caption_markup = $this->get_caption_markup( $caption );
 		$tag            = '' === $caption_markup ? 'div' : 'figure';
+		$image          = $this->encode_brackets( $image );
+
+		if ( '' === $image ) {
+			$content = $this->get_source_markup( $code );
+		} elseif ( $image_only ) {
+			$content = $image;
+		} else {
+			$content = '<noscript>' . $image . '</noscript>' . $this->get_source_markup( $code );
+		}
 
 		return sprintf(
 			'<%1$s %2$s>%3$s%4$s</%1$s>',
 			$tag,
 			$this->encode_brackets( $attributes ),
-			$this->get_source_markup( $code ),
+			$content,
 			$caption_markup
 		);
 	}

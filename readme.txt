@@ -26,6 +26,7 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - Every Mermaid theme: one for the whole site under Settings → Mermaid Blocks, and one per diagram where you need it. The automatic theme follows the page, dark mode included.
 - Alignment (centre, wide and full width), spacing, and an optional caption.
 - A title and a description of each diagram for screen readers.
+- Optionally, a saved image of each diagram, for feeds and for browsers that run no JavaScript, which otherwise show its Mermaid code.
 - Simple and intuitive integration with the block editor.
 - A `[mermaid]` shortcode for the classic editor, page builders and text widgets.
 - Optionally, Mermaid code that is already in your posts as code, such as a `language-mermaid` code block from a Markdown import, is shown as a diagram.
@@ -71,6 +72,17 @@ On WordPress 6.9 and later, the plugin registers abilities with the WordPress Ab
 
 A diagram is addressed by the ID of its post and its index among the post's diagrams. Changes need the hash a read returned, so a diagram edited in the meantime is never overwritten, and every change leaves a revision. Each ability is open only to those who could make the same change in the editor: users work with the diagrams of the posts they can edit.
 
+### Saved images:
+A diagram is drawn in the visitor's browser, so a feed reader, or a browser that runs no JavaScript, shows its Mermaid code instead. Switch on "Save an image of each diagram" under Settings → Mermaid Blocks to give those readers a picture:
+
+- The block editor makes a PNG image of each diagram of a post when the post is opened or saved in it. A post written before gets its images the next time it is opened in the editor.
+- Feeds show the image in place of the code. On the site the image is in a `<noscript>` element, so browsers that run JavaScript never load it, and show the live diagram as before.
+- An image is of one version of a diagram. When the code or the theme of a diagram is changed anywhere else, through the abilities for example, its image is removed, and those readers see the code again until the post is opened in the editor.
+- The text of the image, for those who can't see it, is the description of the diagram, or else its title.
+- The images are files in `wp-content/uploads/mermaid-blocks/`. They are deleted with their post, and with the plugin.
+
+The diagrams of synced patterns, template parts, widgets and shortcodes get no image.
+
 == Installation ==
 
 1. Upload the plugin to the `/wp-content/plugins/mermaid-blocks` directory, or install it through the WordPress plugin screen.
@@ -91,6 +103,9 @@ Yes, your diagrams are rendered in real-time as you edit the code.
 
 = Does it work on all themes? =
 Yes, it is compatible with most modern WordPress themes.
+
+= What do feed readers and browsers without JavaScript show? =
+The Mermaid code of the diagram, since it is the browser that draws it. To show them a picture instead, switch on "Save an image of each diagram" under Settings → Mermaid Blocks, then open your posts in the block editor, which makes the images.
 
 = Can I use it in the classic editor or a page builder? =
 Yes, with the `[mermaid]` shortcode: put the Mermaid code between `[mermaid]` and `[/mermaid]`. If a page builder shows the code instead of the diagram, the code has a `<` that WordPress took for the start of a tag: write it as `&lt;`.

@@ -15,7 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Registers the block from its metadata in `build/`, with a variation per
- * diagram type, renders it, and gives the editor what its preview needs.
+ * diagram type, renders it, with its saved image when it has one, and gives
+ * the editor what its preview needs.
  */
 final class Block {
 
@@ -60,6 +61,13 @@ final class Block {
 	private DiagramTypes $types;
 
 	/**
+	 * The saved images of diagrams, for readers that run no JavaScript.
+	 *
+	 * @var SavedImages
+	 */
+	private SavedImages $images;
+
+	/**
 	 * Sets up the block.
 	 *
 	 * @param Assets       $assets   The assets of diagrams.
@@ -67,13 +75,15 @@ final class Block {
 	 * @param Themes       $themes   The themes a diagram can be drawn in.
 	 * @param Settings     $settings The settings, which hold the site's theme.
 	 * @param DiagramTypes $types    The diagram types, for the variations.
+	 * @param SavedImages  $images   The saved images of diagrams.
 	 */
-	public function __construct( Assets $assets, Diagram $diagram, Themes $themes, Settings $settings, DiagramTypes $types ) {
+	public function __construct( Assets $assets, Diagram $diagram, Themes $themes, Settings $settings, DiagramTypes $types, SavedImages $images ) {
 		$this->assets   = $assets;
 		$this->diagram  = $diagram;
 		$this->themes   = $themes;
 		$this->settings = $settings;
 		$this->types    = $types;
+		$this->images   = $images;
 	}
 
 	/**
@@ -125,7 +135,8 @@ final class Block {
 	/**
 	 * Tells the editor the themes a diagram can have, the site's theme, which
 	 * the preview of a block without a theme of its own is drawn in, and, to
-	 * those who may change that one, where.
+	 * those who may change that one, where. It also tells whether to draw the
+	 * images of the diagrams of a post: see ImageSync.
 	 */
 	public function add_editor_settings(): void {
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( self::NAME );
@@ -138,6 +149,7 @@ final class Block {
 			'themes'      => $this->themes->get_all(),
 			'theme'       => $this->settings->get_theme(),
 			'settingsUrl' => current_user_can( 'manage_options' ) ? $this->settings->get_url() : '',
+			'saveImages'  => $this->images->is_on(),
 		);
 
 		// The block's own editor script: `mermaid-js` is the library.
@@ -152,7 +164,8 @@ final class Block {
 
 	/**
 	 * Renders the block: the diagram, in a wrapper with the attributes the
-	 * block editor adds, such as its alignment and spacing.
+	 * block editor adds, such as its alignment and spacing. A diagram that has
+	 * a saved image, in the post it is shown in, carries that too.
 	 *
 	 * @param array $attributes The attributes of the block.
 	 *
@@ -165,10 +178,15 @@ final class Block {
 			return '';
 		}
 
+		$theme = isset( $attributes['theme'] ) && is_string( $attributes['theme'] ) ? $attributes['theme'] : '';
+
+		// What readers that run no JavaScript see instead of the source. A diagram that changed since has none.
+		$image = $this->images->find( get_the_ID(), $code, $theme );
+
 		$wrapper = array(
-			'class'              => 'mermaid-blocks-diagram',
+			'class'              => $image ? 'mermaid-blocks-diagram has-image' : 'mermaid-blocks-diagram',
 			// The block's own theme, or else the site's.
-			'data-mermaid-theme' => $this->diagram->get_theme( isset( $attributes['theme'] ) ? $attributes['theme'] : '' ),
+			'data-mermaid-theme' => $this->diagram->get_theme( $theme ),
 		);
 
 		// The controls visitors get. The front-end script adds them to the rendered diagram.
@@ -196,10 +214,24 @@ final class Block {
 			}
 		}
 
+		$caption = isset( $attributes['caption'] ) ? $attributes['caption'] : '';
+
+		if ( ! $image ) {
+			return $this->diagram->wrap( get_block_wrapper_attributes( $wrapper ), $code, $caption );
+		}
+
+		// The image says what the diagram shows: its description, or else its title.
+		$alt = isset( $wrapper['data-mermaid-description'] ) ? $wrapper['data-mermaid-description'] : '';
+		if ( '' === $alt && isset( $wrapper['data-mermaid-title'] ) ) {
+			$alt = $wrapper['data-mermaid-title'];
+		}
+
 		return $this->diagram->wrap(
 			get_block_wrapper_attributes( $wrapper ),
 			$code,
-			isset( $attributes['caption'] ) ? $attributes['caption'] : ''
+			$caption,
+			$this->diagram->get_image_markup( $image, $alt ),
+			$this->images->replaces_source()
 		);
 	}
 }

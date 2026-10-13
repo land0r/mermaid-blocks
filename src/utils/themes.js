@@ -41,6 +41,22 @@ const DARK_COUNTERPARTS = {
 };
 
 /**
+ * Tells whether a diagram drawn in a theme has light text, for a dark
+ * surface.
+ *
+ * @param {string} theme What a diagram is drawn in, as resolveTheme() returns
+ *                       it.
+ *
+ * @return {boolean} True for AUTO_DARK and for the dark themes.
+ */
+export function isDarkTheme( theme ) {
+	return (
+		theme === AUTO_DARK ||
+		Object.values( DARK_COUNTERPARTS ).includes( theme )
+	);
+}
+
+/**
  * Returns what to draw a diagram in.
  *
  * @param {string}  theme   The theme asked for: one of THEMES, or AUTO_THEME.

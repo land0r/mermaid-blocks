@@ -3,6 +3,7 @@
  * it. Used by the download buttons on the front end and in the editor.
  */
 import { getSurface } from './surface';
+import { isDarkTheme } from './themes';
 
 const FILE_NAME = 'mermaid-diagram';
 
@@ -140,17 +141,33 @@ export function getPngBackground( svg ) {
 }
 
 /**
+ * Returns the background of the PNG of a diagram that isn't on a page: the
+ * one its theme is made for.
+ *
+ * @param {string} theme What the diagram was drawn in, as resolveTheme()
+ *                       returns it.
+ *
+ * @return {string} A CSS colour.
+ */
+export function getThemeBackground( theme ) {
+	return isDarkTheme( theme ) ? PNG_DARK_BACKGROUND : PNG_BACKGROUND;
+}
+
+/**
  * Draws a diagram as a PNG, on a background its text can be read on: see
  * getPngBackground().
  *
  * The SVG is loaded from a `data:` URL. From a `blob:` URL, Chromium refuses
  * to read back a canvas that an SVG with HTML labels was drawn on.
  *
- * @param {SVGSVGElement} svg The rendered diagram.
+ * @param {SVGSVGElement} svg          The rendered diagram.
+ * @param {string}        [background] The background, a CSS colour. Default:
+ *                                     the one for the surface the diagram
+ *                                     sits on in the page.
  *
  * @return {Promise<Blob>} The PNG. Rejects when the browser can't draw it.
  */
-export async function getPngBlob( svg ) {
+export async function getPngBlob( svg, background = getPngBackground( svg ) ) {
 	const size = getDiagramSize( svg );
 	const { width, height } = getPngSize( size );
 	const image = await loadImage(
@@ -163,7 +180,7 @@ export async function getPngBlob( svg ) {
 	canvas.height = height;
 
 	const context = canvas.getContext( '2d' );
-	context.fillStyle = getPngBackground( svg );
+	context.fillStyle = background;
 	context.fillRect( 0, 0, width, height );
 	context.drawImage( image, 0, 0, width, height );
 

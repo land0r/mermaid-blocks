@@ -2,8 +2,10 @@ import {
 	downloadDiagram,
 	getDiagramSize,
 	getPngBackground,
+	getPngBlob,
 	getPngSize,
 	getSvgMarkup,
+	getThemeBackground,
 } from '../export-diagram';
 
 // A diagram as Mermaid renders it: as wide as the page allows, with a label
@@ -98,6 +100,19 @@ describe( 'getPngBackground', () => {
 		);
 
 		expect( getPngBackground( section.firstElementChild ) ).toBe( '#333' );
+	} );
+} );
+
+describe( 'getThemeBackground', () => {
+	it( 'is white for a light theme, and for what Mermaid picks', () => {
+		expect( getThemeBackground( 'forest' ) ).toBe( '#fff' );
+		expect( getThemeBackground( 'auto-light' ) ).toBe( '#fff' );
+	} );
+
+	it( 'is dark for a dark theme, which has light text', () => {
+		expect( getThemeBackground( 'dark' ) ).toBe( '#333' );
+		expect( getThemeBackground( 'redux-dark-color' ) ).toBe( '#333' );
+		expect( getThemeBackground( 'auto-dark' ) ).toBe( '#333' );
 	} );
 } );
 
@@ -260,6 +275,23 @@ describe( 'downloadDiagram', () => {
 
 		expect( url.startsWith( prefix ) ).toBe( true );
 		expect( svg.getAttribute( 'width' ) ).toBe( '600' );
+	} );
+
+	it( 'draws a diagram that is in no page on the background it is given', async () => {
+		const template = document.createElement( 'template' );
+		template.innerHTML = DIAGRAM;
+		document.body.innerHTML =
+			'<section style="background-color: rgb(17, 24, 39)"></section>';
+
+		const blob = await getPngBlob(
+			template.content.firstElementChild,
+			'#333'
+		);
+
+		expect( blob ).toBe( pngBlob );
+		expect( context.fillStyle ).toBe( '#333' );
+		expect( context.fillRect ).toHaveBeenCalledWith( 0, 0, 600, 301 );
+		expect( downloads ).toEqual( [] );
 	} );
 
 	it( 'rejects when the browser cannot load the diagram as an image', async () => {
