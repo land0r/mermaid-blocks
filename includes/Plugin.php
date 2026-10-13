@@ -74,6 +74,13 @@ final class Plugin {
 	private Block $block;
 
 	/**
+	 * The shortcode.
+	 *
+	 * @var Shortcode
+	 */
+	private Shortcode $shortcode;
+
+	/**
 	 * The diagram types with starter code.
 	 *
 	 * @var DiagramTypes
@@ -119,6 +126,7 @@ final class Plugin {
 		$this->diagram       = new Diagram( $this->themes, $this->settings, $this->assets );
 		$this->diagram_types = new DiagramTypes();
 		$this->block         = new Block( $this->assets, $this->diagram, $this->themes, $this->settings, $this->diagram_types );
+		$this->shortcode     = new Shortcode( $this->diagram );
 		$this->post_diagrams = new PostDiagrams( $this->diagram_types );
 		$this->abilities     = new Abilities\AbilitiesRegistrar(
 			$this->assets,
@@ -144,6 +152,7 @@ final class Plugin {
 
 		$this->assets->hooks();
 		$this->block->hooks();
+		$this->shortcode->hooks();
 		$this->settings->hooks();
 		$this->abilities->hooks();
 	}
@@ -191,6 +200,15 @@ final class Plugin {
 	 */
 	public function block(): Block {
 		return $this->block;
+	}
+
+	/**
+	 * Returns the shortcode.
+	 *
+	 * @return Shortcode The shortcode.
+	 */
+	public function shortcode(): Shortcode {
+		return $this->shortcode;
 	}
 
 	/**
