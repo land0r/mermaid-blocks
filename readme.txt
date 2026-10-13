@@ -84,7 +84,7 @@ Yes, your diagrams are rendered in real-time as you edit the code.
 Yes, it is compatible with most modern WordPress themes.
 
 = Can I use it in the classic editor or a page builder? =
-Yes, with the `[mermaid]` shortcode: put the Mermaid code between `[mermaid]` and `[/mermaid]`.
+Yes, with the `[mermaid]` shortcode: put the Mermaid code between `[mermaid]` and `[/mermaid]`. If a page builder shows the code instead of the diagram, the code has a `<` that WordPress took for the start of a tag: write it as `&lt;`.
 
 == Screenshots ==
 

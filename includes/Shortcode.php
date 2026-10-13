@@ -77,12 +77,23 @@ final class Shortcode {
 	}
 
 	/**
+	 * The filters that run shortcodes in content: of posts, of text widgets,
+	 * and of block widgets.
+	 */
+	const CONTENT_FILTERS = array( 'the_content', 'widget_text_content', 'widget_block_content' );
+
+	/**
 	 * Adds the hooks of the shortcode to WordPress.
 	 */
 	public function hooks(): void {
 		// Late, so a plugin that has the `mermaid` tag keeps it.
 		add_action( 'init', array( $this, 'register' ), 20 );
 		add_filter( 'no_texturize_shortcodes', array( $this, 'skip_texturize' ) );
+
+		// Before wpautop() at 10 and do_shortcode() at 11, and before do_blocks() at 9 runs a Shortcode block.
+		foreach ( self::CONTENT_FILTERS as $filter ) {
+			add_filter( $filter, array( $this, 'protect_code' ), 8 );
+		}
 	}
 
 	/**
@@ -127,6 +138,64 @@ final class Shortcode {
 	 */
 	public function skip_texturize( $tags ): array {
 		return array_merge( (array) $tags, $this->get_tags() );
+	}
+
+	/**
+	 * Writes the `<` and `>` in the code of this shortcode as entities, before
+	 * the content filters read them.
+	 *
+	 * Both wpautop() and do_shortcode() take everything from a `<` to the next
+	 * `>` for a tag. A class diagram that ends with `Animal <|-- Duck` has no `>`
+	 * before the closing tag of the shortcode, which then is inside that "tag"
+	 * and no longer found: the code would show as text. get_code() turns the
+	 * entities back.
+	 *
+	 * @param mixed $content The content, before any shortcode ran.
+	 *
+	 * @return mixed The content, with the code of this shortcode protected.
+	 */
+	public function protect_code( $content ) {
+		if ( ! is_string( $content ) ) {
+			return $content;
+		}
+
+		$tags = array();
+		foreach ( $this->get_tags() as $tag ) {
+			if ( false !== strpos( $content, '[' . $tag ) ) {
+				$tags[] = $tag;
+			}
+		}
+
+		if ( ! $tags ) {
+			return $content;
+		}
+
+		$protected = preg_replace_callback( '/' . get_shortcode_regex( $tags ) . '/', array( $this, 'protect_match' ), $content );
+
+		return null === $protected ? $content : $protected;
+	}
+
+	/**
+	 * Protects the code of one shortcode in content.
+	 *
+	 * @param array $shortcode What get_shortcode_regex() matched: the whole
+	 *                         shortcode, a second opening bracket, the tag, the
+	 *                         attributes, the slash of a self-closing tag, the
+	 *                         content, and a second closing bracket.
+	 *
+	 * @return string The shortcode, with the `<` and `>` of its code as entities.
+	 */
+	private function protect_match( array $shortcode ): string {
+		$code = isset( $shortcode[5] ) ? $shortcode[5] : '';
+
+		// Nothing to protect, or a shortcode written as text: [[mermaid]].
+		if ( '' === $code || ( '[' === $shortcode[1] && ']' === $shortcode[6] ) ) {
+			return $shortcode[0];
+		}
+
+		$code = str_replace( array( '<', '>' ), array( '&lt;', '&gt;' ), $code );
+
+		return '[' . $shortcode[1] . $shortcode[2] . $shortcode[3] . ']' . $code . '[/' . $shortcode[2] . ']' . $shortcode[6];
 	}
 
 	/**
@@ -209,10 +278,10 @@ final class Shortcode {
 	 * wrote it.
 	 *
 	 * Before a shortcode runs, wpautop() ends each of its lines with `<br />`
-	 * and wraps what blank lines separate in `<p>`. The editors and kses also
-	 * store `>`, `<` and `&` as entities, and the visual editor stores repeated
-	 * spaces as non-breaking ones. A `<br>` in the middle of a line stays: it is
-	 * a line break in a label.
+	 * and wraps what blank lines separate in `<p>`. The editors, kses and
+	 * protect_code() also store `>`, `<` and `&` as entities, and the visual
+	 * editor stores repeated spaces as non-breaking ones. A `<br>` in the
+	 * middle of a line stays: it is a line break in a label.
 	 *
 	 * @param mixed $content The content of the shortcode.
 	 *

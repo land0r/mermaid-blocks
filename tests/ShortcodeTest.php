@@ -179,6 +179,75 @@ class ShortcodeTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Diagrams with a `<` that no `>` follows before the shortcode closes, and
+	 * with line breaks written as tags.
+	 *
+	 * @return array[] The code.
+	 */
+	public function data_code_with_brackets(): array {
+		return array(
+			'inheritance in a class diagram' => array( "classDiagram\nAnimal <|-- Duck\nAnimal <|-- Fish" ),
+			'a comparison in the last label' => array( "flowchart LR\nA --> B\nB[x < y]" ),
+			'an arrow both ways'             => array( "flowchart LR\nA <--> B\nB <--> C" ),
+			'a line break ending a line'     => array( "flowchart LR\nA[\"one<br>\ntwo\"] --> B[three<br/>four]" ),
+			'stereotypes'                    => array( "classDiagram\nclass Shape\n<<interface>> Shape" ),
+		);
+	}
+
+	/**
+	 * A `<` in the code is no start of a tag to the content filters, which
+	 * would hide the closing tag of the shortcode in it.
+	 *
+	 * @dataProvider data_code_with_brackets
+	 *
+	 * @param string $code The code.
+	 */
+	public function test_keeps_code_with_brackets( string $code ): void {
+		$shortcode = $this->shortcode( $code );
+		$after     = "\n\nAfter <strong>the</strong> diagram.";
+
+		$classic = apply_filters( 'the_content', $shortcode . $after );
+		$block   = apply_filters( 'the_content', "<!-- wp:shortcode -->\n" . $shortcode . "\n<!-- /wp:shortcode -->\n\n<!-- wp:paragraph -->\n<p>After <strong>the</strong> diagram.</p>\n<!-- /wp:paragraph -->" );
+		$widget  = apply_filters( 'widget_text_content', $shortcode . $after );
+
+		$this->assertSame( $code, $this->get_source( $classic ) );
+		$this->assertSame( $code, $this->get_source( $block ) );
+		$this->assertSame( $code, $this->get_source( $widget ) );
+		$this->assertStringContainsString( '<p>After <strong>the</strong> diagram.</p>', $classic );
+		$this->assertStringContainsString( '>After <strong>the</strong> diagram.</p>', $block );
+	}
+
+	/**
+	 * Only the code of this shortcode is protected: other content, another
+	 * plugin's shortcode and a shortcode written as text stay as they are.
+	 */
+	public function test_protects_only_its_own_code(): void {
+		add_shortcode( 'mermaid_blocks_test', '__return_empty_string' );
+
+		$other = "<p>1 < 2</p>\n[mermaid_blocks_test]a < b[/mermaid_blocks_test]\n[[mermaid]a < b[/mermaid]]\n[mermaid /]";
+
+		$this->assertSame( $other, $this->shortcode->protect_code( $other ) );
+		$this->assertSame(
+			$other . "\n[mermaid zoom]a &lt;--&gt; b[/mermaid]\n[mermaid_blocks]c &lt; d[/mermaid_blocks]",
+			$this->shortcode->protect_code( $other . "\n[mermaid zoom]a <--> b[/mermaid]\n[mermaid_blocks]c < d[/mermaid_blocks]" )
+		);
+		$this->assertNull( $this->shortcode->protect_code( null ) );
+
+		remove_shortcode( 'mermaid_blocks_test' );
+	}
+
+	/**
+	 * The code of a tag another plugin has is left alone.
+	 */
+	public function test_protects_no_code_of_a_taken_tag(): void {
+		add_shortcode( 'mermaid', '__return_empty_string' );
+
+		$content = '[mermaid]a < b[/mermaid]';
+
+		$this->assertSame( $content, $this->shortcode->protect_code( $content ) );
+	}
+
+	/**
 	 * Content, as a shortcode gets it, with the code it holds.
 	 *
 	 * @return array[] The content and the code.
