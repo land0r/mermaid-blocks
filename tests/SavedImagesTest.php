@@ -7,8 +7,9 @@
 
 namespace MermaidBlocks\Tests;
 
-use MermaidBlocks\SavedImages;
-use MermaidBlocks\Settings;
+use MermaidBlocks\Admin\SettingsPage;
+use MermaidBlocks\Images\SavedImages;
+use MermaidBlocks\Options;
 use WP_Error;
 use WP_UnitTestCase;
 
@@ -18,7 +19,7 @@ require_once __DIR__ . '/ImageHelpers.php';
  * The images of diagrams: what is accepted as one, where it is kept, and
  * when it is found again.
  *
- * @covers \MermaidBlocks\SavedImages
+ * @covers \MermaidBlocks\Images\SavedImages
  */
 class SavedImagesTest extends WP_UnitTestCase {
 
@@ -42,9 +43,9 @@ class SavedImagesTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->images = mermaid_blocks()->images();
+		$this->images = mermaid_blocks()->get( SavedImages::class );
 
-		update_option( SavedImages::OPTION, 1 );
+		update_option( Options::SAVE_IMAGES, 1 );
 	}
 
 	/**
@@ -158,15 +159,15 @@ class SavedImagesTest extends WP_UnitTestCase {
 		$post = $this->create_post( array( $this->diagram_block( self::CODE ) ) );
 		$this->images->save( $post, $this->images->get_key( self::CODE ), 'auto', $this->png() );
 
-		update_option( SavedImages::OPTION, 0 );
+		update_option( Options::SAVE_IMAGES, 0 );
 		$this->assertFalse( $this->images->is_on() );
 		$this->assertNull( $this->images->find( $post->ID, self::CODE ) );
 
-		delete_option( SavedImages::OPTION );
+		delete_option( Options::SAVE_IMAGES );
 		$this->assertFalse( $this->images->is_on() );
 		$this->assertNull( $this->images->find( $post->ID, self::CODE ) );
 
-		update_option( SavedImages::OPTION, 1 );
+		update_option( Options::SAVE_IMAGES, 1 );
 		$this->assertNotNull( $this->images->find( $post->ID, self::CODE ) );
 	}
 
@@ -450,19 +451,19 @@ class SavedImagesTest extends WP_UnitTestCase {
 
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 
-		delete_option( SavedImages::OPTION );
-		mermaid_blocks()->settings()->register();
+		delete_option( Options::SAVE_IMAGES );
+		mermaid_blocks()->get( SettingsPage::class )->register();
 
-		$this->assertArrayHasKey( SavedImages::OPTION, get_registered_settings() );
-		$this->assertArrayHasKey( SavedImages::OPTION, $wp_settings_fields[ Settings::PAGE ][ Settings::SECTION ] );
+		$this->assertArrayHasKey( Options::SAVE_IMAGES, get_registered_settings() );
+		$this->assertArrayHasKey( Options::SAVE_IMAGES, $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] );
 		$this->assertFalse( $this->images->is_on() );
 
 		foreach ( get_registered_settings() as $option => $setting ) {
-			if ( Settings::GROUP === $setting['group'] ) {
-				unregister_setting( Settings::GROUP, $option );
+			if ( SettingsPage::GROUP === $setting['group'] ) {
+				unregister_setting( SettingsPage::GROUP, $option );
 			}
 		}
-		unset( $wp_settings_sections[ Settings::PAGE ], $wp_settings_fields[ Settings::PAGE ] );
+		unset( $wp_settings_sections[ SettingsPage::PAGE ], $wp_settings_fields[ SettingsPage::PAGE ] );
 	}
 
 	/**
@@ -481,7 +482,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 
 		require dirname( __DIR__ ) . '/uninstall.php';
 
-		$this->assertFalse( get_option( SavedImages::OPTION ) );
+		$this->assertFalse( get_option( Options::SAVE_IMAGES ) );
 		$this->assertFalse( metadata_exists( 'post', $post->ID, SavedImages::META_KEY ) );
 		$this->assertFileDoesNotExist( $this->get_upload_path( $image['file'] ) );
 		$this->assertDirectoryDoesNotExist( $this->get_upload_path( 'mermaid-blocks' ) );

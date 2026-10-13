@@ -7,12 +7,16 @@
 
 namespace MermaidBlocks\Tests;
 
-use MermaidBlocks\Block;
-use MermaidBlocks\SavedImages;
+use MermaidBlocks\Images\ImagesController;
+use MermaidBlocks\Images\SavedImages;
+use MermaidBlocks\Integrations\Block;
 use WP_Post;
+use WP_REST_Request;
+use WP_REST_Response;
 
 /**
- * Posts with diagrams, and PNG files to save for them.
+ * Posts with diagrams, PNG files to save for them, and requests to the routes
+ * that take them.
  */
 trait ImageHelpers {
 
@@ -91,5 +95,49 @@ trait ImageHelpers {
 	protected function enter_post( WP_Post $post ): void {
 		$GLOBALS['post'] = $post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- What the loop does.
 		setup_postdata( $post );
+	}
+
+	/**
+	 * Sends a request to the routes of the saved images.
+	 *
+	 * @param string      $method The method.
+	 * @param string      $route  The route, after the namespace.
+	 * @param string|null $body   The body.
+	 *
+	 * @return WP_REST_Response The response.
+	 */
+	protected function request( string $method, string $route, ?string $body = null ): WP_REST_Response {
+		$request = new WP_REST_Request( $method, '/' . ImagesController::REST_NAMESPACE . $route );
+
+		if ( null !== $body ) {
+			$request->set_header( 'Content-Type', 'image/png' );
+			$request->set_body( $body );
+		}
+
+		return rest_get_server()->dispatch( $request );
+	}
+
+	/**
+	 * Sends the image of a diagram of a post.
+	 *
+	 * @param int    $post_id The ID of the post.
+	 * @param string $code    The code of the diagram.
+	 * @param string $theme   The theme chosen for the diagram.
+	 *
+	 * @return WP_REST_Response The response.
+	 */
+	protected function send_image( int $post_id, string $code, string $theme = '' ): WP_REST_Response {
+		$key = mermaid_blocks()->get( SavedImages::class )->get_key( $code, $theme );
+
+		return $this->request( 'POST', sprintf( '/posts/%d/images/%s', $post_id, $key ), $this->png() );
+	}
+
+	/**
+	 * Forgets the REST server a test used: the next test gets one of its own.
+	 */
+	protected function forget_rest_server(): void {
+		global $wp_rest_server;
+
+		$wp_rest_server = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- What a test of the REST API does.
 	}
 }

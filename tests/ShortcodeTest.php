@@ -8,14 +8,14 @@
 namespace MermaidBlocks\Tests;
 
 use MermaidBlocks\Assets;
-use MermaidBlocks\Shortcode;
+use MermaidBlocks\Integrations\Shortcode;
 use WP_UnitTestCase;
 
 /**
  * The shortcode, run as WordPress runs it: in post content, with the filters
  * that change the content before a shortcode sees it.
  *
- * @covers \MermaidBlocks\Shortcode
+ * @covers \MermaidBlocks\Integrations\Shortcode
  */
 class ShortcodeTest extends WP_UnitTestCase {
 
@@ -38,7 +38,7 @@ class ShortcodeTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->shortcode = mermaid_blocks()->shortcode();
+		$this->shortcode = mermaid_blocks()->get( Shortcode::class );
 
 		wp_dequeue_script( Assets::RENDERER );
 		wp_dequeue_style( Assets::RENDERER );

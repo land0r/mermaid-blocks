@@ -12,7 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * The themes of the bundled Mermaid, and one that follows the page.
+ * The themes of the bundled Mermaid, and one that follows the page. It also
+ * tells which of them a diagram is drawn in: its own, or else the site's.
  */
 final class Themes {
 
@@ -22,6 +23,22 @@ final class Themes {
 	 * sits on a dark background.
 	 */
 	const AUTO = 'auto';
+
+	/**
+	 * The stored settings, which hold the site's theme.
+	 *
+	 * @var Options
+	 */
+	private Options $options;
+
+	/**
+	 * Sets up the themes.
+	 *
+	 * @param Options $options The stored settings, which hold the site's theme.
+	 */
+	public function __construct( Options $options ) {
+		$this->options = $options;
+	}
 
 	/**
 	 * Returns the themes a diagram can be drawn in, in the order they are
@@ -59,5 +76,28 @@ final class Themes {
 	 */
 	public function exists( $theme ): bool {
 		return is_string( $theme ) && array_key_exists( $theme, $this->get_all() );
+	}
+
+	/**
+	 * Returns the site's theme, which diagrams without a theme of their own
+	 * are drawn in. It is set under Settings > Mermaid Blocks.
+	 *
+	 * @return string A name from get_all().
+	 */
+	public function get_site_theme(): string {
+		$theme = $this->options->get_theme();
+
+		return $this->exists( $theme ) ? $theme : self::AUTO;
+	}
+
+	/**
+	 * Returns the theme a diagram is drawn in: its own, or else the site's.
+	 *
+	 * @param mixed $theme Optional. The theme chosen for the diagram.
+	 *
+	 * @return string A name from get_all().
+	 */
+	public function resolve( $theme = '' ): string {
+		return $this->exists( $theme ) ? $theme : $this->get_site_theme();
 	}
 }

@@ -7,6 +7,8 @@
 
 namespace MermaidBlocks\Abilities;
 
+use WP_Post;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns one diagram of a post, by its index.
  */
-final class GetDiagram extends DiagramAbility {
+final class GetDiagram extends PostAbility {
 
 	/**
 	 * Returns the name of the ability.
@@ -52,8 +54,8 @@ final class GetDiagram extends DiagramAbility {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_id' => $this->get_post_id_schema(),
-				'index'   => $this->get_index_schema(),
+				'post_id' => $this->schemas->get_post_id(),
+				'index'   => $this->schemas->get_index(),
 			),
 			'required'             => array( 'post_id', 'index' ),
 			'additionalProperties' => false,
@@ -66,7 +68,7 @@ final class GetDiagram extends DiagramAbility {
 	 * @return array The schema.
 	 */
 	protected function get_output_schema(): array {
-		return $this->get_diagram_schema();
+		return $this->schemas->get_diagram();
 	}
 
 	/**
@@ -90,17 +92,12 @@ final class GetDiagram extends DiagramAbility {
 	/**
 	 * Returns the diagram.
 	 *
-	 * @param mixed $input The post and the index.
+	 * @param WP_Post $post  The post.
+	 * @param array   $input The input, with the index.
 	 *
 	 * @return array|\WP_Error The diagram, or the error.
 	 */
-	public function execute( $input = null ) {
-		$post = $this->get_post( $input );
-
-		if ( is_wp_error( $post ) ) {
-			return $post;
-		}
-
+	protected function run( WP_Post $post, array $input ) {
 		return $this->describe_saved( $post->ID, (int) $input['index'] );
 	}
 }

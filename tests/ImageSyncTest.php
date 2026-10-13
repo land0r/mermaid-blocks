@@ -7,22 +7,19 @@
 
 namespace MermaidBlocks\Tests;
 
-use MermaidBlocks\Block;
-use MermaidBlocks\ImageSync;
-use MermaidBlocks\SavedImages;
-use MermaidBlocks\Settings;
-use WP_Block_Type_Registry;
-use WP_REST_Request;
-use WP_REST_Response;
+use MermaidBlocks\Images\ImageSync;
+use MermaidBlocks\Images\SavedImages;
+use MermaidBlocks\Options;
+use MermaidBlocks\Posts\PostDiagrams;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/ImageHelpers.php';
 
 /**
- * Which diagrams of a post the editor is asked to draw, which images it may
- * send, who may do so, and what happens to an image when its diagram goes.
+ * Which diagrams of a post the editor is asked to draw, and what happens to
+ * an image when its diagram goes.
  *
- * @covers \MermaidBlocks\ImageSync
+ * @covers \MermaidBlocks\Images\ImageSync
  */
 class ImageSyncTest extends WP_UnitTestCase {
 
@@ -54,10 +51,10 @@ class ImageSyncTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->images = mermaid_blocks()->images();
-		$this->sync   = mermaid_blocks()->image_sync();
+		$this->images = mermaid_blocks()->get( SavedImages::class );
+		$this->sync   = mermaid_blocks()->get( ImageSync::class );
 
-		update_option( SavedImages::OPTION, 1 );
+		update_option( Options::SAVE_IMAGES, 1 );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 	}
 
@@ -65,46 +62,10 @@ class ImageSyncTest extends WP_UnitTestCase {
 	 * Removes the files the test saved, and the REST server it used.
 	 */
 	public function tear_down(): void {
-		global $wp_rest_server;
-
-		$wp_rest_server = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The next test gets a server of its own.
-
+		$this->forget_rest_server();
 		$this->remove_added_uploads();
 
 		parent::tear_down();
-	}
-
-	/**
-	 * Sends a request to the REST API.
-	 *
-	 * @param string      $method The method.
-	 * @param string      $route  The route, after the namespace.
-	 * @param string|null $body   The body.
-	 *
-	 * @return WP_REST_Response The response.
-	 */
-	private function request( string $method, string $route, ?string $body = null ): WP_REST_Response {
-		$request = new WP_REST_Request( $method, '/' . ImageSync::REST_NAMESPACE . $route );
-
-		if ( null !== $body ) {
-			$request->set_header( 'Content-Type', 'image/png' );
-			$request->set_body( $body );
-		}
-
-		return rest_get_server()->dispatch( $request );
-	}
-
-	/**
-	 * Sends the image of a diagram of a post.
-	 *
-	 * @param int    $post_id The ID of the post.
-	 * @param string $code    The code of the diagram.
-	 * @param string $theme   The theme chosen for the diagram.
-	 *
-	 * @return WP_REST_Response The response.
-	 */
-	private function send_image( int $post_id, string $code, string $theme = '' ): WP_REST_Response {
-		return $this->request( 'POST', sprintf( '/posts/%d/images/%s', $post_id, $this->images->get_key( $code, $theme ) ), $this->png() );
 	}
 
 	/**
@@ -113,7 +74,7 @@ class ImageSyncTest extends WP_UnitTestCase {
 	 * the site's. Two diagrams that look the same share an image.
 	 */
 	public function test_lists_the_diagrams_of_a_post(): void {
-		update_option( Settings::THEME_OPTION, 'neutral' );
+		update_option( Options::THEME, 'neutral' );
 
 		$group = array(
 			'blockName'    => 'core/group',
@@ -185,7 +146,7 @@ class ImageSyncTest extends WP_UnitTestCase {
 		}
 		$this->assertSame( array(), $this->sync->get_missing( $post ) );
 
-		update_option( Settings::THEME_OPTION, 'forest' );
+		update_option( Options::THEME, 'forest' );
 
 		$this->assertNotNull( $this->images->find( $post->ID, self::FLOW ) );
 		$this->assertSame(
@@ -239,7 +200,7 @@ class ImageSyncTest extends WP_UnitTestCase {
 		$flow = $this->images->save( $post, $this->images->get_key( self::FLOW ), 'auto', $this->png() );
 		$pie  = $this->images->save( $post, $this->images->get_key( self::PIE ), 'auto', $this->png() );
 
-		$diagrams = mermaid_blocks()->post_diagrams();
+		$diagrams = mermaid_blocks()->get( PostDiagrams::class );
 		$changed  = self::FLOW . "\nB --> C";
 		$diagrams->replace( $post, 0, $diagrams->get_hash( $diagrams->get( $post, 0 ) ), $this->diagram_block( $changed ) );
 
@@ -291,194 +252,23 @@ class ImageSyncTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The editor gets the diagrams to draw, sends an image for each, and is
-	 * then asked for none.
+	 * The sync is added when a post is saved, and not before: most requests
+	 * save none. It is there in time for that same save.
 	 */
-	public function test_routes_take_the_images_of_a_post(): void {
-		$post = $this->create_post( array( $this->diagram_block( self::FLOW ), $this->diagram_block( self::PIE, array( 'theme' => 'forest' ) ) ) );
-
-		$response = $this->request( 'GET', '/posts/' . $post->ID . '/images' );
-
-		$this->assertSame( 200, $response->get_status() );
-		$this->assertSame(
-			array(
-				'missing' => array(
-					array(
-						'key'   => $this->images->get_key( self::FLOW ),
-						'code'  => self::FLOW,
-						'theme' => 'auto',
-					),
-					array(
-						'key'   => $this->images->get_key( self::PIE, 'forest' ),
-						'code'  => self::PIE,
-						'theme' => 'forest',
-					),
-				),
-			),
-			$response->get_data()
-		);
-
-		$response = $this->send_image( $post->ID, self::PIE, 'forest' );
-
-		$this->assertSame( 201, $response->get_status() );
-		$this->assertSame(
-			array(
-				'key'    => $this->images->get_key( self::PIE, 'forest' ),
-				'width'  => 600,
-				'height' => 300,
-			),
-			$response->get_data()
-		);
-		$this->assertSame( 'forest', $this->images->get_all( $post->ID )[ $this->images->get_key( self::PIE, 'forest' ) ]['theme'] );
-		$this->assertNotNull( $this->images->find( $post->ID, self::PIE, 'forest' ) );
-
-		$this->send_image( $post->ID, self::FLOW );
-
-		$this->assertSame( array( 'missing' => array() ), $this->request( 'GET', '/posts/' . $post->ID . '/images' )->get_data() );
-	}
-
-	/**
-	 * An image is taken only for a diagram the post has: one that changed in
-	 * the meantime is refused, and so is a key that isn't one.
-	 */
-	public function test_route_refuses_an_image_the_post_has_no_diagram_for(): void {
-		$post = $this->create_post( array( $this->diagram_block( self::FLOW ) ) );
-
-		$response = $this->send_image( $post->ID, self::PIE );
-
-		$this->assertSame( 409, $response->get_status() );
-		$this->assertSame( 'mermaid_blocks_image_not_wanted', $response->get_data()['code'] );
-		$this->assertSame( 404, $this->request( 'POST', '/posts/' . $post->ID . '/images/not-a-key', $this->png() )->get_status() );
-		$this->assertSame( 409, $this->request( 'POST', '/posts/' . $post->ID . '/images/' . strtoupper( $this->images->get_key( self::FLOW ) ), $this->png() )->get_status() );
-		$this->assertSame( array(), $this->images->get_all( $post->ID ) );
-	}
-
-	/**
-	 * What is sent must be a PNG file.
-	 */
-	public function test_route_refuses_what_is_no_image(): void {
+	public function test_is_added_when_a_post_is_saved(): void {
 		$post  = $this->create_post( array( $this->diagram_block( self::FLOW ) ) );
-		$route = sprintf( '/posts/%d/images/%s', $post->ID, $this->images->get_key( self::FLOW ) );
+		$image = $this->images->save( $post, $this->images->get_key( self::FLOW ), 'auto', $this->png() );
 
-		foreach ( array( '', '<svg onload="alert(1)"></svg>', '<?php phpinfo();' ) as $body ) {
-			$response = $this->request( 'POST', $route, $body );
+		remove_action( 'wp_after_insert_post', array( $this->sync, 'prune' ) );
 
-			$this->assertSame( 400, $response->get_status() );
-			$this->assertSame( 'mermaid_blocks_image_invalid', $response->get_data()['code'] );
-		}
-
-		$this->assertSame( 400, $this->request( 'POST', $route )->get_status() );
-		$this->assertSame( array(), $this->images->get_all( $post->ID ) );
-	}
-
-	/**
-	 * Roles, with the posts whose images they reach: their own, another
-	 * user's published post, another user's draft.
-	 *
-	 * @return array[] The role, or none for a visitor, and what it reaches.
-	 */
-	public function data_roles(): array {
-		return array(
-			'administrator' => array( 'administrator', true, true, true ),
-			'editor'        => array( 'editor', true, true, true ),
-			'author'        => array( 'author', true, false, false ),
-			'contributor'   => array( 'contributor', true, false, false ),
-			'subscriber'    => array( 'subscriber', false, false, false ),
-			'visitor'       => array( '', false, false, false ),
-		);
-	}
-
-	/**
-	 * The images of a post are for those who may edit it.
-	 *
-	 * @dataProvider data_roles
-	 *
-	 * @param string $role      The role.
-	 * @param bool   $own       Whether it reaches its own draft.
-	 * @param bool   $published Whether it reaches another user's post.
-	 * @param bool   $draft     Whether it reaches another user's draft.
-	 */
-	public function test_routes_are_for_those_who_may_edit_the_post( string $role, bool $own, bool $published, bool $draft ): void {
-		$someone = self::factory()->user->create( array( 'role' => 'editor' ) );
-		$user    = '' === $role ? 0 : self::factory()->user->create( array( 'role' => $role ) );
-		$block   = array( $this->diagram_block( self::FLOW ) );
-
-		$posts = array(
+		wp_update_post(
 			array(
-				$own,
-				$this->create_post(
-					$block,
-					array(
-						'post_author' => $user,
-						'post_status' => 'draft',
-					)
-				),
-			),
-			array( $published, $this->create_post( $block, array( 'post_author' => $someone ) ) ),
-			array(
-				$draft,
-				$this->create_post(
-					$block,
-					array(
-						'post_author' => $someone,
-						'post_status' => 'draft',
-					)
-				),
-			),
+				'ID'           => $post->ID,
+				'post_content' => '',
+			)
 		);
 
-		wp_set_current_user( $user );
-
-		foreach ( $posts as list( $allowed, $post ) ) {
-			$refused = $user ? 403 : 401;
-
-			$this->assertSame( $allowed ? 200 : $refused, $this->request( 'GET', '/posts/' . $post->ID . '/images' )->get_status() );
-			$this->assertSame( $allowed ? 201 : $refused, $this->send_image( $post->ID, self::FLOW )->get_status() );
-			$this->assertSame( $allowed ? 1 : 0, count( $this->images->get_all( $post->ID ) ) );
-		}
-	}
-
-	/**
-	 * A post that doesn't exist is not found.
-	 */
-	public function test_routes_do_not_find_a_missing_post(): void {
-		$this->assertSame( 404, $this->request( 'GET', '/posts/999999/images' )->get_status() );
-		$this->assertSame( 404, $this->send_image( 999999, self::FLOW )->get_status() );
-	}
-
-	/**
-	 * While the setting is off there are no routes, and the editor isn't
-	 * told to draw.
-	 */
-	public function test_does_nothing_while_the_setting_is_off(): void {
-		$post = $this->create_post( array( $this->diagram_block( self::FLOW ) ) );
-
-		update_option( SavedImages::OPTION, 0 );
-
-		$this->assertSame( 404, $this->request( 'GET', '/posts/' . $post->ID . '/images' )->get_status() );
-		$this->assertSame( 404, $this->send_image( $post->ID, self::FLOW )->get_status() );
-		$this->assertSame( array(), $this->images->get_all( $post->ID ) );
-		$this->assertStringContainsString( '"saveImages":false', $this->get_editor_settings() );
-	}
-
-	/**
-	 * With the setting on, the editor is told to draw the images.
-	 */
-	public function test_tells_the_editor_to_draw_the_images(): void {
-		$this->assertStringContainsString( '"saveImages":true', $this->get_editor_settings() );
-	}
-
-	/**
-	 * Returns what the block tells its editor script.
-	 *
-	 * @return string The script printed before the editor script, last.
-	 */
-	private function get_editor_settings(): string {
-		mermaid_blocks()->block()->add_editor_settings();
-
-		$handles = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME )->editor_script_handles;
-		$before  = (array) wp_scripts()->get_data( end( $handles ), 'before' );
-
-		return (string) end( $before );
+		$this->assertSame( 10, has_action( 'wp_after_insert_post', array( $this->sync, 'prune' ) ) );
+		$this->assertFileDoesNotExist( $this->get_upload_path( $image['file'] ) );
 	}
 }

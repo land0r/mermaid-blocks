@@ -7,6 +7,8 @@
 
 namespace MermaidBlocks\Abilities;
 
+use WP_Post;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Adds a diagram to a post.
  */
-final class InsertDiagram extends DiagramAbility {
+final class InsertDiagram extends PostAbility {
 
 	/**
 	 * Returns the name of the ability.
@@ -52,9 +54,9 @@ final class InsertDiagram extends DiagramAbility {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_id'    => $this->get_post_id_schema(),
-				'code'       => $this->get_code_schema(),
-				'attributes' => $this->get_attributes_schema(),
+				'post_id'    => $this->schemas->get_post_id(),
+				'code'       => $this->schemas->get_code(),
+				'attributes' => $this->schemas->get_attributes(),
 				'position'   => array(
 					'type'        => 'integer',
 					'minimum'     => 0,
@@ -72,25 +74,19 @@ final class InsertDiagram extends DiagramAbility {
 	 * @return array The schema.
 	 */
 	protected function get_output_schema(): array {
-		return $this->get_diagram_schema();
+		return $this->schemas->get_diagram();
 	}
 
 	/**
 	 * Adds the diagram.
 	 *
-	 * @param mixed $input The post, the code, the other attributes, and the
-	 *                     position.
+	 * @param WP_Post $post  The post.
+	 * @param array   $input The input, with the code, the other attributes,
+	 *                       and the position.
 	 *
 	 * @return array|\WP_Error The new diagram, or the error.
 	 */
-	public function execute( $input = null ) {
-		$input = (array) $input;
-		$post  = $this->get_post( $input );
-
-		if ( is_wp_error( $post ) ) {
-			return $post;
-		}
-
+	protected function run( WP_Post $post, array $input ) {
 		$code = $this->get_code( $input );
 
 		if ( is_wp_error( $code ) ) {

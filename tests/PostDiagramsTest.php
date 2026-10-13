@@ -7,10 +7,10 @@
 
 namespace MermaidBlocks\Tests;
 
-use MermaidBlocks\Block;
 use MermaidBlocks\Diagram;
 use MermaidBlocks\DiagramTypes;
-use MermaidBlocks\PostDiagrams;
+use MermaidBlocks\Integrations\Block;
+use MermaidBlocks\Posts\PostDiagrams;
 use WP_Block_Type_Registry;
 use WP_Post;
 use WP_UnitTestCase;
@@ -18,7 +18,7 @@ use WP_UnitTestCase;
 /**
  * Finding diagrams by index, and adding, changing and removing them.
  *
- * @covers \MermaidBlocks\PostDiagrams
+ * @covers \MermaidBlocks\Posts\PostDiagrams
  */
 class PostDiagramsTest extends WP_UnitTestCase {
 
@@ -354,5 +354,32 @@ class PostDiagramsTest extends WP_UnitTestCase {
 			array( 'code' => 'pie' ),
 			$this->diagrams->merge_attributes( array( 'code' => 'pie' ) + $attributes, array_fill_keys( Diagram::CONTROLS, false ) )
 		);
+	}
+
+	/**
+	 * The attributes an ability may set are those the block declares, with
+	 * their types: all but the code, which an ability takes on its own, and
+	 * with the alignment, which the block has from its supports.
+	 */
+	public function test_lists_the_attributes_of_the_block(): void {
+		$declared = wp_json_file_decode( dirname( __DIR__ ) . '/src/block.json', array( 'associative' => true ) )['attributes'];
+
+		$this->assertArrayHasKey( 'code', $declared );
+		unset( $declared['code'] );
+
+		$expected = wp_list_pluck( $declared, 'type' ) + array( 'align' => 'string' );
+		$listed   = PostDiagrams::ATTRIBUTES;
+
+		ksort( $expected );
+		ksort( $listed );
+
+		$this->assertSame( $expected, $listed );
+
+		// What WordPress registered from the build, the alignment included.
+		$block = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
+
+		foreach ( PostDiagrams::ATTRIBUTES as $name => $type ) {
+			$this->assertSame( $type, $block->attributes[ $name ]['type'] ?? null, $name );
+		}
 	}
 }

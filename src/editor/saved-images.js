@@ -2,10 +2,10 @@
  * Draws the saved images of the diagrams of the post being edited.
  *
  * The server keeps an image of each diagram for readers that run no
- * JavaScript, and can't draw one (see includes/SavedImages.php and
- * includes/ImageSync.php). So when a post is opened in the editor, and each
- * time it is saved there, this asks the server which diagrams of the post
- * have no image, draws each as a PNG, and sends it back.
+ * JavaScript, and can't draw one (see SavedImages.php, ImageSync.php and
+ * ImagesController.php in includes/Images/). So when a post is opened in the
+ * editor, and each time it is saved there, this asks the server which
+ * diagrams of the post have no image, draws each as a PNG, and sends it back.
  *
  * The server says what to draw: the code and the theme of the diagrams as
  * they are saved, not as they are being edited. An image is of what readers

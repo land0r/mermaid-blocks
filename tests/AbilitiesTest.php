@@ -7,6 +7,8 @@
 
 namespace MermaidBlocks\Tests;
 
+use MermaidBlocks\Abilities\Ability;
+use MermaidBlocks\Abilities\Registrar;
 use WP_Ability;
 use WP_UnitTestCase;
 
@@ -14,9 +16,10 @@ use WP_UnitTestCase;
  * The abilities, run as WordPress runs them: input validated against the
  * schema, permission checked, output validated.
  *
- * @covers \MermaidBlocks\Abilities\AbilitiesRegistrar
+ * @covers \MermaidBlocks\Abilities\Registrar
  * @covers \MermaidBlocks\Abilities\Ability
  * @covers \MermaidBlocks\Abilities\DiagramAbility
+ * @covers \MermaidBlocks\Abilities\PostAbility
  * @covers \MermaidBlocks\Abilities\ListDiagramTypes
  * @covers \MermaidBlocks\Abilities\ListDiagrams
  * @covers \MermaidBlocks\Abilities\GetDiagram
@@ -140,6 +143,25 @@ class AbilitiesTest extends WP_UnitTestCase {
 			array( 'update-diagram', false, false, true ),
 			array( 'delete-diagram', false, true, true ),
 		);
+	}
+
+	/**
+	 * The registrar creates an ability of each class it lists, by name, and
+	 * those are what WordPress has.
+	 */
+	public function test_creates_the_abilities_it_lists(): void {
+		$registrar = mermaid_blocks()->get( Registrar::class );
+		$abilities = $registrar->get_abilities();
+
+		$this->assertSame( array_column( $this->data_annotations(), 0 ), str_replace( 'mermaid-blocks/', '', array_keys( $abilities ) ) );
+		$this->assertSame( Registrar::ABILITIES, array_values( array_map( 'get_class', $abilities ) ) );
+		$this->assertSame( $abilities, $registrar->get_abilities() );
+
+		foreach ( $abilities as $name => $ability ) {
+			$this->assertInstanceOf( Ability::class, $ability );
+			$this->assertSame( $name, $ability->get_name() );
+			$this->assertSame( $ability->get_args( Registrar::CATEGORY )['label'], wp_get_ability( $name )->get_label() );
+		}
 	}
 
 	/**

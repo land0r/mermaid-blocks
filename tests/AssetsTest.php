@@ -8,6 +8,7 @@
 namespace MermaidBlocks\Tests;
 
 use MermaidBlocks\Assets;
+use MermaidBlocks\Files;
 use WP_UnitTestCase;
 
 /**
@@ -18,19 +19,19 @@ use WP_UnitTestCase;
 class AssetsTest extends WP_UnitTestCase {
 
 	/**
-	 * The assets.
+	 * The plugin's files.
 	 *
-	 * @var Assets
+	 * @var Files
 	 */
-	private Assets $assets;
+	private Files $files;
 
 	/**
-	 * Gets the assets.
+	 * Gets the files.
 	 */
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->assets = mermaid_blocks()->assets();
+		$this->files = mermaid_blocks()->get( Files::class );
 	}
 
 	/**
@@ -51,12 +52,12 @@ class AssetsTest extends WP_UnitTestCase {
 	 * The script gets the URL of Mermaid's ES module build, with its version.
 	 */
 	public function test_says_where_mermaid_is(): void {
-		$version = $this->assets->get_build_asset( 'mermaid' )['version'];
+		$version = $this->files->get_build_asset( 'mermaid' )['version'];
 
 		$this->assertNotEmpty( $version );
-		$this->assertFileExists( $this->assets->get_path( 'mermaid/mermaid.esm.min.js' ) );
+		$this->assertFileExists( $this->files->get_build_path( 'mermaid/mermaid.esm.min.js' ) );
 		$this->assertSame(
-			$this->assets->get_url( 'mermaid/mermaid.esm.min.js' ) . '?ver=' . $version,
+			$this->files->get_build_url( 'mermaid/mermaid.esm.min.js' ) . '?ver=' . $version,
 			$this->get_settings()['mermaidUrl']
 		);
 	}
@@ -66,13 +67,13 @@ class AssetsTest extends WP_UnitTestCase {
 	 * URL, with the version of that file.
 	 */
 	public function test_says_where_the_controls_are(): void {
-		$asset = $this->assets->get_build_asset( 'controls' );
+		$asset = $this->files->get_build_asset( 'controls' );
 
 		$this->assertNotEmpty( $asset['version'] );
 		$this->assertSame( 'module', $asset['type'] );
-		$this->assertFileExists( $this->assets->get_path( 'controls.js' ) );
+		$this->assertFileExists( $this->files->get_build_path( 'controls.js' ) );
 		$this->assertSame(
-			$this->assets->get_url( 'controls.js' ) . '?ver=' . $asset['version'],
+			$this->files->get_build_url( 'controls.js' ) . '?ver=' . $asset['version'],
 			$this->get_settings()['controlsUrl']
 		);
 	}
@@ -106,5 +107,18 @@ class AssetsTest extends WP_UnitTestCase {
 
 		$this->assertStringEndsWith( 'build/mermaid.min.js', $script->src );
 		$this->assertStringNotContainsString( 'mermaid.min.js', $this->get_settings()['mermaidUrl'] );
+	}
+
+	/**
+	 * Diagram markup loads the script and the style that render it.
+	 */
+	public function test_enqueues_what_renders_diagrams(): void {
+		wp_dequeue_script( Assets::RENDERER );
+		wp_dequeue_style( Assets::RENDERER );
+
+		mermaid_blocks()->get( Assets::class )->enqueue_renderer();
+
+		$this->assertTrue( wp_script_is( Assets::RENDERER ) );
+		$this->assertTrue( wp_style_is( Assets::RENDERER ) );
 	}
 }

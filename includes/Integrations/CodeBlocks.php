@@ -5,8 +5,11 @@
  * @package MermaidBlocks
  */
 
-namespace MermaidBlocks;
+namespace MermaidBlocks\Integrations;
 
+use MermaidBlocks\Diagram;
+use MermaidBlocks\Hookable;
+use MermaidBlocks\Options;
 use WP_HTML_Tag_Processor;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,12 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * the page, another plugin's for example, finds none and doesn't draw it a
  * second time.
  */
-final class CodeBlocks {
-
-	/**
-	 * The option that holds the setting.
-	 */
-	const OPTION = 'mermaid_blocks_code_blocks';
+final class CodeBlocks implements Hookable {
 
 	/**
 	 * The class that marks code as Mermaid.
@@ -47,29 +45,27 @@ final class CodeBlocks {
 	private Diagram $diagram;
 
 	/**
-	 * The settings, which hold the switch.
+	 * The stored settings, which hold the switch.
 	 *
-	 * @var Settings
+	 * @var Options
 	 */
-	private Settings $settings;
+	private Options $options;
 
 	/**
 	 * Sets up the code blocks.
 	 *
-	 * @param Diagram  $diagram  The diagram markup.
-	 * @param Settings $settings The settings.
+	 * @param Diagram $diagram The diagram markup.
+	 * @param Options $options The stored settings.
 	 */
-	public function __construct( Diagram $diagram, Settings $settings ) {
-		$this->diagram  = $diagram;
-		$this->settings = $settings;
+	public function __construct( Diagram $diagram, Options $options ) {
+		$this->diagram = $diagram;
+		$this->options = $options;
 	}
 
 	/**
-	 * Adds the setting, and the filters that replace the code, to WordPress.
+	 * Adds the filters that replace the code to WordPress.
 	 */
 	public function hooks(): void {
-		add_action( 'mermaid_blocks_register_settings', array( $this, 'add_setting' ) );
-
 		// Wherever a Code block is rendered: post content, widgets, templates.
 		add_filter( 'render_block_core/code', array( $this, 'render_block' ) );
 
@@ -83,26 +79,13 @@ final class CodeBlocks {
 	}
 
 	/**
-	 * Adds the switch to the settings page.
-	 *
-	 * @param Settings $settings The settings.
-	 */
-	public function add_setting( Settings $settings ): void {
-		$settings->add_switch(
-			self::OPTION,
-			__( 'Code blocks', 'mermaid-blocks' ),
-			__( 'Show code marked as Mermaid as diagrams', 'mermaid-blocks' ),
-			__( 'For Mermaid code that is in a post as code: a Code block with the additional CSS class <code>language-mermaid</code>, or a <code>&lt;pre&gt;&lt;code class="language-mermaid"&gt;</code> element, as Markdown converters write it. Visitors see a diagram in the theme set above, and the editor keeps showing the code.', 'mermaid-blocks' )
-		);
-	}
-
-	/**
-	 * Tells whether code marked as Mermaid is shown as diagrams.
+	 * Tells whether code marked as Mermaid is shown as diagrams: a switch on
+	 * the settings page.
 	 *
 	 * @return bool Whether the setting is on.
 	 */
 	public function is_on(): bool {
-		return $this->settings->is_on( self::OPTION );
+		return $this->options->is_on( Options::CODE_BLOCKS );
 	}
 
 	/**

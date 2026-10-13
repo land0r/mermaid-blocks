@@ -101,7 +101,7 @@ jobs:
             require "vendor/autoload.php";
             foreach ( array_merge( glob( "includes/[A-Z]*.php" ), glob( "includes/*/[A-Z]*.php" ) ) as $file ) {
               $class = "MermaidBlocks\\" . str_replace( "/", "\\", substr( $file, 9, -4 ) );
-              if ( ! class_exists( $class ) ) {
+              if ( ! class_exists( $class ) && ! interface_exists( $class ) ) {
                 echo "::error::$class does not load from the plugin ZIP.\n";
                 exit( 1 );
               }

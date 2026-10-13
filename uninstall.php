@@ -1,8 +1,8 @@
 <?php
 /**
  * Removes what the plugin stored when it is deleted: the options of its
- * settings (see MermaidBlocks\Settings). Diagrams stay in the posts they were
- * written in.
+ * settings (see MermaidBlocks\Options, which lists them: a unit test tells
+ * when one is missing here). Diagrams stay in the posts they were written in.
  *
  * @package MermaidBlocks
  */
@@ -16,8 +16,8 @@ delete_option( 'mermaid_blocks_theme' );
 delete_option( 'mermaid_blocks_save_images' );
 
 /*
- * The saved images of diagrams (see MermaidBlocks\SavedImages): the list each
- * post has of its images, the files, and their directory.
+ * The saved images of diagrams (see MermaidBlocks\Images\SavedImages): the
+ * list each post has of its images, the files, and their directory.
  */
 delete_post_meta_by_key( '_mermaid_blocks_images' );
 

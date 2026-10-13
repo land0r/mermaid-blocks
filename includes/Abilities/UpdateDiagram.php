@@ -7,6 +7,8 @@
 
 namespace MermaidBlocks\Abilities;
 
+use WP_Post;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Changes the code or the other attributes of a diagram in a post.
  */
-final class UpdateDiagram extends DiagramAbility {
+final class UpdateDiagram extends PostAbility {
 
 	/**
 	 * Returns the name of the ability.
@@ -52,11 +54,11 @@ final class UpdateDiagram extends DiagramAbility {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_id'    => $this->get_post_id_schema(),
-				'index'      => $this->get_index_schema(),
-				'hash'       => $this->get_hash_schema(),
-				'code'       => $this->get_code_schema(),
-				'attributes' => $this->get_attributes_schema(),
+				'post_id'    => $this->schemas->get_post_id(),
+				'index'      => $this->schemas->get_index(),
+				'hash'       => $this->schemas->get_hash(),
+				'code'       => $this->schemas->get_code(),
+				'attributes' => $this->schemas->get_attributes(),
 			),
 			'required'             => array( 'post_id', 'index', 'hash' ),
 			'additionalProperties' => false,
@@ -69,7 +71,7 @@ final class UpdateDiagram extends DiagramAbility {
 	 * @return array The schema.
 	 */
 	protected function get_output_schema(): array {
-		return $this->get_diagram_schema();
+		return $this->schemas->get_diagram();
 	}
 
 	/**
@@ -85,18 +87,13 @@ final class UpdateDiagram extends DiagramAbility {
 	/**
 	 * Changes the diagram.
 	 *
-	 * @param mixed $input The post, the index, the hash, and the changes.
+	 * @param WP_Post $post  The post.
+	 * @param array   $input The input, with the index, the hash, and the
+	 *                       changes.
 	 *
 	 * @return array|\WP_Error The changed diagram, or the error.
 	 */
-	public function execute( $input = null ) {
-		$input = (array) $input;
-		$post  = $this->get_post( $input );
-
-		if ( is_wp_error( $post ) ) {
-			return $post;
-		}
-
+	protected function run( WP_Post $post, array $input ) {
 		if ( ! isset( $input['code'] ) && empty( $input['attributes'] ) ) {
 			return $this->error( 'mermaid_blocks_nothing_to_update', __( 'Give the diagram new code, or attributes to change.', 'mermaid-blocks' ) );
 		}

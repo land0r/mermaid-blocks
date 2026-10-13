@@ -5,7 +5,10 @@
  * @package MermaidBlocks
  */
 
-namespace MermaidBlocks;
+namespace MermaidBlocks\Integrations;
+
+use MermaidBlocks\Diagram;
+use MermaidBlocks\Hookable;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -24,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The attributes are those of the block: `theme`, `caption`, `zoom`,
  * `download`, `title`, `description` and `align`.
  */
-final class Shortcode {
+final class Shortcode implements Hookable {
 
 	/**
 	 * The tag of the shortcode, unless something else registered it first.
@@ -228,21 +231,7 @@ final class Shortcode {
 			}
 		}
 
-		if ( $controls ) {
-			$wrapper['data-mermaid-controls'] = implode( ' ', $controls );
-		}
-
-		$texts = array(
-			'title'       => 'data-mermaid-title',
-			'description' => 'data-mermaid-description',
-		);
-		foreach ( $texts as $text => $name ) {
-			$value = trim( (string) $attributes[ $text ] );
-
-			if ( '' !== $value ) {
-				$wrapper[ $name ] = $value;
-			}
-		}
+		$wrapper += $this->diagram->get_data_attributes( $controls, $attributes['title'], $attributes['description'] );
 
 		return $this->diagram->get_markup( $this->get_code( $content ), $wrapper, (string) $attributes['caption'] );
 	}

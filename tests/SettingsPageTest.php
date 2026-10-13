@@ -1,22 +1,25 @@
 <?php
 /**
- * Tests of the settings.
+ * Tests of the settings page.
  *
  * @package MermaidBlocks
  */
 
 namespace MermaidBlocks\Tests;
 
-use MermaidBlocks\Settings;
+use MermaidBlocks\Admin\SettingsPage;
+use MermaidBlocks\Files;
+use MermaidBlocks\Options;
 use MermaidBlocks\Themes;
 use WP_UnitTestCase;
 
 /**
- * The settings page: its theme setting, and the switches other parts add.
+ * The settings page: its theme setting, the switches of the optional parts
+ * of the plugin, and those other code adds.
  *
- * @covers \MermaidBlocks\Settings
+ * @covers \MermaidBlocks\Admin\SettingsPage
  */
-class SettingsTest extends WP_UnitTestCase {
+class SettingsPageTest extends WP_UnitTestCase {
 
 	/**
 	 * The option of the switch the tests add.
@@ -24,11 +27,18 @@ class SettingsTest extends WP_UnitTestCase {
 	const OPTION = 'mermaid_blocks_test_switch';
 
 	/**
-	 * The settings.
+	 * The settings page.
 	 *
-	 * @var Settings
+	 * @var SettingsPage
 	 */
-	private Settings $settings;
+	private SettingsPage $settings;
+
+	/**
+	 * The stored settings.
+	 *
+	 * @var Options
+	 */
+	private Options $options;
 
 	/**
 	 * Loads what registers the fields of a settings page: WordPress has it
@@ -39,7 +49,8 @@ class SettingsTest extends WP_UnitTestCase {
 
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 
-		$this->settings = mermaid_blocks()->settings();
+		$this->settings = mermaid_blocks()->get( SettingsPage::class );
+		$this->options  = mermaid_blocks()->get( Options::class );
 	}
 
 	/**
@@ -49,12 +60,12 @@ class SettingsTest extends WP_UnitTestCase {
 		global $wp_settings_sections, $wp_settings_fields;
 
 		foreach ( get_registered_settings() as $option => $setting ) {
-			if ( Settings::GROUP === $setting['group'] ) {
-				unregister_setting( Settings::GROUP, $option );
+			if ( SettingsPage::GROUP === $setting['group'] ) {
+				unregister_setting( SettingsPage::GROUP, $option );
 			}
 		}
 
-		unset( $wp_settings_sections[ Settings::PAGE ], $wp_settings_fields[ Settings::PAGE ] );
+		unset( $wp_settings_sections[ SettingsPage::PAGE ], $wp_settings_fields[ SettingsPage::PAGE ] );
 
 		parent::tear_down();
 	}
@@ -90,10 +101,40 @@ class SettingsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The page asks for switches once it has its theme setting, so they come
-	 * after it.
+	 * The page has a switch for each optional part of the plugin, after the
+	 * theme: every option of the plugin is a setting of the page.
 	 */
-	public function test_asks_for_switches_after_the_theme(): void {
+	public function test_has_the_switches_of_the_optional_parts(): void {
+		global $wp_settings_fields;
+
+		$this->settings->register();
+
+		$this->assertSame(
+			array( Options::THEME, Options::CODE_BLOCKS, Options::SAVE_IMAGES ),
+			array_keys( $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] )
+		);
+
+		$registered = get_registered_settings();
+
+		foreach ( Options::ALL as $option ) {
+			$this->assertSame( SettingsPage::GROUP, $registered[ $option ]['group'] ?? null, $option );
+		}
+
+		foreach ( array( Options::CODE_BLOCKS, Options::SAVE_IMAGES ) as $option ) {
+			$field = $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ][ $option ];
+
+			$this->assertNotEmpty( $field['title'], $option );
+			$this->assertNotEmpty( $field['args']['label'], $option );
+			$this->assertNotEmpty( $field['args']['description'], $option );
+			$this->assertSame( '0', (string) get_option( $option, 'missing' ), $option );
+		}
+	}
+
+	/**
+	 * The page asks for the switches of other code once it has its own, so
+	 * they come last.
+	 */
+	public function test_asks_for_switches_after_its_own(): void {
 		global $wp_settings_fields;
 
 		$given = null;
@@ -107,11 +148,11 @@ class SettingsTest extends WP_UnitTestCase {
 
 		$this->settings->register();
 
-		$fields = array_keys( $wp_settings_fields[ Settings::PAGE ][ Settings::SECTION ] );
+		$fields = array_keys( $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] );
 
 		$this->assertSame( $this->settings, $given );
-		$this->assertSame( Settings::THEME_OPTION, $fields[0] );
-		$this->assertContains( self::OPTION, $fields );
+		$this->assertSame( Options::THEME, $fields[0] );
+		$this->assertSame( self::OPTION, end( $fields ) );
 	}
 
 	/**
@@ -120,17 +161,17 @@ class SettingsTest extends WP_UnitTestCase {
 	 * takes a query.
 	 */
 	public function test_adds_a_switch(): void {
-		$this->assertFalse( $this->settings->is_on( self::OPTION ) );
+		$this->assertFalse( $this->options->is_on( self::OPTION ) );
 
 		$this->add_switch();
 
 		$registered = get_registered_settings();
 
 		$this->assertArrayHasKey( self::OPTION, $registered );
-		$this->assertSame( Settings::GROUP, $registered[ self::OPTION ]['group'] );
+		$this->assertSame( SettingsPage::GROUP, $registered[ self::OPTION ]['group'] );
 		$this->assertSame( 'boolean', $registered[ self::OPTION ]['type'] );
 		$this->assertSame( '0', (string) get_option( self::OPTION, 'missing' ) );
-		$this->assertFalse( $this->settings->is_on( self::OPTION ) );
+		$this->assertFalse( $this->options->is_on( self::OPTION ) );
 	}
 
 	/**
@@ -142,7 +183,7 @@ class SettingsTest extends WP_UnitTestCase {
 
 		$this->add_switch();
 
-		$this->assertTrue( $this->settings->is_on( self::OPTION ) );
+		$this->assertTrue( $this->options->is_on( self::OPTION ) );
 	}
 
 	/**
@@ -176,7 +217,7 @@ class SettingsTest extends WP_UnitTestCase {
 		update_option( self::OPTION, $value );
 
 		$this->assertSame( $is_on ? '1' : '0', (string) get_option( self::OPTION ) );
-		$this->assertSame( $is_on, $this->settings->is_on( self::OPTION ) );
+		$this->assertSame( $is_on, $this->options->is_on( self::OPTION ) );
 	}
 
 	/**
@@ -213,16 +254,51 @@ class SettingsTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The theme setting is still the site's theme, and an unknown one is
-	 * Automatic.
+	 * The theme setting is stored from the start, as Automatic, and only the
+	 * name of a theme is stored in it.
 	 */
-	public function test_keeps_the_theme_setting(): void {
+	public function test_stores_only_a_known_theme(): void {
+		delete_option( Options::THEME );
+
 		$this->settings->register();
 
-		update_option( Settings::THEME_OPTION, 'forest' );
-		$this->assertSame( 'forest', $this->settings->get_theme() );
+		$this->assertSame( Themes::AUTO, get_option( Options::THEME, 'missing' ) );
 
-		update_option( Settings::THEME_OPTION, 'no-such-theme' );
-		$this->assertSame( Themes::AUTO, $this->settings->get_theme() );
+		update_option( Options::THEME, 'forest' );
+		$this->assertSame( 'forest', get_option( Options::THEME ) );
+
+		update_option( Options::THEME, 'no-such-theme' );
+		$this->assertSame( Themes::AUTO, get_option( Options::THEME ) );
+	}
+
+	/**
+	 * The field of the theme offers every theme, with the site's selected.
+	 */
+	public function test_outputs_the_themes(): void {
+		update_option( Options::THEME, 'forest' );
+
+		$markup = get_echo( array( $this->settings, 'render_theme_field' ) );
+
+		foreach ( mermaid_blocks()->themes()->get_all() as $name => $label ) {
+			$this->assertStringContainsString( '<option value="' . $name . '" ' . ( 'forest' === $name ? " selected='selected'" : '' ) . '>' . $label . '</option>', $markup );
+		}
+	}
+
+	/**
+	 * The page is in the admin: its hooks are those of the admin, and the row
+	 * of the plugin in the list of plugins links to it.
+	 */
+	public function test_adds_the_page_to_the_admin(): void {
+		$this->settings->hooks();
+
+		$this->assertSame( 10, has_action( 'admin_init', array( $this->settings, 'register' ) ) );
+		$this->assertSame( 10, has_action( 'admin_menu', array( $this->settings, 'add_page' ) ) );
+
+		$basename = mermaid_blocks()->get( Files::class )->get_basename();
+		$links    = apply_filters( 'plugin_action_links_' . $basename, array( 'deactivate' => '<a>Deactivate</a>' ) ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- A hook of WordPress.
+
+		$this->assertSame( '<a href="' . esc_url( $this->settings->get_url() ) . '">Settings</a>', reset( $links ) );
+		$this->assertSame( admin_url( 'options-general.php?page=mermaid-blocks' ), $this->settings->get_url() );
+		$this->assertCount( 2, $links );
 	}
 }

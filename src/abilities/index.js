@@ -6,7 +6,7 @@
  *
  * A script module, as the client-side Abilities API is. It has no access to
  * translations: its texts come translated from
- * includes/Abilities/AbilitiesRegistrar.php.
+ * includes/Abilities/ClientAbilities.php.
  */
 
 /**
