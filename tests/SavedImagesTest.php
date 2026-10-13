@@ -117,6 +117,23 @@ class SavedImagesTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A page served over HTTPS gets the image over HTTPS, as it gets its
+	 * attachments, on a site whose address still says HTTP.
+	 */
+	public function test_gives_the_image_the_scheme_of_the_page(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::CODE ) ) );
+		$this->images->save( $post, $this->images->get_key( self::CODE ), 'auto', $this->png() );
+
+		$this->assertStringStartsWith( 'http://example.org/', $this->images->find( $post->ID, self::CODE )['url'] );
+
+		$_SERVER['HTTPS'] = 'on';
+		$url              = $this->images->find( $post->ID, self::CODE )['url'];
+		unset( $_SERVER['HTTPS'] );
+
+		$this->assertStringStartsWith( 'https://example.org/', $url );
+	}
+
+	/**
 	 * A diagram whose code or theme changed finds no image: the one that was
 	 * saved is of something else. Nor does a diagram in another post, or in
 	 * none.

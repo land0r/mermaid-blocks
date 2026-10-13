@@ -214,9 +214,15 @@ final class SavedImages {
 		}
 
 		$uploads = wp_get_upload_dir();
+		$url     = $uploads['baseurl'] . '/' . $images[ $key ]['file'];
+
+		// As for an attachment: a page served over HTTPS gets no image over HTTP, whatever the site's address says.
+		if ( is_ssl() ) {
+			$url = set_url_scheme( $url, 'https' );
+		}
 
 		return array(
-			'url'    => $uploads['baseurl'] . '/' . $images[ $key ]['file'],
+			'url'    => $url,
 			'width'  => max( 1, (int) round( $images[ $key ]['width'] / self::SCALE ) ),
 			'height' => max( 1, (int) round( $images[ $key ]['height'] / self::SCALE ) ),
 		);
