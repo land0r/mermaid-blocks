@@ -225,10 +225,11 @@ describe( 'renderDiagram themes', () => {
 
 		await renderDiagram( mermaid, 'c', 'graph', document, AUTO_DARK );
 
+		// The dark theme of a type is added to the layout the type has.
 		expect( mermaid.initialize ).toHaveBeenLastCalledWith( {
 			...MERMAID_CONFIG,
 			theme: 'dark',
-			flowchart: { theme: 'redux-dark-color' },
+			flowchart: { layout: 'dagre', theme: 'redux-dark-color' },
 		} );
 
 		// Back to what Mermaid picks: no theme is named.
@@ -236,6 +237,65 @@ describe( 'renderDiagram themes', () => {
 
 		expect( mermaid.initialize ).toHaveBeenCalledTimes( 3 );
 		expect( mermaid.initialize ).toHaveBeenLastCalledWith( MERMAID_CONFIG );
+	} );
+
+	it( 'gives a flowchart whose keyword asks for ELK that layout', async () => {
+		const mermaid = fakeMermaid();
+		const elk = {
+			...MERMAID_CONFIG,
+			flowchart: { layout: 'elk' },
+		};
+
+		await renderDiagram( mermaid, 'a', 'flowchart-elk LR\nA --> B' );
+
+		expect( mermaid.initialize ).toHaveBeenLastCalledWith( elk );
+
+		// Mermaid removes these before it looks for the keyword.
+		await renderDiagram(
+			mermaid,
+			'b',
+			'---\ntitle: T\n---\n%% a comment\n\n  flowchart-elk TD\nA --> B'
+		);
+
+		expect( mermaid.initialize ).toHaveBeenCalledTimes( 1 );
+
+		await renderDiagram( mermaid, 'c', 'flowchart LR\nA --> B' );
+
+		expect( mermaid.initialize ).toHaveBeenCalledTimes( 2 );
+		expect( mermaid.initialize ).toHaveBeenLastCalledWith( MERMAID_CONFIG );
+	} );
+
+	it( 'gives that flowchart ELK in a theme too', async () => {
+		const mermaid = fakeMermaid();
+
+		await renderDiagram(
+			mermaid,
+			'a',
+			'flowchart-elk LR\nA --> B',
+			document,
+			AUTO_DARK
+		);
+
+		expect( mermaid.initialize ).toHaveBeenCalledWith( {
+			...MERMAID_CONFIG,
+			theme: 'dark',
+			flowchart: { layout: 'elk', theme: 'redux-dark-color' },
+		} );
+	} );
+
+	it.each( [
+		[
+			'a node named after the keyword',
+			'flowchart LR\nflowchart-elk --> B',
+		],
+		[ 'a label with the keyword', 'flowchart LR\nA[flowchart-elk] --> B' ],
+		[ 'another diagram type', 'sequenceDiagram\nflowchart-elk->>B: Hi' ],
+	] )( 'leaves the layout of %s alone', async ( name, code ) => {
+		const mermaid = fakeMermaid();
+
+		await renderDiagram( mermaid, 'a', code );
+
+		expect( mermaid.initialize ).not.toHaveBeenCalled();
 	} );
 
 	it( 'keeps the theme of each Mermaid instance apart', async () => {

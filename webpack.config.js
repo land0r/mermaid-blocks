@@ -1,8 +1,9 @@
 /**
  * Extends the @wordpress/scripts webpack config to build the front-end
- * renderer and to ship Mermaid (installed from npm) alongside the block assets
- * in `build/`: the minified build for the editor, and the code-split ES module
- * build that the front end loads on demand.
+ * renderer, and the controls of diagrams as a module it loads on demand, and
+ * to ship Mermaid (installed from npm) alongside the block assets in `build/`:
+ * the minified build for the editor, and the code-split ES module build that
+ * the front end loads on demand.
  */
 const fs = require( 'fs' );
 const path = require( 'path' );
@@ -90,13 +91,16 @@ const WORDPRESS_MODULES = [
 ];
 
 // The client-side abilities are a script module: the Abilities API is one.
-const withAbilities = ( config ) => ( {
+// So are the controls of diagrams, which the front end imports by URL when a
+// diagram asks for one (see src/frontend/load-controls.js).
+const withModules = ( config ) => ( {
 	...config,
 	entry: () => ( {
 		...( typeof config.entry === 'function'
 			? config.entry()
 			: config.entry ),
 		abilities: path.resolve( __dirname, 'src/abilities/index.js' ),
+		controls: path.resolve( __dirname, 'src/frontend/controls.js' ),
 	} ),
 	plugins: config.plugins.map( ( plugin ) =>
 		plugin.constructor.name === 'DependencyExtractionWebpackPlugin'
@@ -112,13 +116,14 @@ const withAbilities = ( config ) => ( {
 } );
 
 // `--experimental-modules` makes the default config an array: the classic
-// scripts, then the script modules.
-if ( Array.isArray( defaultConfig ) ) {
-	const [ scripts, modules ] = defaultConfig;
-	module.exports = [
-		withRendererAndMermaid( scripts ),
-		withAbilities( modules ),
-	];
-} else {
-	module.exports = withRendererAndMermaid( defaultConfig );
+// scripts, then the script modules. Without the modules, diagrams would get no
+// controls, and nothing would say why.
+if ( ! Array.isArray( defaultConfig ) ) {
+	throw new Error(
+		'Build with --experimental-modules, as `npm run build` and `npm start` do: part of the plugin is script modules.'
+	);
 }
+
+const [ scripts, modules ] = defaultConfig;
+
+module.exports = [ withRendererAndMermaid( scripts ), withModules( modules ) ];

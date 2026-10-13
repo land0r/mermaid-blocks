@@ -1,4 +1,4 @@
-import { toSourceLine } from '../source-line';
+import { getParsedText, toSourceLine } from '../source-line';
 
 // A sequence diagram whose third line is the mistake, with optional text
 // before it and between its second and third lines.
@@ -73,4 +73,42 @@ describe( 'toSourceLine', () => {
 		expect( toSourceLine( '%% only a comment', 1 ) ).toBe( 1 );
 		expect( toSourceLine( '', 2 ) ).toBe( 2 );
 	} );
+} );
+
+describe( 'getParsedText', () => {
+	it.each( [
+		[ 'nothing to remove', 'flowchart LR\nA --> B' ],
+		[
+			'front matter',
+			'---\ntitle: T\nconfig:\n  theme: dark\n---\nflowchart LR\nA --> B',
+		],
+		[ 'leading blank lines', '\n\n  flowchart LR\nA --> B' ],
+		[
+			'a directive',
+			'%%{init: {"theme": "dark"}}%%\nflowchart LR\nA --> B',
+		],
+		[
+			'a comment on the first line',
+			'%% a comment\nflowchart LR\nA --> B',
+		],
+		[
+			'Windows line endings',
+			'---\r\ntitle: T\r\n---\r\nflowchart LR\r\nA --> B',
+		],
+	] )( 'starts with the keyword past %s', ( name, code ) => {
+		expect( getParsedText( code ) ).toBe( 'flowchart LR\nA --> B' );
+	} );
+
+	it( 'keeps what follows the keyword as it is', () => {
+		expect(
+			getParsedText( 'flowchart LR\n  %% a comment\n  A --> B\n' )
+		).toBe( 'flowchart LR\n  A --> B\n' );
+	} );
+
+	it.each( [ [ '' ], [ '%% only a comment' ], [ undefined ] ] )(
+		'returns a text for %p',
+		( code ) => {
+			expect( typeof getParsedText( code ) ).toBe( 'string' );
+		}
+	);
 } );

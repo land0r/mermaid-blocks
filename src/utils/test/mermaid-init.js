@@ -51,6 +51,7 @@ describe( 'getMermaid', () => {
 	} );
 
 	it( 'uses the same configuration as the front end, without the old SVG-label workaround', () => {
-		expect( MERMAID_CONFIG ).toEqual( { startOnLoad: false } );
+		expect( MERMAID_CONFIG.startOnLoad ).toBe( false );
+		expect( MERMAID_CONFIG ).not.toHaveProperty( 'htmlLabels' );
 	} );
 } );

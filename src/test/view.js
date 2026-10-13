@@ -1,13 +1,24 @@
-const MERMAID_URL = 'https://example.test/mermaid.esm.min.js?ver=1';
+import addControls from '../frontend/controls';
+
+const MERMAID_URL =
+	'https://example.test/plugin/build/mermaid/mermaid.esm.min.js?ver=1';
+const CONTROLS_URL = 'https://example.test/plugin/build/controls.js?ver=2';
 
 const DIAGRAM =
 	'<div class="mermaid-blocks-diagram"><pre class="mermaid-blocks-diagram__source">graph LR\nA--&gt;B</pre></div>';
 
 const mockLoadMermaid = jest.fn();
+const mockLoadControls = jest.fn();
 
 jest.mock( '../frontend/load-mermaid', () => ( {
 	__esModule: true,
 	default: ( ...args ) => mockLoadMermaid( ...args ),
+} ) );
+
+// Stands in for the import of the controls, a file of their own.
+jest.mock( '../frontend/load-controls', () => ( {
+	__esModule: true,
+	default: ( ...args ) => mockLoadControls( ...args ),
 } ) );
 
 const fakeMermaid = () => ( {
@@ -65,7 +76,12 @@ describe( 'view script', () => {
 		mermaid = fakeMermaid();
 		mockLoadMermaid.mockReset();
 		mockLoadMermaid.mockResolvedValue( mermaid );
-		window.mermaidBlocksSettings = { mermaidUrl: MERMAID_URL };
+		mockLoadControls.mockReset();
+		mockLoadControls.mockResolvedValue( addControls );
+		window.mermaidBlocksSettings = {
+			mermaidUrl: MERMAID_URL,
+			controlsUrl: CONTROLS_URL,
+		};
 		window.IntersectionObserver = FakeIntersectionObserver;
 	} );
 
@@ -144,6 +160,69 @@ describe( 'view script', () => {
 		expect(
 			withControls.querySelector( 'button[aria-label="Inzoomen"]' )
 		).not.toBeNull();
+		expect( mockLoadControls ).toHaveBeenCalledTimes( 1 );
+		expect( mockLoadControls ).toHaveBeenCalledWith( CONTROLS_URL );
+	} );
+
+	it.each( [ [ undefined ], [ '' ], [ '  ' ] ] )(
+		'loads no controls for a diagram that asks for %p',
+		async ( controls ) => {
+			document.body.innerHTML = DIAGRAM;
+			const [ diagram ] = diagrams();
+
+			if ( controls !== undefined ) {
+				diagram.dataset.mermaidControls = controls;
+			}
+
+			loadViewScript();
+			scrollIntoView( diagram );
+			await settle();
+
+			expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
+			expect( mockLoadControls ).not.toHaveBeenCalled();
+		}
+	);
+
+	it.each( [
+		[ MERMAID_URL, 'https://example.test/plugin/build/controls.js' ],
+		[
+			'/plugin/build/mermaid/mermaid.esm.min.js?ver=1',
+			'http://localhost/plugin/build/controls.js',
+		],
+	] )(
+		'finds the controls next to Mermaid, at %s, on a page that says nothing of them',
+		async ( mermaidUrl, expected ) => {
+			// A page cached before the controls became a file of their own.
+			window.mermaidBlocksSettings = { mermaidUrl };
+			document.body.innerHTML = DIAGRAM;
+			const [ diagram ] = diagrams();
+			diagram.dataset.mermaidControls = 'zoom';
+
+			loadViewScript();
+			scrollIntoView( diagram );
+			await settle();
+
+			expect( mockLoadControls ).toHaveBeenCalledWith( expected );
+			expect( diagram.querySelectorAll( 'button' ) ).toHaveLength( 3 );
+		}
+	);
+
+	it( 'leaves a diagram as it is when its controls cannot be loaded', async () => {
+		jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+		mockLoadControls.mockRejectedValue( new Error( 'Network error' ) );
+		document.body.innerHTML = DIAGRAM;
+		const [ diagram ] = diagrams();
+		diagram.dataset.mermaidControls = 'zoom download';
+
+		loadViewScript();
+		scrollIntoView( diagram );
+		await settle();
+
+		expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
+		expect( diagram.classList.contains( 'has-error' ) ).toBe( false );
+		expect( diagram.querySelector( 'button' ) ).toBeNull();
+		// eslint-disable-next-line no-console
+		expect( console.error ).toHaveBeenCalled();
 	} );
 
 	it( 'adds no controls to a diagram that failed', async () => {
@@ -159,6 +238,7 @@ describe( 'view script', () => {
 
 		expect( diagram.classList.contains( 'has-error' ) ).toBe( true );
 		expect( diagram.querySelector( 'button' ) ).toBeNull();
+		expect( mockLoadControls ).not.toHaveBeenCalled();
 	} );
 
 	it( 'draws a diagram that follows the page again when the page turns dark', async () => {
