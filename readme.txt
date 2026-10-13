@@ -27,6 +27,26 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - Alignment (centre, wide and full width), spacing, and an optional caption.
 - A title and a description of each diagram for screen readers.
 - Simple and intuitive integration with the block editor.
+- A `[mermaid]` shortcode for the classic editor, page builders and text widgets.
+
+### Shortcode:
+Where the block can't be used, write the diagram between `[mermaid]` and `[/mermaid]`:
+
+    [mermaid caption="Checkout" zoom download]
+    flowchart LR
+    A[Cart] --> B{Paid?}
+    B -->|Yes| C[Done]
+    [/mermaid]
+
+Its attributes are the settings of the block:
+
+- `theme`: a Mermaid theme, such as `forest` or `dark`. Without one, the theme set for the site.
+- `caption`: a caption under the diagram.
+- `zoom` and `download`: zoom controls and download buttons for visitors. Write them without a value, or as `zoom="1"`.
+- `title` and `description`: what screen readers read for the diagram.
+- `align`: `center`, `wide` or `full`.
+
+If another plugin already uses `[mermaid]`, write `[mermaid_blocks]` instead: it always belongs to this plugin.
 
 ### Abilities for AI agents:
 On WordPress 6.9 and later, the plugin registers abilities with the WordPress Abilities API, in the "Mermaid diagrams" category. AI agents and automation can use them to work with diagrams, for example through the MCP Adapter or the REST API under `wp-abilities/v1`:
@@ -62,6 +82,9 @@ Yes, your diagrams are rendered in real-time as you edit the code.
 
 = Does it work on all themes? =
 Yes, it is compatible with most modern WordPress themes.
+
+= Can I use it in the classic editor or a page builder? =
+Yes, with the `[mermaid]` shortcode: put the Mermaid code between `[mermaid]` and `[/mermaid]`. If a page builder shows the code instead of the diagram, the code has a `<` that WordPress took for the start of a tag: write it as `&lt;`.
 
 == Screenshots ==
 

@@ -2,6 +2,8 @@
 
 A WordPress block plugin with one dynamic block, `mermaid-blocks/diagram`. Its attributes are `code`, the Mermaid source; `zoom` and `download`, which give visitors zoom controls and download buttons; `theme`, the theme the diagram is drawn in; `caption`; and `accTitle` and `accDescr`, a title and a description for assistive technology. It supports alignment (centre, wide, full) and spacing. The editor shows a live SVG preview. The server outputs the source in a `<pre>`, and the front end replaces it with an SVG rendered by the bundled Mermaid library.
 
+The `[mermaid]` shortcode outputs the same diagrams where the block can't be used: the classic editor, page builders, text widgets.
+
 Supports WordPress 6.6+ and PHP 7.4+ (header of `mermaid-blocks.php`).
 
 ## Commands
@@ -31,6 +33,7 @@ The pre-commit hook runs the three linters. CI (`.github/workflows/ci.yml`) runs
   - `Plugin`: creates the other parts and adds their hooks. `mermaid_blocks()`, in `functions.php`, returns its one instance, which gives access to each part.
   - `Assets`: registers the `mermaid-js` and `mermaid-blocks-diagram` assets from `build/`, and passes the URL of Mermaid's ES module build and the translated labels to the latter.
   - `Block`: registers the block from `build/` and renders it, loads Mermaid into the editor iframe, and tells the editor the themes and the site's theme for diagrams.
+  - `Shortcode`: the `[mermaid]` shortcode, and `[mermaid_blocks]`, the tag no other plugin takes. It reads the Mermaid source back out of what the content filters made of it, and outputs it through `Diagram`.
   - `Diagram`: the diagram markup, shared by the block and other integrations, and the theme a diagram is drawn in.
   - `Themes`: the themes a diagram can be drawn in.
   - `Settings`: the settings page, Settings > Mermaid Blocks. Its one setting is the theme of diagrams that have none of their own, stored in the `mermaid_blocks_theme` option, which `uninstall.php` deletes.
@@ -56,6 +59,7 @@ None of these is obvious from the code, and each has broken before.
 - **The front end loads Mermaid on demand.** `load-mermaid.js` imports Mermaid's ES module build (`build/mermaid/`) by URL at runtime, so it's never bundled, and the build loads each diagram type's code on first use. Don't make the `mermaid-blocks-diagram` script depend on `mermaid-js`. `webpack.config.js` copies the build with `.mjs` renamed to `.js`, because not every server serves `.mjs` as JavaScript, and fails if an import it can't rewrite is left.
 - **One Mermaid config.** The editor and the front end share `src/utils/mermaid-config.js`, so the preview matches the published diagram. Don't set `htmlLabels: false`: SVG text labels show `&amp;` literally and drop `>` (#7).
 - **The escaping in `Diagram::get_source_markup()` is deliberate.** `esc_textarea()` round-trips the source exactly, and `[` and `]` become `&#91;` and `&#93;` so `do_shortcode()` doesn't expand diagram text such as `A[gallery]`. Don't switch to `esc_html()` or drop the bracket encoding. The wrapper's attributes get the same encoding (`Diagram::encode_brackets()`): `do_shortcode()` also expands shortcodes inside attribute values, such as an accessible title.
+- **A shortcode gets its content after the content filters.** `wpautop()` has ended each line with `<br />` and wrapped what blank lines separate in `<p>`, and the editors and kses store `>`, `<` and `&` as entities. `Shortcode::get_code()` undoes exactly that, and keeps a `<br>` in the middle of a line, which is a line break in a label. Those filters, and `do_shortcode()` itself, also take everything from a `<` to the next `>` for a tag: a class diagram ending with `Animal <|-- Duck` would hide the shortcode's closing tag in one. So `Shortcode::protect_code()` runs before them, on the filters that run shortcodes in content, and writes the `<` and `>` of the code as entities. Code passed straight to `do_shortcode()`, as some page builders do, doesn't get that: there a `<` needs a `>` after it, or has to be written as `&lt;`. `wptexturize()` is kept away with `no_texturize_shortcodes`, only for the tags that are the plugin's at that moment: `[mermaid]` is registered late and only when it is free, so another plugin that has it keeps it.
 - **Saved markup is versioned.** When the output of `save.js` or the block's attributes change, add an entry to `deprecated.js` with a test. Without one, existing posts show "This block contains unexpected or invalid content".
 - **The transform is asked about every block.** `src/transforms.js` registers it for `*`, so `isMatch` gets the attributes of whatever is selected: blocks with no `content`, or with something other than text in it. An exception there takes the whole editor down when the Transform menu opens (#6).
 - **A theme is set per render, and renders take turns.** Mermaid has one configuration per window and no theme per render. `renderDiagram()` initialises Mermaid again when the theme changes, and queues the renders of each Mermaid instance, because Mermaid reads its configuration all through a render. Don't call `mermaid.initialize()` or `mermaid.render()` anywhere else once diagrams render.
@@ -84,7 +88,7 @@ None of these is obvious from the code, and each has broken before.
 
 ## Reusing the renderer
 
-The block is one integration of a shared renderer, so other editors, such as a shortcode or a page builder widget, can output the same diagrams. An integration:
+The block and the shortcode are two integrations of a shared renderer, so other editors, such as a page builder widget, can output the same diagrams. An integration:
 
 1. Outputs `mermaid_blocks()->diagram()->get_markup( $code, $attributes, $caption )`: a `.mermaid-blocks-diagram` wrapper around the escaped source, a `<figure>` when there is a caption. It also enqueues the assets. Check `function_exists( 'mermaid_blocks' )` first: the plugin may be inactive.
 2. Declares the `mermaid-blocks-diagram` script and style handles as its dependencies if it renders outside a normal page load, such as over AJAX, where enqueueing has no effect.
