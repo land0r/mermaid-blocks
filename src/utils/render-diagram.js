@@ -1,6 +1,6 @@
-import MERMAID_CONFIG from './mermaid-config';
+import MERMAID_CONFIG, { mergeConfig } from './mermaid-config';
 import { AUTO_LIGHT, getThemeConfig } from './themes';
-import { toSourceLine } from './source-line';
+import { getParsedText, toSourceLine } from './source-line';
 
 /*
  * Mermaid has one configuration per window, and no theme per render. A
@@ -8,11 +8,39 @@ import { toSourceLine } from './source-line';
  * renders, and no other diagram may render in the meantime: Mermaid reads its
  * configuration all through a render.
  *
- * Kept for each Mermaid instance: the theme it was last initialised with, and
- * its last render, which the next one waits for.
+ * Kept for each Mermaid instance: the configuration it was last initialised
+ * with, and its last render, which the next one waits for.
  */
-const themes = new WeakMap();
+const configs = new WeakMap();
 const renders = new WeakMap();
+
+// What Mermaid starts out with: see load-mermaid.js and mermaid-init.js.
+const INITIAL_CONFIG = JSON.stringify( MERMAID_CONFIG );
+
+// The keyword flowcharts asked for the ELK layout with before Mermaid 11.
+// Mermaid 12 takes such a diagram for a flowchart like any other.
+const ELK_FLOWCHART = /^flowchart-elk/;
+
+/**
+ * Returns the configuration a diagram renders with.
+ *
+ * @param {Object} mermaid The Mermaid API object.
+ * @param {string} code    The Mermaid source.
+ * @param {string} theme   What to draw the diagram in.
+ *
+ * @return {Object} Options for `mermaid.initialize()`: the shared ones, the
+ * theme, and ELK as the layout of a flowchart whose keyword asks for it.
+ */
+function getConfig( mermaid, code, theme ) {
+	const config = mergeConfig(
+		MERMAID_CONFIG,
+		getThemeConfig( mermaid, theme )
+	);
+
+	return ELK_FLOWCHART.test( getParsedText( code ) )
+		? mergeConfig( config, { flowchart: { layout: 'elk' } } )
+		: config;
+}
 
 /**
  * Returns the errors of a diagram type whose parser lists them: pie, gitGraph
@@ -121,13 +149,12 @@ function removeLeftovers( renderId, doc ) {
  */
 async function renderInTheme( mermaid, renderId, code, doc, theme ) {
 	try {
-		// Mermaid starts out in AUTO_LIGHT: mermaid-config.js names no theme.
-		if ( ( themes.get( mermaid ) || AUTO_LIGHT ) !== theme ) {
-			mermaid.initialize( {
-				...MERMAID_CONFIG,
-				...getThemeConfig( mermaid, theme ),
-			} );
-			themes.set( mermaid, theme );
+		const config = getConfig( mermaid, code, theme );
+		const key = JSON.stringify( config );
+
+		if ( ( configs.get( mermaid ) || INITIAL_CONFIG ) !== key ) {
+			mermaid.initialize( config );
+			configs.set( mermaid, key );
 		}
 
 		const { svg, bindFunctions } = await mermaid.render( renderId, code );

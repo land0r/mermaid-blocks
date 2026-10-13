@@ -38,6 +38,21 @@ function removeMatches( source, pattern ) {
 }
 
 /**
+ * Returns what Mermaid parses of a source: the source without what Mermaid
+ * removes from it first. It starts with the keyword of the diagram's type.
+ *
+ * @param {string} code The Mermaid source.
+ *
+ * @return {string} The text Mermaid parses.
+ */
+export function getParsedText( code ) {
+	return [ FRONT_MATTER, DIRECTIVE, COMMENT_LINE, LEADING_WHITESPACE ].reduce(
+		( text, pattern ) => text.replace( pattern, '' ),
+		String( code ).replace( /\r\n?/g, '\n' )
+	);
+}
+
+/**
  * Maps a line number in a Mermaid parse error back to the line of the source
  * the user wrote.
  *
