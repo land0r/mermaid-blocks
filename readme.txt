@@ -28,6 +28,7 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - A title and a description of each diagram for screen readers.
 - Simple and intuitive integration with the block editor.
 - A `[mermaid]` shortcode for the classic editor, page builders and text widgets.
+- Optionally, Mermaid code that is already in your posts as code, such as a `language-mermaid` code block from a Markdown import, is shown as a diagram.
 
 ### Shortcode:
 Where the block can't be used, write the diagram between `[mermaid]` and `[/mermaid]`:
@@ -47,6 +48,14 @@ Its attributes are the settings of the block:
 - `align`: `center`, `wide` or `full`.
 
 If another plugin already uses `[mermaid]`, write `[mermaid_blocks]` instead: it always belongs to this plugin.
+
+### Mermaid code in posts:
+Content that came from Markdown often holds its diagrams as code. Switch on "Show code marked as Mermaid as diagrams" under Settings → Mermaid Blocks, and visitors see that code as diagrams, without anyone converting it:
+
+- a Code block with the additional CSS class `language-mermaid` (under Advanced, in the settings of the block),
+- a `<pre>` element with that class, or whose `<code>` element has it, as in `<pre><code class="language-mermaid">`.
+
+The post and the editor keep the code. These diagrams have the theme set for the site, and no controls. To give one its own settings, select the Code block and transform it into a Mermaid Diagram block.
 
 ### Abilities for AI agents:
 On WordPress 6.9 and later, the plugin registers abilities with the WordPress Abilities API, in the "Mermaid diagrams" category. AI agents and automation can use them to work with diagrams, for example through the MCP Adapter or the REST API under `wp-abilities/v1`:
@@ -85,6 +94,9 @@ Yes, it is compatible with most modern WordPress themes.
 
 = Can I use it in the classic editor or a page builder? =
 Yes, with the `[mermaid]` shortcode: put the Mermaid code between `[mermaid]` and `[/mermaid]`. If a page builder shows the code instead of the diagram, the code has a `<` that WordPress took for the start of a tag: write it as `&lt;`.
+
+= My posts already have Mermaid code in code blocks. Do I have to convert them? =
+No. Switch on "Show code marked as Mermaid as diagrams" under Settings → Mermaid Blocks. Code with the `language-mermaid` class is then shown as a diagram, and the posts stay as they are. The diagram replaces the code before the page is sent, so a script of another plugin that draws such code finds none: it is not drawn twice. To keep some code as code, return false from the `mermaid_blocks_show_code_as_diagram` filter.
 
 == Screenshots ==
 

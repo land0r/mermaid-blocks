@@ -1,7 +1,8 @@
 <?php
 /**
- * Removes what the plugin stored when it is deleted: its one option (see
- * MermaidBlocks\Settings). Diagrams stay in the posts they were written in.
+ * Removes what the plugin stored when it is deleted: the options of its
+ * settings (see MermaidBlocks\Settings). Diagrams stay in the posts they were
+ * written in.
  *
  * @package MermaidBlocks
  */
@@ -10,4 +11,5 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
+delete_option( 'mermaid_blocks_code_blocks' );
 delete_option( 'mermaid_blocks_theme' );

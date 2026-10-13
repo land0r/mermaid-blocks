@@ -183,3 +183,108 @@ describe( 'transforms.from[0] (markdown to Mermaid block)', () => {
 		} );
 	} );
 } );
+
+describe( 'transforms.from[1] (Code block marked as Mermaid)', () => {
+	const {
+		blocks,
+		isMatch: isCodeMatch,
+		transform: toDiagram,
+	} = transforms.from[ 1 ];
+
+	const code = ( html, className = 'language-mermaid' ) => ( {
+		...richText( html ),
+		className,
+	} );
+
+	it( 'is offered for the Code block only', () => {
+		expect( blocks ).toEqual( [ 'core/code' ] );
+	} );
+
+	describe( 'isMatch', () => {
+		it( 'matches a Code block with the class', () => {
+			expect( isCodeMatch( code( 'graph TD\nA --&gt; B' ) ) ).toBe(
+				true
+			);
+		} );
+
+		it( 'matches the class among other classes', () => {
+			expect(
+				isCodeMatch(
+					code( 'graph TD', 'is-style-x  language-mermaid' )
+				)
+			).toBe( true );
+		} );
+
+		it.each( [
+			[ 'no class', null ],
+			[ 'another language', 'language-php' ],
+			[ 'the class in a longer one', 'language-mermaid-x' ],
+			[ 'a class that is no text', [ 'language-mermaid' ] ],
+		] )( 'does not match a Code block with %s', ( _, className ) => {
+			expect( isCodeMatch( code( 'graph TD', className ) ) ).toBe(
+				false
+			);
+		} );
+
+		it( 'does not match a Code block without code', () => {
+			expect( isCodeMatch( code( '  \n' ) ) ).toBe( false );
+			expect( isCodeMatch( { className: 'language-mermaid' } ) ).toBe(
+				false
+			);
+		} );
+
+		it( 'does not throw without attributes', () => {
+			expect( isCodeMatch( undefined ) ).toBe( false );
+		} );
+	} );
+
+	describe( 'transform', () => {
+		it( 'creates a diagram block with the decoded code', () => {
+			const block = toDiagram(
+				code( 'graph TD\n  A --&gt; B{&quot;x &lt; y &amp; z&quot;}\n' )
+			);
+
+			expect( block.name ).toBe( 'mermaid-blocks/diagram' );
+			expect( block.attributes ).toEqual( {
+				code: 'graph TD\n  A --> B{"x < y & z"}',
+			} );
+		} );
+
+		it( 'reads a plain string too', () => {
+			const { attributes } = toDiagram( {
+				content: 'graph TD\nA --&gt; B',
+				className: 'language-mermaid',
+			} );
+
+			expect( attributes.code ).toBe( 'graph TD\nA --> B' );
+		} );
+
+		it( 'drops formatting and keeps its text', () => {
+			const { attributes } = toDiagram(
+				code(
+					'<strong>graph</strong> TD\n<a href="#x">A</a> --&gt; <em>B</em>'
+				)
+			);
+
+			expect( attributes.code ).toBe( 'graph TD\nA --> B' );
+		} );
+
+		it( 'keeps a line break in a label, typed or as an element', () => {
+			const { attributes } = toDiagram(
+				code( 'A[One&lt;br/&gt;Two] --&gt; B[Three<br>Four<BR />Five]' )
+			);
+
+			expect( attributes.code ).toBe(
+				'A[One<br/>Two] --> B[Three<br/>Four<br/>Five]'
+			);
+		} );
+
+		it( 'turns non-breaking spaces into spaces', () => {
+			const { attributes } = toDiagram(
+				code( 'graph TD\n\u00a0\u00a0A --&gt; B' )
+			);
+
+			expect( attributes.code ).toBe( 'graph TD\n  A --> B' );
+		} );
+	} );
+} );
