@@ -29,7 +29,8 @@ const getContent = ( attributes ) => {
 	return null;
 };
 
-// The class that marks a Code block as Mermaid: see includes/CodeBlocks.php.
+// The class that marks a Code block as Mermaid: see
+// includes/Integrations/CodeBlocks.php.
 const MERMAID_CLASS = 'language-mermaid';
 
 /**

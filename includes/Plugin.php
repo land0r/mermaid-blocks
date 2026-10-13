@@ -1,28 +1,69 @@
 <?php
 /**
- * The plugin, which creates its parts and adds them to WordPress.
+ * The plugin, which lists its parts and adds them to WordPress.
  *
  * @package MermaidBlocks
  */
 
 namespace MermaidBlocks;
 
-use MermaidBlocks\Abilities;
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Creates the parts of the plugin, and adds their hooks to WordPress.
+ * Lists the parts of the plugin that add hooks to WordPress, and adds those
+ * of each part on the requests that need it. A part, and what it is built
+ * from, is created when it is first needed: see Container.
  *
  * The function mermaid_blocks() returns the one instance. Through it, other
  * code reaches each part: to output a diagram, or to remove one of the hooks.
  *
  *     echo mermaid_blocks()->diagram()->get_markup( $code );
- *     remove_action( 'admin_menu', array( mermaid_blocks()->settings(), 'add_page' ) );
+ *     remove_filter( 'the_content', array( mermaid_blocks()->get( Integrations\CodeBlocks::class ), 'render_content' ) );
+ *
+ * A new part is a class that implements Hookable, and a line in one of the
+ * lists below. A unit test tells when a class that adds hooks is in none.
  */
 final class Plugin {
+
+	/**
+	 * The parts every request needs.
+	 */
+	const PARTS = array(
+		Assets::class,
+		Integrations\Block::class,
+		Integrations\Shortcode::class,
+		Integrations\CodeBlocks::class,
+		Images\SavedImages::class,
+	);
+
+	/**
+	 * The parts only the admin needs.
+	 */
+	const ADMIN_PARTS = array(
+		Admin\SettingsPage::class,
+		Admin\Editor::class,
+	);
+
+	/**
+	 * The parts needed only once an action fires, with the actions: each one
+	 * the part hooks into that can come first. The part is created then, so
+	 * a request on which none of them fires never loads it.
+	 *
+	 * The hooks of such a part are added when the action fires, so they can't
+	 * be removed before. To keep one from being added, remove
+	 * `array( mermaid_blocks(), 'add_deferred_hooks' )` from the action, at
+	 * priority 0.
+	 */
+	const DEFERRED_PARTS = array(
+		// Also where the block editor is loaded outside the admin.
+		Admin\Editor::class              => array( 'enqueue_block_editor_assets' ),
+		Abilities\ClientAbilities::class => array( 'enqueue_block_editor_assets' ),
+		Abilities\Registrar::class       => array( 'wp_abilities_api_categories_init', 'wp_abilities_api_init' ),
+		Images\ImageSync::class          => array( 'wp_after_insert_post' ),
+		Images\ImagesController::class   => array( 'rest_api_init' ),
+	);
 
 	/**
 	 * The one instance.
@@ -39,88 +80,11 @@ final class Plugin {
 	private bool $initialized = false;
 
 	/**
-	 * The themes a diagram can be drawn in.
+	 * The container, which creates the parts.
 	 *
-	 * @var Themes
+	 * @var Container
 	 */
-	private Themes $themes;
-
-	/**
-	 * The settings page.
-	 *
-	 * @var Settings
-	 */
-	private Settings $settings;
-
-	/**
-	 * The scripts and styles of diagrams.
-	 *
-	 * @var Assets
-	 */
-	private Assets $assets;
-
-	/**
-	 * The diagram markup.
-	 *
-	 * @var Diagram
-	 */
-	private Diagram $diagram;
-
-	/**
-	 * The saved images of diagrams.
-	 *
-	 * @var SavedImages
-	 */
-	private SavedImages $images;
-
-	/**
-	 * The block.
-	 *
-	 * @var Block
-	 */
-	private Block $block;
-
-	/**
-	 * The shortcode.
-	 *
-	 * @var Shortcode
-	 */
-	private Shortcode $shortcode;
-
-	/**
-	 * The code marked as Mermaid, shown as diagrams.
-	 *
-	 * @var CodeBlocks
-	 */
-	private CodeBlocks $code_blocks;
-
-	/**
-	 * The diagram types with starter code.
-	 *
-	 * @var DiagramTypes
-	 */
-	private DiagramTypes $diagram_types;
-
-	/**
-	 * The diagrams in posts.
-	 *
-	 * @var PostDiagrams
-	 */
-	private PostDiagrams $post_diagrams;
-
-	/**
-	 * The abilities, with what registers them.
-	 *
-	 * @var Abilities\AbilitiesRegistrar
-	 */
-	private Abilities\AbilitiesRegistrar $abilities;
-
-	/**
-	 * What keeps the saved images of a post in step with its diagrams.
-	 *
-	 * @var ImageSync
-	 */
-	private ImageSync $image_sync;
+	private Container $container;
 
 	/**
 	 * Returns the one instance.
@@ -136,36 +100,21 @@ final class Plugin {
 	}
 
 	/**
-	 * Creates the parts of the plugin. Adding their hooks is left to init().
+	 * Sets up the plugin. Nothing but the container is created: adding the
+	 * hooks is left to init().
 	 *
 	 * @param string $plugin_file The main file of the plugin.
 	 */
 	private function __construct( string $plugin_file ) {
-		$this->themes        = new Themes();
-		$this->settings      = new Settings( $this->themes, $plugin_file );
-		$this->assets        = new Assets( $plugin_file );
-		$this->diagram       = new Diagram( $this->themes, $this->settings, $this->assets );
-		$this->diagram_types = new DiagramTypes();
-		$this->images        = new SavedImages( $this->settings );
-		$this->block         = new Block( $this->assets, $this->diagram, $this->themes, $this->settings, $this->diagram_types, $this->images );
-		$this->shortcode     = new Shortcode( $this->diagram );
-		$this->code_blocks   = new CodeBlocks( $this->diagram, $this->settings );
-		$this->post_diagrams = new PostDiagrams( $this->diagram_types );
-		$this->abilities     = new Abilities\AbilitiesRegistrar(
-			$this->assets,
-			new Abilities\ListDiagramTypes( $this->diagram_types ),
-			new Abilities\ListDiagrams( $this->post_diagrams, $this->themes ),
-			new Abilities\GetDiagram( $this->post_diagrams, $this->themes ),
-			new Abilities\BuildBlockMarkup( $this->post_diagrams, $this->themes ),
-			new Abilities\InsertDiagram( $this->post_diagrams, $this->themes ),
-			new Abilities\UpdateDiagram( $this->post_diagrams, $this->themes ),
-			new Abilities\DeleteDiagram( $this->post_diagrams, $this->themes )
-		);
-		$this->image_sync    = new ImageSync( $this->images, $this->post_diagrams, $this->diagram );
+		$this->container = new Container();
+
+		// The one part that needs something else than other parts.
+		$this->container->set( new Files( $plugin_file ) );
 	}
 
 	/**
-	 * Adds the hooks of every part to WordPress, once.
+	 * Adds the hooks of the parts to WordPress, once: now for the parts this
+	 * request needs, and when its action fires for a part that waits for one.
 	 */
 	public function init(): void {
 		if ( $this->initialized ) {
@@ -174,41 +123,49 @@ final class Plugin {
 
 		$this->initialized = true;
 
-		$this->assets->hooks();
-		$this->block->hooks();
-		$this->shortcode->hooks();
-		$this->code_blocks->hooks();
-		$this->settings->hooks();
-		$this->abilities->hooks();
-		$this->images->hooks();
-		$this->image_sync->hooks();
+		foreach ( is_admin() ? array_merge( self::PARTS, self::ADMIN_PARTS ) : self::PARTS as $part ) {
+			$this->get( $part )->hooks();
+		}
+
+		foreach ( array_unique( array_merge( ...array_values( self::DEFERRED_PARTS ) ) ) as $action ) {
+			// Before the callbacks of the parts themselves, at the default priority.
+			add_action( $action, array( $this, 'add_deferred_hooks' ), 0 );
+		}
 	}
 
 	/**
-	 * Returns the themes a diagram can be drawn in.
+	 * Adds the hooks of the parts that waited for the action that fires now.
 	 *
-	 * @return Themes The themes.
+	 * Each time the action fires: adding the same hooks again changes nothing,
+	 * and puts back those something removed in between.
 	 */
-	public function themes(): Themes {
-		return $this->themes;
+	public function add_deferred_hooks(): void {
+		$action = current_action();
+
+		foreach ( self::DEFERRED_PARTS as $part => $actions ) {
+			if ( in_array( $action, $actions, true ) ) {
+				$this->get( $part )->hooks();
+			}
+		}
 	}
 
 	/**
-	 * Returns the settings page.
+	 * Returns a part of the plugin, or anything a part is built from, created
+	 * on first use.
 	 *
-	 * @return Settings The settings.
-	 */
-	public function settings(): Settings {
-		return $this->settings;
-	}
-
-	/**
-	 * Returns the scripts and styles of diagrams.
+	 * @template T of object
 	 *
-	 * @return Assets The assets.
+	 * @param string $name The name of a class of the plugin, such as
+	 *                     `Images\SavedImages::class`.
+	 *
+	 * @phpstan-param class-string<T> $name
+	 *
+	 * @return object The object: the same one each time.
+	 *
+	 * @phpstan-return T
 	 */
-	public function assets(): Assets {
-		return $this->assets;
+	public function get( string $name ): object {
+		return $this->container->get( $name );
 	}
 
 	/**
@@ -217,79 +174,15 @@ final class Plugin {
 	 * @return Diagram The diagram markup.
 	 */
 	public function diagram(): Diagram {
-		return $this->diagram;
+		return $this->get( Diagram::class );
 	}
 
 	/**
-	 * Returns the block.
+	 * Returns the themes a diagram can be drawn in.
 	 *
-	 * @return Block The block.
+	 * @return Themes The themes.
 	 */
-	public function block(): Block {
-		return $this->block;
-	}
-
-	/**
-	 * Returns the shortcode.
-	 *
-	 * @return Shortcode The shortcode.
-	 */
-	public function shortcode(): Shortcode {
-		return $this->shortcode;
-	}
-
-	/**
-	 * Returns the code marked as Mermaid, shown as diagrams.
-	 *
-	 * @return CodeBlocks The code blocks.
-	 */
-	public function code_blocks(): CodeBlocks {
-		return $this->code_blocks;
-	}
-
-	/**
-	 * Returns the diagram types with starter code.
-	 *
-	 * @return DiagramTypes The diagram types.
-	 */
-	public function diagram_types(): DiagramTypes {
-		return $this->diagram_types;
-	}
-
-	/**
-	 * Returns the diagrams in posts.
-	 *
-	 * @return PostDiagrams The diagrams in posts.
-	 */
-	public function post_diagrams(): PostDiagrams {
-		return $this->post_diagrams;
-	}
-
-	/**
-	 * Returns the registrar of the abilities, which lists them.
-	 *
-	 * @return Abilities\AbilitiesRegistrar The registrar.
-	 */
-	public function abilities(): Abilities\AbilitiesRegistrar {
-		return $this->abilities;
-	}
-
-	/**
-	 * Returns the saved images of diagrams.
-	 *
-	 * @return SavedImages The images.
-	 */
-	public function images(): SavedImages {
-		return $this->images;
-	}
-
-	/**
-	 * Returns what keeps the saved images of a post in step with its
-	 * diagrams.
-	 *
-	 * @return ImageSync The sync.
-	 */
-	public function image_sync(): ImageSync {
-		return $this->image_sync;
+	public function themes(): Themes {
+		return $this->get( Themes::class );
 	}
 }

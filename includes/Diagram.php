@@ -53,13 +53,6 @@ final class Diagram {
 	private Themes $themes;
 
 	/**
-	 * The settings, which hold the site's theme.
-	 *
-	 * @var Settings
-	 */
-	private Settings $settings;
-
-	/**
 	 * The assets that render diagrams.
 	 *
 	 * @var Assets
@@ -69,14 +62,12 @@ final class Diagram {
 	/**
 	 * Sets up the diagram markup.
 	 *
-	 * @param Themes   $themes   The themes a diagram can be drawn in.
-	 * @param Settings $settings The settings, which hold the site's theme.
-	 * @param Assets   $assets   The assets that render diagrams.
+	 * @param Themes $themes The themes a diagram can be drawn in.
+	 * @param Assets $assets The assets that render diagrams.
 	 */
-	public function __construct( Themes $themes, Settings $settings, Assets $assets ) {
-		$this->themes   = $themes;
-		$this->settings = $settings;
-		$this->assets   = $assets;
+	public function __construct( Themes $themes, Assets $assets ) {
+		$this->themes = $themes;
+		$this->assets = $assets;
 	}
 
 	/**
@@ -88,7 +79,49 @@ final class Diagram {
 	 * @return string A name from Themes::get_all().
 	 */
 	public function get_theme( $theme = '' ): string {
-		return $this->themes->exists( $theme ) ? $theme : $this->settings->get_theme();
+		return $this->themes->resolve( $theme );
+	}
+
+	/**
+	 * Returns the attributes of a wrapper that tell the front-end script what
+	 * a diagram gets besides its theme: the controls for visitors, and a
+	 * title and a description for assistive technology.
+	 *
+	 * For integrations, which each know these from attributes of their own:
+	 * the block from `zoom` and `accTitle`, the shortcode from `zoom` and
+	 * `title`. Add the result to the attributes passed to get_markup(), or
+	 * to those of a wrapper output with wrap().
+	 *
+	 * @param string[] $controls    The controls visitors get: any of CONTROLS.
+	 *                              They keep the order given.
+	 * @param mixed    $title       Optional. A title of the diagram.
+	 * @param mixed    $description Optional. A description of the diagram.
+	 *
+	 * @return array The attributes, as name => value, not escaped. Only those
+	 *               that say something: a diagram without controls gets no
+	 *               `data-mermaid-controls`.
+	 */
+	public function get_data_attributes( array $controls, $title = '', $description = '' ): array {
+		$attributes = array();
+
+		if ( $controls ) {
+			$attributes['data-mermaid-controls'] = implode( ' ', $controls );
+		}
+
+		$texts = array(
+			'data-mermaid-title'       => $title,
+			'data-mermaid-description' => $description,
+		);
+
+		foreach ( $texts as $name => $text ) {
+			$text = trim( (string) $text );
+
+			if ( '' !== $text ) {
+				$attributes[ $name ] = $text;
+			}
+		}
+
+		return $attributes;
 	}
 
 	/**

@@ -5,8 +5,10 @@
  * @package MermaidBlocks
  */
 
-namespace MermaidBlocks;
+namespace MermaidBlocks\Posts;
 
+use MermaidBlocks\DiagramTypes;
+use MermaidBlocks\Integrations\Block;
 use WP_Error;
 use WP_Post;
 
@@ -31,7 +33,9 @@ final class PostDiagrams {
 
 	/**
 	 * The attributes of a diagram block that can be set, besides its code,
-	 * with their types.
+	 * with their types: the one list of them in PHP. The schema of the
+	 * abilities is made from it (Abilities\Schemas), and a unit test compares
+	 * it with the block's own, in `src/block.json`.
 	 */
 	const ATTRIBUTES = array(
 		'theme'      => 'string',

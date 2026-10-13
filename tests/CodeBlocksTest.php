@@ -7,17 +7,18 @@
 
 namespace MermaidBlocks\Tests;
 
+use MermaidBlocks\Admin\SettingsPage;
 use MermaidBlocks\Assets;
-use MermaidBlocks\Block;
-use MermaidBlocks\CodeBlocks;
-use MermaidBlocks\Settings;
+use MermaidBlocks\Integrations\Block;
+use MermaidBlocks\Integrations\CodeBlocks;
+use MermaidBlocks\Options;
 use WP_UnitTestCase;
 
 /**
  * Code marked as Mermaid, in Code blocks and in classic content, run through
  * the filters WordPress runs content through.
  *
- * @covers \MermaidBlocks\CodeBlocks
+ * @covers \MermaidBlocks\Integrations\CodeBlocks
  */
 class CodeBlocksTest extends WP_UnitTestCase {
 
@@ -41,9 +42,9 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->code_blocks = mermaid_blocks()->code_blocks();
+		$this->code_blocks = mermaid_blocks()->get( CodeBlocks::class );
 
-		update_option( CodeBlocks::OPTION, 1 );
+		update_option( Options::CODE_BLOCKS, 1 );
 
 		wp_dequeue_script( Assets::RENDERER );
 		wp_dequeue_style( Assets::RENDERER );
@@ -147,7 +148,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	 * A diagram shown this way has the site's theme.
 	 */
 	public function test_shows_the_diagram_in_the_theme_of_the_site(): void {
-		update_option( Settings::THEME_OPTION, 'forest' );
+		update_option( Options::THEME, 'forest' );
 
 		$this->assertStringStartsWith( '<div class="mermaid-blocks-diagram" data-mermaid-theme="forest">', trim( do_blocks( $this->code_block() ) ) );
 	}
@@ -210,9 +211,9 @@ class CodeBlocksTest extends WP_UnitTestCase {
 
 		foreach ( array( 0, null ) as $value ) {
 			if ( null === $value ) {
-				delete_option( CodeBlocks::OPTION );
+				delete_option( Options::CODE_BLOCKS );
 			} else {
-				update_option( CodeBlocks::OPTION, $value );
+				update_option( Options::CODE_BLOCKS, $value );
 			}
 
 			$this->assertFalse( $this->code_blocks->is_on() );
@@ -420,16 +421,16 @@ class CodeBlocksTest extends WP_UnitTestCase {
 
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 
-		delete_option( CodeBlocks::OPTION );
-		mermaid_blocks()->settings()->register();
+		delete_option( Options::CODE_BLOCKS );
+		mermaid_blocks()->get( SettingsPage::class )->register();
 
-		$this->assertArrayHasKey( CodeBlocks::OPTION, get_registered_settings() );
-		$this->assertArrayHasKey( CodeBlocks::OPTION, $wp_settings_fields[ Settings::PAGE ][ Settings::SECTION ] );
+		$this->assertArrayHasKey( Options::CODE_BLOCKS, get_registered_settings() );
+		$this->assertArrayHasKey( Options::CODE_BLOCKS, $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] );
 		$this->assertFalse( $this->code_blocks->is_on() );
 
-		unregister_setting( Settings::GROUP, Settings::THEME_OPTION );
-		unregister_setting( Settings::GROUP, CodeBlocks::OPTION );
-		unset( $wp_settings_sections[ Settings::PAGE ], $wp_settings_fields[ Settings::PAGE ] );
+		unregister_setting( SettingsPage::GROUP, Options::THEME );
+		unregister_setting( SettingsPage::GROUP, Options::CODE_BLOCKS );
+		unset( $wp_settings_sections[ SettingsPage::PAGE ], $wp_settings_fields[ SettingsPage::PAGE ] );
 	}
 
 	/**
@@ -442,6 +443,6 @@ class CodeBlocksTest extends WP_UnitTestCase {
 
 		require dirname( __DIR__ ) . '/uninstall.php';
 
-		$this->assertFalse( get_option( CodeBlocks::OPTION ) );
+		$this->assertFalse( get_option( Options::CODE_BLOCKS ) );
 	}
 }

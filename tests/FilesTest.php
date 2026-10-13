@@ -1,0 +1,71 @@
+<?php
+/**
+ * Tests of where the plugin's files are.
+ *
+ * @package MermaidBlocks
+ */
+
+namespace MermaidBlocks\Tests;
+
+use MermaidBlocks\Files;
+use WP_UnitTestCase;
+
+/**
+ * The paths and the URLs of what the build generated.
+ *
+ * @covers \MermaidBlocks\Files
+ */
+class FilesTest extends WP_UnitTestCase {
+
+	/**
+	 * The plugin's files.
+	 *
+	 * @var Files
+	 */
+	private Files $files;
+
+	/**
+	 * Gets the files.
+	 */
+	public function set_up(): void {
+		parent::set_up();
+
+		$this->files = mermaid_blocks()->get( Files::class );
+	}
+
+	/**
+	 * The plugin is known to WordPress by its folder and main file.
+	 */
+	public function test_knows_the_name_of_the_plugin(): void {
+		$this->assertSame( plugin_basename( MERMAID_BLOCKS_PLUGIN_FILE ), $this->files->get_basename() );
+		$this->assertStringEndsWith( '/mermaid-blocks.php', $this->files->get_basename() );
+	}
+
+	/**
+	 * A file of the build has a path and a URL, and so has `build/` itself.
+	 */
+	public function test_finds_the_files_of_the_build(): void {
+		$this->assertSame( dirname( MERMAID_BLOCKS_PLUGIN_FILE ) . '/build/', $this->files->get_build_path() );
+		$this->assertFileExists( $this->files->get_build_path( 'block.json' ) );
+		$this->assertSame( plugins_url( 'build/view.js', MERMAID_BLOCKS_PLUGIN_FILE ), $this->files->get_build_url( 'view.js' ) );
+		$this->assertStringEndsWith( '/build/', $this->files->get_build_url() );
+	}
+
+	/**
+	 * An asset file gives the version and the dependencies of a built file.
+	 * One that is missing gives no version and no dependencies.
+	 */
+	public function test_reads_an_asset_file(): void {
+		$asset = $this->files->get_build_asset( 'view' );
+
+		$this->assertNotEmpty( $asset['version'] );
+		$this->assertSame( array(), $asset['dependencies'] );
+		$this->assertSame(
+			array(
+				'dependencies' => array(),
+				'version'      => false,
+			),
+			$this->files->get_build_asset( 'no-such-entry' )
+		);
+	}
+}

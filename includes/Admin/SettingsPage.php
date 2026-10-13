@@ -5,7 +5,12 @@
  * @package MermaidBlocks
  */
 
-namespace MermaidBlocks;
+namespace MermaidBlocks\Admin;
+
+use MermaidBlocks\Files;
+use MermaidBlocks\Hookable;
+use MermaidBlocks\Options;
+use MermaidBlocks\Themes;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,11 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * The settings page. It has the theme diagrams are drawn in unless a diagram
- * has its own, and a switch for each optional part of the plugin, which that
- * part adds: see add_switch(). Each setting is stored in an option, which
- * `uninstall.php` deletes.
+ * has its own, and a switch for each optional part of the plugin. Each
+ * setting is stored in an option: Options reads them, on any request, and
+ * `uninstall.php` deletes them.
  */
-final class Settings {
+final class SettingsPage implements Hookable {
 
 	/**
 	 * The slug of the settings page.
@@ -35,9 +40,11 @@ final class Settings {
 	const SECTION = 'mermaid_blocks_diagrams';
 
 	/**
-	 * The option that holds the site's theme.
+	 * The stored settings.
+	 *
+	 * @var Options
 	 */
-	const THEME_OPTION = 'mermaid_blocks_theme';
+	private Options $options;
 
 	/**
 	 * The themes a diagram can be drawn in.
@@ -47,53 +54,32 @@ final class Settings {
 	private Themes $themes;
 
 	/**
-	 * The main file of the plugin.
+	 * The plugin's files, to find its row in the list of plugins.
 	 *
-	 * @var string
+	 * @var Files
 	 */
-	private string $plugin_file;
+	private Files $files;
 
 	/**
-	 * Sets up the settings.
+	 * Sets up the settings page.
 	 *
-	 * @param Themes $themes      The themes a diagram can be drawn in.
-	 * @param string $plugin_file The main file of the plugin.
+	 * @param Options $options The stored settings.
+	 * @param Themes  $themes  The themes a diagram can be drawn in.
+	 * @param Files   $files   The plugin's files.
 	 */
-	public function __construct( Themes $themes, string $plugin_file ) {
-		$this->themes      = $themes;
-		$this->plugin_file = $plugin_file;
+	public function __construct( Options $options, Themes $themes, Files $files ) {
+		$this->options = $options;
+		$this->themes  = $themes;
+		$this->files   = $files;
 	}
 
 	/**
-	 * Adds the settings page and its setting to WordPress.
+	 * Adds the settings page and its settings to WordPress.
 	 */
 	public function hooks(): void {
 		add_action( 'admin_init', array( $this, 'register' ) );
 		add_action( 'admin_menu', array( $this, 'add_page' ) );
-		add_filter( 'plugin_action_links_' . plugin_basename( $this->plugin_file ), array( $this, 'add_action_link' ) );
-	}
-
-	/**
-	 * Returns the site's theme, which diagrams without a theme of their own
-	 * are drawn in.
-	 *
-	 * @return string A name from Themes::get_all().
-	 */
-	public function get_theme(): string {
-		$theme = get_option( self::THEME_OPTION, Themes::AUTO );
-
-		return $this->themes->exists( $theme ) ? $theme : Themes::AUTO;
-	}
-
-	/**
-	 * Tells whether a setting that is on or off is on: see add_switch().
-	 *
-	 * @param string $option The option that holds the setting.
-	 *
-	 * @return bool Whether it is on. A setting that was never saved is off.
-	 */
-	public function is_on( string $option ): bool {
-		return (bool) get_option( $option, false );
+		add_filter( 'plugin_action_links_' . $this->files->get_basename(), array( $this, 'add_action_link' ) );
 	}
 
 	/**
@@ -106,21 +92,22 @@ final class Settings {
 	}
 
 	/**
-	 * Registers the theme setting and its field on the settings page, then lets
-	 * the optional parts of the plugin add their switches.
+	 * Registers the theme setting and its field on the settings page, then the
+	 * switches of the optional parts of the plugin, then lets other code add
+	 * its own.
 	 */
 	public function register(): void {
 		/*
 		 * Stored even when it was never changed: reading an option that doesn't
 		 * exist takes a query, on every page that shows a diagram.
 		 */
-		if ( false === get_option( self::THEME_OPTION, false ) ) {
-			add_option( self::THEME_OPTION, Themes::AUTO );
+		if ( false === get_option( Options::THEME, false ) ) {
+			add_option( Options::THEME, Themes::AUTO );
 		}
 
 		register_setting(
 			self::GROUP,
-			self::THEME_OPTION,
+			Options::THEME,
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => array( $this, 'sanitize_theme' ),
@@ -136,29 +123,57 @@ final class Settings {
 		);
 
 		add_settings_field(
-			self::THEME_OPTION,
+			Options::THEME,
 			__( 'Theme', 'mermaid-blocks' ),
 			array( $this, 'render_theme_field' ),
 			self::PAGE,
 			self::SECTION,
-			array( 'label_for' => self::THEME_OPTION )
+			array( 'label_for' => Options::THEME )
 		);
 
+		foreach ( $this->get_switches() as $option => $switch ) {
+			$this->add_switch( $option, $switch['title'], $switch['label'], $switch['description'] );
+		}
+
 		/**
-		 * Fires once the settings page has its theme setting, for what adds a
-		 * setting of its own: see Settings::add_switch().
+		 * Fires once the settings page has the plugin's settings, for what adds
+		 * a setting of its own: see SettingsPage::add_switch().
 		 *
-		 * @param Settings $settings The settings.
+		 * @param SettingsPage $settings_page The settings page.
 		 */
 		do_action( 'mermaid_blocks_register_settings', $this );
 	}
 
 	/**
+	 * Returns the switches of the optional parts of the plugin, in the order
+	 * the page shows them.
+	 *
+	 * A new one also needs its option in Options::ALL and in `uninstall.php`.
+	 *
+	 * @return array[] The title, the label and the description of each
+	 *                 switch, by its option: see add_switch().
+	 */
+	private function get_switches(): array {
+		return array(
+			Options::CODE_BLOCKS => array(
+				'title'       => __( 'Code blocks', 'mermaid-blocks' ),
+				'label'       => __( 'Show code marked as Mermaid as diagrams', 'mermaid-blocks' ),
+				'description' => __( 'For Mermaid code that is in a post as code: a Code block with the additional CSS class <code>language-mermaid</code>, or a <code>&lt;pre&gt;&lt;code class="language-mermaid"&gt;</code> element, as Markdown converters write it. Visitors see a diagram in the theme set above, and the editor keeps showing the code.', 'mermaid-blocks' ),
+			),
+			Options::SAVE_IMAGES => array(
+				'title'       => __( 'Saved images', 'mermaid-blocks' ),
+				'label'       => __( 'Save an image of each diagram', 'mermaid-blocks' ),
+				'description' => __( 'Feeds, and browsers that run no JavaScript, then show the diagram instead of its Mermaid code. The block editor makes the images when a post is opened or saved in it, so a diagram changed anywhere else shows its code until then.', 'mermaid-blocks' ),
+			),
+		);
+	}
+
+	/**
 	 * Adds a setting that is on or off, with its checkbox on the settings page.
 	 *
-	 * For the optional parts of the plugin: each adds its switch on the
-	 * `mermaid_blocks_register_settings` action, reads it with is_on(), and
-	 * has its option deleted in `uninstall.php`.
+	 * The plugin's own are in get_switches(). Other code adds one on the
+	 * `mermaid_blocks_register_settings` action, reads it with
+	 * Options::is_on(), and deletes its option when it is uninstalled.
 	 *
 	 * @param string $option      The option that holds the setting.
 	 * @param string $title       The title of the setting.
@@ -247,9 +262,9 @@ final class Settings {
 	 * Outputs the field of the theme setting.
 	 */
 	public function render_theme_field(): void {
-		$current = $this->get_theme();
+		$current = $this->themes->get_site_theme();
 		?>
-		<select id="<?php echo esc_attr( self::THEME_OPTION ); ?>" name="<?php echo esc_attr( self::THEME_OPTION ); ?>" aria-describedby="mermaid_blocks_theme_description">
+		<select id="<?php echo esc_attr( Options::THEME ); ?>" name="<?php echo esc_attr( Options::THEME ); ?>" aria-describedby="mermaid_blocks_theme_description">
 			<?php foreach ( $this->themes->get_all() as $name => $label ) : ?>
 				<option value="<?php echo esc_attr( $name ); ?>" <?php selected( $current, $name ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
@@ -285,7 +300,7 @@ final class Settings {
 		<fieldset>
 			<legend class="screen-reader-text"><span><?php echo esc_html( $args['title'] ); ?></span></legend>
 			<label for="<?php echo esc_attr( $option ); ?>">
-				<input type="checkbox" id="<?php echo esc_attr( $option ); ?>" name="<?php echo esc_attr( $option ); ?>" value="1" <?php checked( $this->is_on( $option ) ); ?><?php echo '' === $description ? '' : ' aria-describedby="' . esc_attr( $option ) . '_description"'; ?>>
+				<input type="checkbox" id="<?php echo esc_attr( $option ); ?>" name="<?php echo esc_attr( $option ); ?>" value="1" <?php checked( $this->options->is_on( $option ) ); ?><?php echo '' === $description ? '' : ' aria-describedby="' . esc_attr( $option ) . '_description"'; ?>>
 				<?php echo esc_html( $args['label'] ); ?>
 			</label>
 			<?php if ( '' !== $description ) : ?>

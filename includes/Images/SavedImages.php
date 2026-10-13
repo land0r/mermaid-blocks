@@ -5,8 +5,10 @@
  * @package MermaidBlocks
  */
 
-namespace MermaidBlocks;
+namespace MermaidBlocks\Images;
 
+use MermaidBlocks\Hookable;
+use MermaidBlocks\Options;
 use WP_Error;
 use WP_Post;
 
@@ -40,12 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - **An image holds SCALE times the pixels it is shown at**, to stay sharp
  *   on dense screens.
  */
-final class SavedImages {
-
-	/**
-	 * The option that holds the setting.
-	 */
-	const OPTION = 'mermaid_blocks_save_images';
+final class SavedImages implements Hookable {
 
 	/**
 	 * The post meta field that lists the images of a post, by key: for each,
@@ -80,50 +77,37 @@ final class SavedImages {
 	const SIGNATURE = "\x89PNG\r\n\x1a\n";
 
 	/**
-	 * The settings, which hold the switch.
+	 * The stored settings, which hold the switch.
 	 *
-	 * @var Settings
+	 * @var Options
 	 */
-	private Settings $settings;
+	private Options $options;
 
 	/**
 	 * Sets up the images.
 	 *
-	 * @param Settings $settings The settings.
+	 * @param Options $options The stored settings.
 	 */
-	public function __construct( Settings $settings ) {
-		$this->settings = $settings;
+	public function __construct( Options $options ) {
+		$this->options = $options;
 	}
 
 	/**
-	 * Adds the setting to WordPress, and removes the images of a post with it.
+	 * Removes the images of a post with it. Also while the setting is off:
+	 * the images made before it was switched off are still there.
 	 */
 	public function hooks(): void {
-		add_action( 'mermaid_blocks_register_settings', array( $this, 'add_setting' ) );
 		add_action( 'before_delete_post', array( $this, 'delete_all' ) );
 	}
 
 	/**
-	 * Adds the switch to the settings page.
-	 *
-	 * @param Settings $settings The settings.
-	 */
-	public function add_setting( Settings $settings ): void {
-		$settings->add_switch(
-			self::OPTION,
-			__( 'Saved images', 'mermaid-blocks' ),
-			__( 'Save an image of each diagram', 'mermaid-blocks' ),
-			__( 'Feeds, and browsers that run no JavaScript, then show the diagram instead of its Mermaid code. The block editor makes the images when a post is opened or saved in it, so a diagram changed anywhere else shows its code until then.', 'mermaid-blocks' )
-		);
-	}
-
-	/**
-	 * Tells whether images of diagrams are saved and shown.
+	 * Tells whether images of diagrams are saved and shown: a switch on the
+	 * settings page.
 	 *
 	 * @return bool Whether the setting is on.
 	 */
 	public function is_on(): bool {
-		return $this->settings->is_on( self::OPTION );
+		return $this->options->is_on( Options::SAVE_IMAGES );
 	}
 
 	/**

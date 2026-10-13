@@ -7,8 +7,10 @@
 
 namespace MermaidBlocks\Tests;
 
-use MermaidBlocks\Block;
-use MermaidBlocks\SavedImages;
+use MermaidBlocks\Images\SavedImages;
+use MermaidBlocks\Integrations\Block;
+use MermaidBlocks\Options;
+use MermaidBlocks\Posts\PostDiagrams;
 use WP_Post;
 use WP_UnitTestCase;
 
@@ -17,7 +19,7 @@ require_once __DIR__ . '/ImageHelpers.php';
 /**
  * The markup the block renders on the server.
  *
- * @covers \MermaidBlocks\Block
+ * @covers \MermaidBlocks\Integrations\Block
  */
 class BlockTest extends WP_UnitTestCase {
 
@@ -135,12 +137,12 @@ class BlockTest extends WP_UnitTestCase {
 	 * @return WP_Post The post.
 	 */
 	private function enter_post_with_image( array $attributes = array() ): WP_Post {
-		update_option( SavedImages::OPTION, 1 );
+		update_option( Options::SAVE_IMAGES, 1 );
 
 		// Someone whose posts are saved as written: kses changes the code of others.
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
-		$images = mermaid_blocks()->images();
+		$images = mermaid_blocks()->get( SavedImages::class );
 		$theme  = isset( $attributes['theme'] ) ? $attributes['theme'] : '';
 		$post   = $this->create_post( array( $this->diagram_block( "graph TD\nA --> B", $attributes ) ) );
 
@@ -167,7 +169,7 @@ class BlockTest extends WP_UnitTestCase {
 			'<img class="mermaid-blocks-diagram__image" src="%s/mermaid-blocks/%d-%s-%s.png" alt="%s" width="300" height="150" loading="lazy" decoding="async" />',
 			$uploads['baseurl'],
 			$post->ID,
-			mermaid_blocks()->images()->get_key( "graph TD\nA --> B", 'auto' === $theme ? '' : $theme ),
+			mermaid_blocks()->get( SavedImages::class )->get_key( "graph TD\nA --> B", 'auto' === $theme ? '' : $theme ),
 			$theme,
 			$alt
 		);
@@ -277,7 +279,7 @@ class BlockTest extends WP_UnitTestCase {
 		$this->assertSame( $without, $changed );
 
 		// As the abilities change a diagram: on the server, with no editor to draw it again.
-		$diagrams = mermaid_blocks()->post_diagrams();
+		$diagrams = mermaid_blocks()->get( PostDiagrams::class );
 		$diagrams->replace( $post, 0, $diagrams->get_hash( $diagrams->get( $post, 0 ) ), $this->diagram_block( "graph TD\nA --> C" ) );
 		$this->enter_post( get_post( $post->ID ) );
 
@@ -296,11 +298,11 @@ class BlockTest extends WP_UnitTestCase {
 		$this->enter_post_with_image();
 		$this->assertStringContainsString( '<img', $this->render() );
 
-		update_option( SavedImages::OPTION, 0 );
+		update_option( Options::SAVE_IMAGES, 0 );
 		$this->assertStringNotContainsString( '<img', $this->render() );
 		$this->assertStringNotContainsString( 'has-image', $this->render() );
 
-		update_option( SavedImages::OPTION, 1 );
+		update_option( Options::SAVE_IMAGES, 1 );
 		$this->enter_post( $this->create_post( array( $this->diagram_block( "graph TD\nA --> B" ) ) ) );
 		$this->assertStringNotContainsString( '<img', $this->render() );
 

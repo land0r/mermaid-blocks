@@ -7,7 +7,9 @@
 
 namespace MermaidBlocks\Abilities;
 
-use MermaidBlocks\Block;
+use MermaidBlocks\Integrations\Block;
+use MermaidBlocks\Posts\EditablePosts;
+use MermaidBlocks\Posts\PostDiagrams;
 use WP_Post;
 use WP_Query;
 
@@ -26,6 +28,26 @@ final class ListDiagrams extends DiagramAbility {
 	 * The number of posts on a page, by default.
 	 */
 	const PER_PAGE = 10;
+
+	/**
+	 * The posts diagrams can be in.
+	 *
+	 * @var EditablePosts
+	 */
+	private EditablePosts $posts;
+
+	/**
+	 * Sets up the ability.
+	 *
+	 * @param PostDiagrams  $diagrams The diagrams in posts.
+	 * @param Schemas       $schemas  The schemas the abilities share.
+	 * @param EditablePosts $posts    The posts diagrams can be in.
+	 */
+	public function __construct( PostDiagrams $diagrams, Schemas $schemas, EditablePosts $posts ) {
+		parent::__construct( $diagrams, $schemas );
+
+		$this->posts = $posts;
+	}
 
 	/**
 	 * Returns the name of the ability.
@@ -64,12 +86,12 @@ final class ListDiagrams extends DiagramAbility {
 			'type'                 => 'object',
 			'properties'           => array(
 				'post_id'   => array_merge(
-					$this->get_post_id_schema(),
+					$this->schemas->get_post_id(),
 					array( 'description' => __( 'The ID of a post, to list only its diagrams.', 'mermaid-blocks' ) )
 				),
 				'post_type' => array(
 					'type'        => 'string',
-					'enum'        => $this->get_post_types(),
+					'enum'        => $this->posts->get_types(),
 					'description' => __( 'A post type, to list only the diagrams in posts of that type.', 'mermaid-blocks' ),
 				),
 				'page'      => array(
@@ -110,7 +132,7 @@ final class ListDiagrams extends DiagramAbility {
 							'status'    => array( 'type' => 'string' ),
 							'diagrams'  => array(
 								'type'  => 'array',
-								'items' => $this->get_diagram_schema(),
+								'items' => $this->schemas->get_diagram(),
 							),
 						),
 					),
@@ -152,8 +174,10 @@ final class ListDiagrams extends DiagramAbility {
 	 * @return bool Whether the user may run the ability.
 	 */
 	public function check_permissions( $input = null ) {
-		if ( $this->get_post_id( $input ) ) {
-			return parent::check_permissions( $input );
+		$post_id = $this->get_post_id( $input );
+
+		if ( $post_id ) {
+			return $this->posts->can_edit( $post_id );
 		}
 
 		return current_user_can( 'edit_posts' );
@@ -167,10 +191,11 @@ final class ListDiagrams extends DiagramAbility {
 	 * @return array|\WP_Error The posts with their diagrams, or the error.
 	 */
 	public function execute( $input = null ) {
-		$input = (array) $input;
+		$input   = (array) $input;
+		$post_id = $this->get_post_id( $input );
 
-		if ( $this->get_post_id( $input ) ) {
-			$post = $this->get_post( $input );
+		if ( $post_id ) {
+			$post = $this->posts->get( $post_id );
 
 			if ( is_wp_error( $post ) ) {
 				return $post;
@@ -183,7 +208,7 @@ final class ListDiagrams extends DiagramAbility {
 			);
 		}
 
-		$post_types = isset( $input['post_type'] ) ? array( (string) $input['post_type'] ) : $this->get_post_types();
+		$post_types = isset( $input['post_type'] ) ? array( (string) $input['post_type'] ) : $this->posts->get_types();
 
 		// Only the types the user may edit posts of: not templates, for an editor.
 		$post_types = array_values( array_filter( $post_types, array( $this, 'can_edit_posts_of' ) ) );

@@ -105,4 +105,43 @@ class DiagramTest extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( ' alt="The &#91;gallery&#93; step" ', $markup );
 	}
+
+	/**
+	 * The controls, the title and the description of a diagram become the
+	 * attributes the front-end script reads: only those that say something,
+	 * with the texts trimmed.
+	 */
+	public function test_builds_the_attributes_the_script_reads(): void {
+		$this->assertSame( array(), $this->diagram->get_data_attributes( array() ) );
+		$this->assertSame( array(), $this->diagram->get_data_attributes( array(), ' ', null ) );
+		$this->assertSame(
+			array( 'data-mermaid-controls' => 'zoom download' ),
+			$this->diagram->get_data_attributes( array( 'zoom', 'download' ) )
+		);
+		$this->assertSame(
+			array(
+				'data-mermaid-controls'    => 'copy',
+				'data-mermaid-title'       => 'A title',
+				'data-mermaid-description' => 'What it shows',
+			),
+			$this->diagram->get_data_attributes( array( 'copy' ), ' A title ', "What it shows\n" )
+		);
+		$this->assertSame(
+			array( 'data-mermaid-description' => 'Only this' ),
+			$this->diagram->get_data_attributes( array(), '', 'Only this' )
+		);
+	}
+
+	/**
+	 * An integration adds those attributes to the ones it passes with the
+	 * code, and gets a diagram with the controls and the texts.
+	 */
+	public function test_takes_those_attributes_with_the_code(): void {
+		$attributes = array( 'class' => 'alignwide' ) + $this->diagram->get_data_attributes( array( 'zoom', 'fullscreen' ), 'A "title"' );
+
+		$this->assertSame(
+			'<div class="mermaid-blocks-diagram alignwide" data-mermaid-controls="zoom fullscreen" data-mermaid-title="A &quot;title&quot;" data-mermaid-theme="auto">' . self::SOURCE . '</div>',
+			$this->diagram->get_markup( 'A[x] --> B', $attributes )
+		);
+	}
 }

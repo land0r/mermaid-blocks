@@ -53,8 +53,8 @@ final class BuildBlockMarkup extends DiagramAbility {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'code'       => $this->get_code_schema(),
-				'attributes' => $this->get_attributes_schema(),
+				'code'       => $this->schemas->get_code(),
+				'attributes' => $this->schemas->get_attributes(),
 			),
 			'required'             => array( 'code' ),
 			'additionalProperties' => false,
@@ -67,7 +67,7 @@ final class BuildBlockMarkup extends DiagramAbility {
 	 * @return array The schema.
 	 */
 	protected function get_output_schema(): array {
-		$diagram = $this->get_diagram_schema()['properties'];
+		$diagram = $this->schemas->get_diagram()['properties'];
 
 		return array(
 			'type'       => 'object',

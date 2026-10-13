@@ -7,6 +7,8 @@
 
 namespace MermaidBlocks\Abilities;
 
+use WP_Post;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Removes a diagram from a post.
  */
-final class DeleteDiagram extends DiagramAbility {
+final class DeleteDiagram extends PostAbility {
 
 	/**
 	 * Returns the name of the ability.
@@ -52,9 +54,9 @@ final class DeleteDiagram extends DiagramAbility {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_id' => $this->get_post_id_schema(),
-				'index'   => $this->get_index_schema(),
-				'hash'    => $this->get_hash_schema(),
+				'post_id' => $this->schemas->get_post_id(),
+				'index'   => $this->schemas->get_index(),
+				'hash'    => $this->schemas->get_hash(),
 			),
 			'required'             => array( 'post_id', 'index', 'hash' ),
 			'additionalProperties' => false,
@@ -99,18 +101,12 @@ final class DeleteDiagram extends DiagramAbility {
 	/**
 	 * Removes the diagram.
 	 *
-	 * @param mixed $input The post, the index and the hash.
+	 * @param WP_Post $post  The post.
+	 * @param array   $input The input, with the index and the hash.
 	 *
 	 * @return array|\WP_Error What was removed, or the error.
 	 */
-	public function execute( $input = null ) {
-		$input = (array) $input;
-		$post  = $this->get_post( $input );
-
-		if ( is_wp_error( $post ) ) {
-			return $post;
-		}
-
+	protected function run( WP_Post $post, array $input ) {
 		$index  = (int) $input['index'];
 		$result = $this->diagrams->remove( $post, $index, (string) $input['hash'] );
 
