@@ -18,9 +18,12 @@ export const DAGRE_TYPES = [
 	'state',
 	'er',
 	'requirement',
-	'usecase',
 	'agentflow',
 ];
+
+// The types left with ELK. Mermaid never drew a use case diagram with dagre
+// before, and dagre draws the lines between use cases through other use cases.
+export const ELK_TYPES = [ 'usecase' ];
 
 const MERMAID_CONFIG = {
 	// Blocks are rendered explicitly; never scan the page on load.

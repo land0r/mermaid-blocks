@@ -1,7 +1,11 @@
 import { readFileSync, readdirSync } from 'fs';
 import { dirname, join } from 'path';
 
-import MERMAID_CONFIG, { DAGRE_TYPES, mergeConfig } from '../mermaid-config';
+import MERMAID_CONFIG, {
+	DAGRE_TYPES,
+	ELK_TYPES,
+	mergeConfig,
+} from '../mermaid-config';
 
 describe( 'MERMAID_CONFIG', () => {
 	it( 'never scans the page for diagrams', () => {
@@ -11,6 +15,14 @@ describe( 'MERMAID_CONFIG', () => {
 	it.each( DAGRE_TYPES )( 'lays out the %s type with dagre', ( type ) => {
 		expect( MERMAID_CONFIG[ type ] ).toEqual( { layout: 'dagre' } );
 	} );
+
+	it.each( ELK_TYPES )(
+		'leaves the layout of the %s type alone',
+		( type ) => {
+			expect( MERMAID_CONFIG ).not.toHaveProperty( type );
+			expect( DAGRE_TYPES ).not.toContain( type );
+		}
+	);
 
 	it( 'names no layout for all types at once', () => {
 		// Mind maps and swimlane diagrams would lose theirs.
@@ -159,11 +171,13 @@ describe( 'the types laid out with dagre', () => {
 		expect( configurable.size ).toBeGreaterThan( 0 );
 	} );
 
-	it( 'are the types the bundled Mermaid lays out with ELK', () => {
+	it( 'are the types the bundled Mermaid lays out with ELK, but for those left with it', () => {
 		const types = Array.from( configurable ).filter(
 			( type ) => getDefaultLayout( type ) === 'elk'
 		);
 
-		expect( [ ...DAGRE_TYPES ].sort() ).toEqual( types.sort() );
+		expect( [ ...DAGRE_TYPES, ...ELK_TYPES ].sort() ).toEqual(
+			types.sort()
+		);
 	} );
 } );

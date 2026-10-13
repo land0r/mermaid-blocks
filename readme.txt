@@ -106,7 +106,7 @@ Yes, your diagrams are rendered in real-time as you edit the code.
 Yes, it is compatible with most modern WordPress themes.
 
 = How much does a diagram add to a page? =
-A page with a diagram gets one script of 8 KB (3.5 KB compressed) and 3.5 KB of styles, and nothing more until a diagram scrolls into view. Then it loads Mermaid, and of Mermaid only what the type of that diagram needs. For a flowchart that is 870 KB of JavaScript, or 240 KB as a server sends it, compressed. Class, state and entity relationship diagrams take as much, sequence diagrams and Gantt charts a little less, and the other types between 190 and 370 KB compressed, except architecture diagrams with 520 KB. Three quarters of it is the same for every type, so a page with several types loads that part once.
+A page with a diagram gets one script of 8 KB (3.5 KB compressed) and 3.5 KB of styles, and nothing more until a diagram scrolls into view. Then it loads Mermaid, and of Mermaid only what the type of that diagram needs. For a flowchart that is 870 KB of JavaScript, or 240 KB as a server sends it, compressed. Class, state and entity relationship diagrams take as much, sequence diagrams and Gantt charts a little less, and the other types between 190 and 370 KB compressed, except architecture diagrams with 520 KB and use case diagrams with 760 KB. Three quarters of it is the same for every type, so a page with several types loads that part once.
 
 Three things are loaded only for a diagram that uses them: formulas (80 KB compressed), the ELK layout (500 KB) and the controls for visitors (4 KB). A page without a diagram loads nothing from the plugin.
 
@@ -118,7 +118,7 @@ Yes, for one diagram at a time. Start its code with these lines:
       layout: elk
     ---
 
-Without them, flowcharts and class, state, entity relationship, requirement and use case diagrams get Mermaid's dagre layout. ELK draws its lines with right angles and often keeps a large diagram tidier, but it is 1.6 MB of JavaScript, twice everything else a flowchart loads, so only the pages with a diagram that asks for it load it.
+Without them, flowcharts and class, state, entity relationship and requirement diagrams get Mermaid's dagre layout. Use case diagrams always get ELK. ELK draws its lines with right angles and often keeps a large diagram tidier, but it is 1.6 MB of JavaScript, twice everything else a flowchart loads, so only the pages with a diagram that asks for it load it.
 
 = What do feed readers and browsers without JavaScript show? =
 The Mermaid code of the diagram, since it is the browser that draws it. To show them a picture instead, switch on "Save an image of each diagram" under Settings → Mermaid Blocks, then open your posts in the block editor, which makes the images.
