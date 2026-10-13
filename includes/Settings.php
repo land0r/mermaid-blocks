@@ -12,8 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * The settings page, and its one setting: the theme diagrams are drawn in
- * unless a diagram has its own. It is stored in an option, which
+ * The settings page. It has the theme diagrams are drawn in unless a diagram
+ * has its own, and a switch for each optional part of the plugin, which that
+ * part adds: see add_switch(). Each setting is stored in an option, which
  * `uninstall.php` deletes.
  */
 final class Settings {
@@ -27,6 +28,11 @@ final class Settings {
 	 * The group the setting is registered in.
 	 */
 	const GROUP = 'mermaid_blocks';
+
+	/**
+	 * The section of the settings page that holds the settings.
+	 */
+	const SECTION = 'mermaid_blocks_diagrams';
 
 	/**
 	 * The option that holds the site's theme.
@@ -80,6 +86,17 @@ final class Settings {
 	}
 
 	/**
+	 * Tells whether a setting that is on or off is on: see add_switch().
+	 *
+	 * @param string $option The option that holds the setting.
+	 *
+	 * @return bool Whether it is on. A setting that was never saved is off.
+	 */
+	public function is_on( string $option ): bool {
+		return (bool) get_option( $option, false );
+	}
+
+	/**
 	 * Returns the URL of the settings page.
 	 *
 	 * @return string The URL.
@@ -89,7 +106,8 @@ final class Settings {
 	}
 
 	/**
-	 * Registers the setting, and its field on the settings page.
+	 * Registers the theme setting and its field on the settings page, then lets
+	 * the optional parts of the plugin add their switches.
 	 */
 	public function register(): void {
 		/*
@@ -111,7 +129,7 @@ final class Settings {
 		);
 
 		add_settings_section(
-			'mermaid_blocks_diagrams',
+			self::SECTION,
 			__( 'Diagrams', 'mermaid-blocks' ),
 			'__return_null',
 			self::PAGE
@@ -122,8 +140,61 @@ final class Settings {
 			__( 'Theme', 'mermaid-blocks' ),
 			array( $this, 'render_theme_field' ),
 			self::PAGE,
-			'mermaid_blocks_diagrams',
+			self::SECTION,
 			array( 'label_for' => self::THEME_OPTION )
+		);
+
+		/**
+		 * Fires once the settings page has its theme setting, for what adds a
+		 * setting of its own: see Settings::add_switch().
+		 *
+		 * @param Settings $settings The settings.
+		 */
+		do_action( 'mermaid_blocks_register_settings', $this );
+	}
+
+	/**
+	 * Adds a setting that is on or off, with its checkbox on the settings page.
+	 *
+	 * For the optional parts of the plugin: each adds its switch on the
+	 * `mermaid_blocks_register_settings` action, reads it with is_on(), and
+	 * has its option deleted in `uninstall.php`.
+	 *
+	 * @param string $option      The option that holds the setting.
+	 * @param string $title       The title of the setting.
+	 * @param string $label       The label of the checkbox: what switching it
+	 *                            on does.
+	 * @param string $description Optional. More about it, shown under the
+	 *                            checkbox. It may contain `<code>` elements.
+	 */
+	public function add_switch( string $option, string $title, string $label, string $description = '' ): void {
+		// Stored even when it was never changed, as the theme is: see register().
+		if ( false === get_option( $option, false ) ) {
+			add_option( $option, 0 );
+		}
+
+		register_setting(
+			self::GROUP,
+			$option,
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => array( $this, 'sanitize_switch' ),
+				'default'           => false,
+			)
+		);
+
+		add_settings_field(
+			$option,
+			$title,
+			array( $this, 'render_switch' ),
+			self::PAGE,
+			self::SECTION,
+			array(
+				'option'      => $option,
+				'title'       => $title,
+				'label'       => $label,
+				'description' => $description,
+			)
 		);
 	}
 
@@ -186,6 +257,43 @@ final class Settings {
 		<p class="description" id="mermaid_blocks_theme_description">
 			<?php esc_html_e( 'Automatic is the theme Mermaid picks for each type of diagram, or its dark counterpart where the diagram sits on a dark background. A diagram block can have a theme of its own.', 'mermaid-blocks' ); ?>
 		</p>
+		<?php
+	}
+
+	/**
+	 * Sanitizes a setting that is on or off.
+	 *
+	 * @param mixed $value The submitted value: nothing for a checkbox that isn't
+	 *                     ticked.
+	 *
+	 * @return int 1 for on, 0 for off.
+	 */
+	public function sanitize_switch( $value ): int {
+		return empty( $value ) ? 0 : 1;
+	}
+
+	/**
+	 * Outputs the checkbox of a setting that is on or off.
+	 *
+	 * @param array $args The option, the title, the label and the description
+	 *                    add_switch() was given.
+	 */
+	public function render_switch( $args ): void {
+		$option      = (string) $args['option'];
+		$description = (string) $args['description'];
+		?>
+		<fieldset>
+			<legend class="screen-reader-text"><span><?php echo esc_html( $args['title'] ); ?></span></legend>
+			<label for="<?php echo esc_attr( $option ); ?>">
+				<input type="checkbox" id="<?php echo esc_attr( $option ); ?>" name="<?php echo esc_attr( $option ); ?>" value="1" <?php checked( $this->is_on( $option ) ); ?><?php echo '' === $description ? '' : ' aria-describedby="' . esc_attr( $option ) . '_description"'; ?>>
+				<?php echo esc_html( $args['label'] ); ?>
+			</label>
+			<?php if ( '' !== $description ) : ?>
+				<p class="description" id="<?php echo esc_attr( $option ); ?>_description">
+					<?php echo wp_kses( $description, array( 'code' => array() ) ); ?>
+				</p>
+			<?php endif; ?>
+		</fieldset>
 		<?php
 	}
 
