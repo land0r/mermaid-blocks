@@ -26,6 +26,14 @@
 			"type": "boolean",
 			"default": false
 		},
+		"copy": {
+			"type": "boolean",
+			"default": false
+		},
+		"fullscreen": {
+			"type": "boolean",
+			"default": false
+		},
 		"theme": {
 			"type": "string"
 		},

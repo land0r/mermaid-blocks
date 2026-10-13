@@ -7,8 +7,11 @@
 
 namespace MermaidBlocks\Tests;
 
+use MermaidBlocks\Block;
+use MermaidBlocks\Diagram;
 use MermaidBlocks\DiagramTypes;
 use MermaidBlocks\PostDiagrams;
+use WP_Block_Type_Registry;
 use WP_Post;
 use WP_UnitTestCase;
 
@@ -326,5 +329,30 @@ class PostDiagramsTest extends WP_UnitTestCase {
 		$this->diagrams->insert( $post, $this->diagrams->create_block( $code ) );
 
 		$this->assertSame( array( $code ), $this->get_codes( $post->ID ) );
+	}
+
+	/**
+	 * The attributes of the controls are those of the block, so an ability can
+	 * set every control the editor can.
+	 */
+	public function test_knows_every_control(): void {
+		$block = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
+
+		foreach ( Diagram::CONTROLS as $control ) {
+			$this->assertSame( 'boolean', PostDiagrams::ATTRIBUTES[ $control ] ?? null, $control );
+			$this->assertSame( 'boolean', $block->attributes[ $control ]['type'] ?? null, $control );
+			$this->assertFalse( $block->attributes[ $control ]['default'] ?? null, $control );
+		}
+
+		$attributes = array_fill_keys( Diagram::CONTROLS, true );
+
+		$this->assertSame(
+			array( 'code' => 'pie' ) + $attributes,
+			$this->diagrams->create_block( 'pie', $attributes )['attrs']
+		);
+		$this->assertSame(
+			array( 'code' => 'pie' ),
+			$this->diagrams->merge_attributes( array( 'code' => 'pie' ) + $attributes, array_fill_keys( Diagram::CONTROLS, false ) )
+		);
 	}
 }

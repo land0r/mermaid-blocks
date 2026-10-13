@@ -54,13 +54,38 @@ const isDisabled = ( diagram, label ) =>
 // Lets a download that was started finish.
 const settle = () => new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
+/**
+ * Gives the page a clipboard, or takes it away, as on a page served over
+ * HTTP.
+ *
+ * @param {Object|null} clipboard The clipboard, or null for none.
+ *
+ * @return {Object|null} The clipboard.
+ */
+function mockClipboard(
+	clipboard = { writeText: jest.fn().mockResolvedValue() }
+) {
+	Object.defineProperty( window.navigator, 'clipboard', {
+		configurable: true,
+		value: clipboard,
+	} );
+
+	return clipboard;
+}
+
 describe( 'addControls', () => {
 	beforeEach( () => {
 		downloadDiagram.mockReset();
 		downloadDiagram.mockResolvedValue();
 	} );
 
-	afterEach( () => jest.restoreAllMocks() );
+	afterEach( () => {
+		jest.restoreAllMocks();
+		jest.useRealTimers();
+		delete window.navigator.clipboard;
+		// A diagram that is still fullscreen keeps the page from scrolling.
+		document.documentElement.style.overflow = '';
+	} );
 
 	it.each( [ [ null ], [ '' ], [ 'unknown' ] ] )(
 		'adds nothing to a diagram that asks for no controls (%p)',
@@ -248,5 +273,187 @@ describe( 'addControls', () => {
 		button( diagram, 'Download as PNG' ).click();
 
 		expect( status.textContent ).toBe( '' );
+	} );
+
+	it( 'puts the controls in one order, whatever order they are asked in', () => {
+		mockClipboard();
+		const diagram = setup( 'fullscreen copy download zoom' );
+
+		addControls( diagram );
+
+		expect( labels( diagram ) ).toEqual( [
+			'Zoom out',
+			'Zoom in',
+			'Reset zoom',
+			'Download as SVG',
+			'Download as PNG',
+			'Copy code',
+			'View fullscreen',
+		] );
+	} );
+
+	describe( 'the copy button', () => {
+		it( 'copies the code of the diagram, and says so for a while', async () => {
+			jest.useFakeTimers();
+			const clipboard = mockClipboard();
+			const diagram = setup( 'copy' );
+			addControls( diagram, { copied: 'Gekopieerd.' } );
+			const status = diagram.querySelector( '[role="status"]' );
+
+			expect( labels( diagram ) ).toEqual( [ 'Copy code' ] );
+			expect( status.nextElementSibling ).toBe(
+				button( diagram, 'Copy code' )
+			);
+
+			button( diagram, 'Copy code' ).click();
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( clipboard.writeText ).toHaveBeenCalledWith( 'graph LR' );
+			expect( status.textContent ).toBe( 'Gekopieerd.' );
+
+			await jest.advanceTimersByTimeAsync( 5000 );
+
+			expect( status.textContent ).toBe( '' );
+		} );
+
+		it( 'tells when the code could not be copied', async () => {
+			jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+			mockClipboard().writeText.mockRejectedValue(
+				new Error( 'Not allowed' )
+			);
+			const diagram = setup( 'copy' );
+			addControls( diagram );
+
+			button( diagram, 'Copy code' ).click();
+			await settle();
+
+			expect(
+				diagram.querySelector( '[role="status"]' ).textContent
+			).toBe( 'The code could not be copied.' );
+			// eslint-disable-next-line no-console
+			expect( console.error ).toHaveBeenCalled();
+		} );
+
+		it( 'is left out where the page has no clipboard', () => {
+			mockClipboard( null );
+			const diagram = setup( 'copy download' );
+
+			addControls( diagram );
+
+			expect( labels( diagram ) ).toEqual( [
+				'Download as SVG',
+				'Download as PNG',
+			] );
+
+			const other = setup( 'copy' );
+
+			addControls( other );
+
+			expect( toolbar( other ) ).toBeNull();
+		} );
+
+		it( 'shares the place for messages with the download buttons', async () => {
+			jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+			mockClipboard();
+			downloadDiagram.mockRejectedValue( new Error( 'Tainted canvas' ) );
+			const diagram = setup( 'download copy' );
+			addControls( diagram );
+
+			expect(
+				diagram.querySelectorAll( '[role="status"]' )
+			).toHaveLength( 1 );
+
+			button( diagram, 'Download as PNG' ).click();
+			await settle();
+			button( diagram, 'Copy code' ).click();
+			await settle();
+
+			expect(
+				diagram.querySelector( '[role="status"]' ).textContent
+			).toBe( 'Copied.' );
+		} );
+	} );
+
+	describe( 'the fullscreen button', () => {
+		it( 'shows the diagram over the whole screen, and back', () => {
+			const diagram = setup( 'fullscreen' );
+			addControls( diagram );
+			const fullscreen = button( diagram, 'View fullscreen' );
+
+			expect( labels( diagram ) ).toEqual( [ 'View fullscreen' ] );
+			expect( diagram.querySelector( '[role="status"]' ) ).toBeNull();
+
+			fullscreen.click();
+
+			expect( diagram.classList.contains( 'is-fullscreen' ) ).toBe(
+				true
+			);
+			expect( fullscreen.getAttribute( 'aria-label' ) ).toBe(
+				'Exit fullscreen'
+			);
+			expect( fullscreen.title ).toBe( 'Exit fullscreen' );
+
+			fullscreen.click();
+
+			expect( diagram.classList.contains( 'is-fullscreen' ) ).toBe(
+				false
+			);
+			expect( fullscreen.getAttribute( 'aria-label' ) ).toBe(
+				'View fullscreen'
+			);
+		} );
+
+		it( 'gets the focus back when Escape closes the diagram', () => {
+			const diagram = setup( 'fullscreen' );
+			addControls( diagram );
+			const fullscreen = button( diagram, 'View fullscreen' );
+
+			fullscreen.click();
+			document.body.focus();
+			document.dispatchEvent(
+				new window.KeyboardEvent( 'keydown', { key: 'Escape' } )
+			);
+
+			expect( diagram.classList.contains( 'is-fullscreen' ) ).toBe(
+				false
+			);
+			expect( document.activeElement ).toBe( fullscreen );
+		} );
+
+		it( 'resets the zoom, which was relative to the old size', () => {
+			const diagram = setup( 'zoom fullscreen' );
+			addControls( diagram );
+
+			button( diagram, 'Zoom in' ).click();
+
+			expect( diagram.classList.contains( 'is-zoomed' ) ).toBe( true );
+
+			button( diagram, 'View fullscreen' ).click();
+
+			expect( diagram.classList.contains( 'is-zoomed' ) ).toBe( false );
+
+			button( diagram, 'Zoom in' ).click();
+			button( diagram, 'Exit fullscreen' ).click();
+
+			expect( diagram.classList.contains( 'is-zoomed' ) ).toBe( false );
+		} );
+
+		it( 'tells that a diagram drawn again is still fullscreen', () => {
+			const diagram = setup( 'fullscreen' );
+			addControls( diagram );
+
+			button( diagram, 'View fullscreen' ).click();
+			// As redrawDiagram() does before the controls are added again.
+			toolbar( diagram ).remove();
+			addControls( diagram, { exitFullscreen: 'Sluiten' } );
+
+			expect( labels( diagram ) ).toEqual( [ 'Sluiten' ] );
+
+			button( diagram, 'Sluiten' ).click();
+
+			expect( diagram.classList.contains( 'is-fullscreen' ) ).toBe(
+				false
+			);
+		} );
 	} );
 } );

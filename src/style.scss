@@ -68,7 +68,10 @@
 	line-height: 1;
 }
 
-/* Tells when a download failed. Empty, it sets the download buttons apart. */
+/*
+ * Tells when a download failed, or that the code was copied. Empty, it sets
+ * the buttons after it apart.
+ */
 .mermaid-blocks-diagram__status {
 	margin-inline: 4px;
 	font-weight: 400;
@@ -133,6 +136,60 @@
 
 .mermaid-blocks-diagram.is-panning .mermaid-blocks-diagram__canvas {
 	cursor: grabbing;
+}
+
+/*
+ * A diagram shown over the whole screen (see frontend/fullscreen.js): the
+ * toolbar stays at the top, and the canvas takes the rest and scrolls. The
+ * page is no longer behind the diagram, so it brings the page's colour along.
+ */
+.mermaid-blocks-diagram.is-fullscreen {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	padding: 16px;
+	background: var(--mermaid-blocks-surface, Canvas);
+}
+
+/*
+ * Where the browser shows no element fullscreen, the diagram covers the page
+ * itself.
+ */
+.mermaid-blocks-diagram.is-fullscreen-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	width: auto;
+	max-width: none;
+	margin: 0;
+}
+
+.mermaid-blocks-diagram.is-fullscreen .mermaid-blocks-diagram__toolbar,
+.mermaid-blocks-diagram.is-fullscreen .mermaid-blocks-diagram__caption {
+	flex: none;
+}
+
+.mermaid-blocks-diagram.is-fullscreen .mermaid-blocks-diagram__canvas {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	max-height: none;
+	overflow: auto;
+}
+
+/*
+ * Automatic margins centre a diagram smaller than the screen, and let a
+ * zoomed one be scrolled to from every edge.
+ */
+.mermaid-blocks-diagram.is-fullscreen .mermaid-blocks-diagram__canvas svg {
+	flex: none;
+	margin: auto;
+}
+
+/* Until it is zoomed, a tall diagram is fitted to the height of the screen. */
+.mermaid-blocks-diagram.is-fullscreen:not(.is-zoomed)
+.mermaid-blocks-diagram__canvas svg {
+	max-height: 100%;
 }
 
 /*

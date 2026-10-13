@@ -34,13 +34,15 @@ final class PostDiagrams {
 	 * with their types.
 	 */
 	const ATTRIBUTES = array(
-		'theme'    => 'string',
-		'caption'  => 'string',
-		'zoom'     => 'boolean',
-		'download' => 'boolean',
-		'accTitle' => 'string',
-		'accDescr' => 'string',
-		'align'    => 'string',
+		'theme'      => 'string',
+		'caption'    => 'string',
+		'zoom'       => 'boolean',
+		'download'   => 'boolean',
+		'copy'       => 'boolean',
+		'fullscreen' => 'boolean',
+		'accTitle'   => 'string',
+		'accDescr'   => 'string',
+		'align'      => 'string',
 	);
 
 	/**

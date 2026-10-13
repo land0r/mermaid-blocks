@@ -173,7 +173,7 @@ final class Block {
 
 		// The controls visitors get. The front-end script adds them to the rendered diagram.
 		$controls = array();
-		foreach ( array( 'zoom', 'download' ) as $control ) {
+		foreach ( Diagram::CONTROLS as $control ) {
 			if ( ! empty( $attributes[ $control ] ) ) {
 				$controls[] = $control;
 			}

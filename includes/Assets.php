@@ -128,13 +128,18 @@ final class Assets {
 		$settings = array(
 			'mermaidUrl' => add_query_arg( 'ver', $mermaid['version'], $this->get_url( 'mermaid/mermaid.esm.min.js' ) ),
 			'i18n'       => array(
-				'controls'      => __( 'Diagram controls', 'mermaid-blocks' ),
-				'zoomIn'        => __( 'Zoom in', 'mermaid-blocks' ),
-				'zoomOut'       => __( 'Zoom out', 'mermaid-blocks' ),
-				'resetZoom'     => __( 'Reset zoom', 'mermaid-blocks' ),
-				'downloadSvg'   => __( 'Download as SVG', 'mermaid-blocks' ),
-				'downloadPng'   => __( 'Download as PNG', 'mermaid-blocks' ),
-				'downloadError' => __( 'The file could not be created.', 'mermaid-blocks' ),
+				'controls'       => __( 'Diagram controls', 'mermaid-blocks' ),
+				'zoomIn'         => __( 'Zoom in', 'mermaid-blocks' ),
+				'zoomOut'        => __( 'Zoom out', 'mermaid-blocks' ),
+				'resetZoom'      => __( 'Reset zoom', 'mermaid-blocks' ),
+				'downloadSvg'    => __( 'Download as SVG', 'mermaid-blocks' ),
+				'downloadPng'    => __( 'Download as PNG', 'mermaid-blocks' ),
+				'downloadError'  => __( 'The file could not be created.', 'mermaid-blocks' ),
+				'copyCode'       => __( 'Copy code', 'mermaid-blocks' ),
+				'copied'         => __( 'Copied.', 'mermaid-blocks' ),
+				'copyError'      => __( 'The code could not be copied.', 'mermaid-blocks' ),
+				'fullscreen'     => __( 'View fullscreen', 'mermaid-blocks' ),
+				'exitFullscreen' => __( 'Exit fullscreen', 'mermaid-blocks' ),
 			),
 		);
 		wp_add_inline_script(
