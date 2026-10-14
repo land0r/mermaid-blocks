@@ -1,7 +1,7 @@
 /**
  * The block in the editor: the preview of the diagram, its caption, the code
  * field while the block is selected, the sidebar, and a toolbar menu that
- * downloads the preview.
+ * downloads or copies the preview.
  */
 import { __ } from '@wordpress/i18n';
 import {
@@ -21,7 +21,11 @@ import CodeInput from './components/code-input';
 import DiagramSettings from './components/diagram-settings';
 import MermaidDiagram from './components/mermaid-diagram';
 import { SITE_THEME, getOwnTheme } from './editor/settings';
-import { downloadDiagram } from './utils/export-diagram';
+import {
+	canCopyImage,
+	copyDiagram,
+	downloadDiagram,
+} from './utils/export-diagram';
 
 // How long the preview waits for typing to pause before it draws the code.
 const PREVIEW_DELAY = 250;
@@ -63,7 +67,8 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 	const showCode = isSelected || ! code.trim() || !! error;
 
 	const previewRef = useRef( null );
-	const { createErrorNotice } = useDispatch( noticesStore );
+	const { createErrorNotice, createSuccessNotice } =
+		useDispatch( noticesStore );
 
 	const getPreviewSvg = () =>
 		previewRef.current &&
@@ -82,7 +87,32 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 		}
 	};
 
-	const downloadControls = [
+	const copyPreview = () => {
+		const svg = getPreviewSvg();
+
+		if ( svg ) {
+			copyDiagram( svg ).then(
+				() =>
+					createSuccessNotice(
+						__(
+							'Diagram copied as a PNG image.',
+							'mermaid-blocks'
+						),
+						{ type: 'snackbar' }
+					),
+				() =>
+					createErrorNotice(
+						__(
+							'The image could not be copied.',
+							'mermaid-blocks'
+						),
+						{ type: 'snackbar' }
+					)
+			);
+		}
+	};
+
+	const exportControls = [
 		{
 			title: __( 'Download as SVG', 'mermaid-blocks' ),
 			onClick: () => downloadPreview( 'svg' ),
@@ -93,14 +123,22 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 		},
 	];
 
+	// Only where the browser can put an image on the clipboard.
+	if ( canCopyImage() ) {
+		exportControls.push( {
+			title: __( 'Copy as PNG', 'mermaid-blocks' ),
+			onClick: copyPreview,
+		} );
+	}
+
 	return (
 		<div { ...useBlockProps() }>
 			<BlockControls group="other">
 				<ToolbarDropdownMenu
 					icon="download"
-					label={ __( 'Download', 'mermaid-blocks' ) }
+					label={ __( 'Download or copy', 'mermaid-blocks' ) }
 					toggleProps={ { disabled: ! hasPreview } }
-					controls={ downloadControls }
+					controls={ exportControls }
 				/>
 			</BlockControls>
 			<DiagramSettings

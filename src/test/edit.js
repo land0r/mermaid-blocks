@@ -112,6 +112,7 @@ jest.mock(
 
 const mockNotices = {
 	createErrorNotice: jest.fn(),
+	createSuccessNotice: jest.fn(),
 };
 
 jest.mock( '@wordpress/data', () => ( { useDispatch: () => mockNotices } ), {
@@ -150,9 +151,15 @@ jest.mock( '../components/mermaid-diagram', () => {
 	};
 } );
 
+jest.mock( '../utils/export-diagram', () => ( {
+	...jest.requireActual( '../utils/export-diagram' ),
+	copyDiagram: jest.fn( () => Promise.resolve() ),
+} ) );
+
 import { act, createRoot } from '@wordpress/element';
 
 import Edit from '../edit';
+import { copyDiagram } from '../utils/export-diagram';
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -208,12 +215,16 @@ beforeEach( () => {
 	root = createRoot( container );
 	setAttributes = jest.fn();
 	mockNotices.createErrorNotice.mockClear();
+	mockNotices.createSuccessNotice.mockClear();
+	copyDiagram.mockClear();
 } );
 
 afterEach( () => {
 	act( () => root.unmount() );
 	container.remove();
 	jest.useRealTimers();
+	delete window.ClipboardItem;
+	delete window.navigator.clipboard;
 } );
 
 describe( 'the code', () => {
@@ -283,15 +294,70 @@ describe( 'the code', () => {
 } );
 
 describe( 'the toolbar menu', () => {
-	it( 'downloads the preview', () => {
-		render( { code: CODE }, true );
-
-		const titles = Array.from(
+	const titles = () =>
+		Array.from(
 			container.querySelectorAll( '[role="menuitem"]' ),
 			( item ) => item.textContent
 		);
 
-		expect( titles ).toEqual( [ 'Download as SVG', 'Download as PNG' ] );
+	it( 'downloads where the clipboard takes no images', () => {
+		render( { code: CODE }, true );
+
+		expect( titles() ).toEqual( [ 'Download as SVG', 'Download as PNG' ] );
+	} );
+
+	it( 'copies the preview as a PNG where the clipboard takes images', async () => {
+		window.ClipboardItem = class {};
+		Object.defineProperty( window.navigator, 'clipboard', {
+			configurable: true,
+			value: { write: () => Promise.resolve() },
+		} );
+		render( { code: CODE }, true );
+
+		expect( titles() ).toEqual( [
+			'Download as SVG',
+			'Download as PNG',
+			'Copy as PNG',
+		] );
+
+		await act( async () =>
+			container
+				.querySelector( '[role="menuitem"]:last-child' )
+				.dispatchEvent(
+					new window.MouseEvent( 'click', { bubbles: true } )
+				)
+		);
+
+		expect( copyDiagram ).toHaveBeenCalledWith(
+			container.querySelector( '.mermaid-container__diagram > svg' )
+		);
+		expect( mockNotices.createSuccessNotice ).toHaveBeenCalled();
+		expect( mockNotices.createErrorNotice ).not.toHaveBeenCalled();
+	} );
+
+	it( 'tells when the image could not be copied', async () => {
+		window.ClipboardItem = class {};
+		Object.defineProperty( window.navigator, 'clipboard', {
+			configurable: true,
+			value: { write: () => Promise.resolve() },
+		} );
+		copyDiagram.mockImplementationOnce( () =>
+			Promise.reject( new Error( 'Denied' ) )
+		);
+		render( { code: CODE }, true );
+
+		await act( async () =>
+			container
+				.querySelector( '[role="menuitem"]:last-child' )
+				.dispatchEvent(
+					new window.MouseEvent( 'click', { bubbles: true } )
+				)
+		);
+
+		expect( mockNotices.createErrorNotice ).toHaveBeenCalledWith(
+			'The image could not be copied.',
+			{ type: 'snackbar' }
+		);
 	} );
 } );
 
