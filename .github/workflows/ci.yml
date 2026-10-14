@@ -95,11 +95,13 @@ jobs:
             echo "::error::The plugin ZIP holds development dependencies."
             exit 1
           fi
-          # Every class must load through the zipped autoloader.
+          # Every class must load through the zipped autoloader. The Elementor
+          # widget extends a class of Elementor, which stands in for it here.
           php -r '
             define( "ABSPATH", getcwd() . "/" );
             require "vendor/autoload.php";
-            foreach ( array_merge( glob( "includes/[A-Z]*.php" ), glob( "includes/*/[A-Z]*.php" ) ) as $file ) {
+            eval( "namespace Elementor; abstract class Widget_Base {}" );
+            foreach ( array_merge( glob( "includes/[A-Z]*.php" ), glob( "includes/*/[A-Z]*.php" ), glob( "includes/*/*/[A-Z]*.php" ) ) as $file ) {
               $class = "MermaidBlocks\\" . str_replace( "/", "\\", substr( $file, 9, -4 ) );
               if ( ! class_exists( $class ) && ! interface_exists( $class ) ) {
                 echo "::error::$class does not load from the plugin ZIP.\n";

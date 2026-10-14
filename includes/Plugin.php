@@ -58,11 +58,13 @@ final class Plugin {
 	 */
 	const DEFERRED_PARTS = array(
 		// Also where the block editor is loaded outside the admin.
-		Admin\Editor::class              => array( 'enqueue_block_editor_assets' ),
-		Abilities\ClientAbilities::class => array( 'enqueue_block_editor_assets' ),
-		Abilities\Registrar::class       => array( 'wp_abilities_api_categories_init', 'wp_abilities_api_init' ),
-		Images\ImageSync::class          => array( 'wp_after_insert_post' ),
-		Images\ImagesController::class   => array( 'rest_api_init' ),
+		Admin\Editor::class                     => array( 'enqueue_block_editor_assets' ),
+		Abilities\ClientAbilities::class        => array( 'enqueue_block_editor_assets' ),
+		Abilities\Registrar::class              => array( 'wp_abilities_api_categories_init', 'wp_abilities_api_init' ),
+		Images\ImageSync::class                 => array( 'wp_after_insert_post' ),
+		Images\ImagesController::class          => array( 'rest_api_init' ),
+		// Only where Elementor is active.
+		Integrations\Elementor\Registrar::class => array( 'elementor/widgets/register', 'elementor/frontend/after_register_scripts' ),
 	);
 
 	/**

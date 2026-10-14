@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!--
+	The tests of the Elementor widget, with Elementor active. The other tests
+	run as on a site without Elementor (phpunit.xml.dist): Elementor changes
+	what WordPress outputs, such as the attributes of images in content.
+-->
+<phpunit
+	bootstrap="tests/bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	convertDeprecationsToExceptions="true"
+>
+	<php>
+		<env name="MERMAID_BLOCKS_TESTS_ELEMENTOR" value="1"/>
+	</php>
+	<testsuites>
+		<testsuite name="Elementor">
+			<directory suffix="Test.php">./tests/Elementor/</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>

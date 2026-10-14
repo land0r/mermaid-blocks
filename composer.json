@@ -8,7 +8,22 @@
 			"MermaidBlocks\\": "includes/"
 		}
 	},
+	"repositories": [
+		{
+			"type": "package",
+			"package": {
+				"name": "wordpress-plugin/elementor",
+				"version": "4.3.5",
+				"dist": {
+					"type": "zip",
+					"url": "https://downloads.wordpress.org/plugin/elementor.4.3.5.zip",
+					"shasum": "41309f1bd27df5cb014f6dc16b229a477e6fc3ce"
+				}
+			}
+		}
+	],
 	"require-dev": {
+		"wordpress-plugin/elementor": "4.3.5",
 		"wp-coding-standards/wpcs": "^3.4.1",
 		"squizlabs/php_codesniffer": "^3.13.6",
 		"phpcompatibility/phpcompatibility-wp": "^3.0@alpha",
@@ -32,6 +47,10 @@
 		"cs": "phpcs --extensions=php .",
 		"cbf": "phpcbf --extensions=php .",
 		"cs:config": "phpcs --config-show",
-		"test": "phpunit"
+		"test": [
+			"phpunit",
+			"@test:elementor"
+		],
+		"test:elementor": "phpunit -c phpunit-elementor.xml.dist"
 	}
 }
