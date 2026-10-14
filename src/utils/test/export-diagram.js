@@ -1,4 +1,6 @@
 import {
+	canCopyImage,
+	copyDiagram,
 	downloadDiagram,
 	getDiagramSize,
 	getPngBackground,
@@ -177,28 +179,33 @@ describe( 'getSvgMarkup', () => {
 	} );
 } );
 
-describe( 'downloadDiagram', () => {
-	let downloads;
-	let context;
-	let pngBlob;
+// Stands in for the browser loading the SVG as an image.
+class FakeImage {
+	static fails = false;
+	static loaded = [];
 
-	// Stands in for the browser loading the SVG as an image.
-	class FakeImage {
-		static fails = false;
-		static loaded = [];
-
-		set src( url ) {
-			FakeImage.loaded.push( url );
-			setTimeout( () =>
-				FakeImage.fails ? this.onerror() : this.onload()
-			);
-		}
+	set src( url ) {
+		FakeImage.loaded.push( url );
+		setTimeout( () =>
+			FakeImage.fails ? this.onerror() : this.onload()
+		);
 	}
+}
+
+/**
+ * Stands in for what drawing a PNG and downloading a file need, before each
+ * test of the calling `describe`.
+ *
+ * @return {Object} The downloads started, the canvas context and the PNG, as
+ * properties set before each test.
+ */
+function setUpPng() {
+	const state = {};
 
 	beforeEach( () => {
-		downloads = [];
-		context = { fillRect: jest.fn(), drawImage: jest.fn() };
-		pngBlob = new window.Blob( [ 'png' ], { type: 'image/png' } );
+		state.downloads = [];
+		state.context = { fillRect: jest.fn(), drawImage: jest.fn() };
+		state.pngBlob = new window.Blob( [ 'png' ], { type: 'image/png' } );
 		FakeImage.fails = false;
 		FakeImage.loaded = [];
 
@@ -210,22 +217,35 @@ describe( 'downloadDiagram', () => {
 			window.HTMLAnchorElement.prototype,
 			'click'
 		).mockImplementation( function () {
-			downloads.push( { name: this.download, url: this.href } );
+			state.downloads.push( { name: this.download, url: this.href } );
 		} );
 		jest.spyOn(
 			window.HTMLCanvasElement.prototype,
 			'getContext'
-		).mockImplementation( () => context );
+		).mockImplementation( () => state.context );
 		jest.spyOn(
 			window.HTMLCanvasElement.prototype,
 			'toBlob'
-		).mockImplementation( ( callback ) => callback( pngBlob ) );
+		).mockImplementation( ( callback ) => callback( state.pngBlob ) );
 	} );
 
 	afterEach( () => {
 		jest.restoreAllMocks();
 		delete window.URL.createObjectURL;
 		delete window.URL.revokeObjectURL;
+	} );
+
+	return state;
+}
+
+describe( 'downloadDiagram', () => {
+	const png = setUpPng();
+	let downloads;
+	let context;
+	let pngBlob;
+
+	beforeEach( () => {
+		( { downloads, context, pngBlob } = png );
 	} );
 
 	it( 'downloads the SVG', async () => {
@@ -312,5 +332,94 @@ describe( 'downloadDiagram', () => {
 			downloadDiagram( createDiagram(), 'png' )
 		).rejects.toThrow();
 		expect( downloads ).toEqual( [] );
+	} );
+} );
+
+describe( 'canCopyImage', () => {
+	const view = ( { ClipboardItem, clipboard } ) => ( {
+		ClipboardItem,
+		navigator: { clipboard },
+	} );
+
+	it( 'is true where the clipboard takes images', () => {
+		expect(
+			canCopyImage(
+				view( {
+					ClipboardItem: class {},
+					clipboard: { write: () => {} },
+				} )
+			)
+		).toBe( true );
+	} );
+
+	it( 'is false without a clipboard, as on a page served over HTTP', () => {
+		expect( canCopyImage( view( { ClipboardItem: class {} } ) ) ).toBe(
+			false
+		);
+	} );
+
+	it( 'is false where the clipboard takes only text', () => {
+		expect(
+			canCopyImage( view( { clipboard: { writeText: () => {} } } ) )
+		).toBe( false );
+	} );
+} );
+
+describe( 'copyDiagram', () => {
+	const png = setUpPng();
+	let written;
+
+	// Stands in for the browser's ClipboardItem.
+	class FakeClipboardItem {
+		constructor( items ) {
+			this.items = items;
+		}
+	}
+
+	beforeEach( () => {
+		written = null;
+		window.ClipboardItem = FakeClipboardItem;
+		Object.defineProperty( window.navigator, 'clipboard', {
+			configurable: true,
+			value: {
+				write: jest.fn( async ( [ item ] ) => {
+					// The browser reads the PNG once it has been drawn.
+					written = await item.items[ 'image/png' ];
+				} ),
+			},
+		} );
+	} );
+
+	afterEach( () => {
+		delete window.ClipboardItem;
+		delete window.navigator.clipboard;
+	} );
+
+	it( 'puts the PNG the download makes on the clipboard', async () => {
+		await copyDiagram( createDiagram() );
+
+		expect( written ).toBe( png.pngBlob );
+		expect( png.context.fillStyle ).toBe( '#fff' );
+		expect( png.context.fillRect ).toHaveBeenCalledWith( 0, 0, 600, 301 );
+		expect( png.downloads ).toEqual( [] );
+	} );
+
+	it( 'writes to the clipboard before the PNG has been drawn', async () => {
+		const copied = copyDiagram( createDiagram() );
+
+		const [ [ [ item ] ] ] = window.navigator.clipboard.write.mock.calls;
+
+		expect( item ).toBeInstanceOf( FakeClipboardItem );
+		expect( item.items[ 'image/png' ] ).toBeInstanceOf( Promise );
+
+		await copied;
+	} );
+
+	it( 'rejects when the PNG cannot be created', async () => {
+		window.HTMLCanvasElement.prototype.toBlob.mockImplementation(
+			( callback ) => callback( null )
+		);
+
+		await expect( copyDiagram( createDiagram() ) ).rejects.toThrow();
 	} );
 } );

@@ -1,6 +1,7 @@
 /**
  * Turns a rendered diagram into a file: the SVG itself, or a PNG drawn from
- * it. Used by the download buttons on the front end and in the editor.
+ * it. Used by the download buttons on the front end and in the editor, and by
+ * the editor's Copy as PNG.
  */
 import { getSurface } from './surface';
 import { isDarkTheme } from './themes';
@@ -233,4 +234,40 @@ export async function downloadDiagram( svg, format ) {
 			  } );
 
 	saveFile( blob, `${ FILE_NAME }.${ format }` );
+}
+
+/**
+ * Tells whether the browser can put an image on the clipboard. It can only on
+ * pages served over HTTPS, or from localhost.
+ *
+ * @param {Window} [view] The window. Default: the current one.
+ *
+ * @return {boolean} True when copyDiagram() can work.
+ */
+export function canCopyImage( view = window ) {
+	const { clipboard } = view.navigator;
+
+	return (
+		typeof view.ClipboardItem === 'function' &&
+		!! clipboard &&
+		typeof clipboard.write === 'function'
+	);
+}
+
+/**
+ * Puts a diagram on the clipboard as a PNG: the image downloadDiagram() saves.
+ *
+ * The clipboard gets the PNG as a promise, so it is written to while the click
+ * that asked for it still counts as one: Safari refuses a write that starts
+ * after the PNG has been drawn.
+ *
+ * @param {SVGSVGElement} svg The rendered diagram.
+ *
+ * @return {Promise<void>} Resolves once the image is on the clipboard. Rejects
+ * when the PNG could not be created or the browser refused to copy it.
+ */
+export function copyDiagram( svg ) {
+	return window.navigator.clipboard.write( [
+		new window.ClipboardItem( { 'image/png': getPngBlob( svg ) } ),
+	] );
 }
