@@ -28,6 +28,7 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - A title and a description of each diagram for screen readers.
 - Optionally, a saved image of each diagram, for feeds and for browsers that run no JavaScript, which otherwise show its Mermaid code.
 - Simple and intuitive integration with the block editor.
+- A Mermaid Diagram widget for Elementor, with the block's settings and a live preview.
 - A `[mermaid]` shortcode for the classic editor, page builders and text widgets.
 - Optionally, Mermaid code that is already in your posts as code, such as a `language-mermaid` code block from a Markdown import, is shown as a diagram.
 - Light on your pages: a page with a diagram loads one small script, then Mermaid when a diagram scrolls into view, and of Mermaid only the parts that diagram needs. A page without a diagram loads nothing.
@@ -124,7 +125,7 @@ Without them, flowcharts and class, state, entity relationship and requirement d
 The Mermaid code of the diagram, since it is the browser that draws it. To show them a picture instead, switch on "Save an image of each diagram" under Settings → Mermaid Blocks, then open your posts in the block editor, which makes the images.
 
 = Can I use it in the classic editor or a page builder? =
-Yes, with the `[mermaid]` shortcode: put the Mermaid code between `[mermaid]` and `[/mermaid]`. If a page builder shows the code instead of the diagram, the code has a `<` that WordPress took for the start of a tag: write it as `&lt;`.
+In Elementor, add the Mermaid Diagram widget: it has the block's settings, and its preview shows the diagram as you edit it. Elsewhere, use the `[mermaid]` shortcode: put the Mermaid code between `[mermaid]` and `[/mermaid]`. If a page builder shows the code instead of the diagram, the code has a `<` that WordPress took for the start of a tag: write it as `&lt;`.
 
 = My posts already have Mermaid code in code blocks. Do I have to convert them? =
 No. Switch on "Show code marked as Mermaid as diagrams" under Settings → Mermaid Blocks. Code with the `language-mermaid` class is then shown as a diagram, and the posts stay as they are. The diagram replaces the code before the page is sent, so a script of another plugin that draws such code finds none: it is not drawn twice. To keep some code as code, return false from the `mermaid_blocks_show_code_as_diagram` filter.
