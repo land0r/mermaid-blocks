@@ -158,12 +158,12 @@ final class SettingsPage implements Hookable {
 			Options::CODE_BLOCKS => array(
 				'title'       => __( 'Code blocks', 'mermaid-blocks' ),
 				'label'       => __( 'Show code marked as Mermaid as diagrams', 'mermaid-blocks' ),
-				'description' => __( 'For Mermaid code that is in a post as code: a Code block with the additional CSS class <code>language-mermaid</code>, or a <code>&lt;pre&gt;&lt;code class="language-mermaid"&gt;</code> element, as Markdown converters write it. Visitors see a diagram in the theme set above, and the editor keeps showing the code.', 'mermaid-blocks' ),
+				'description' => __( 'Turns code with the <code>language-mermaid</code> class, such as Markdown code blocks, into diagrams for visitors. The editor still shows the code.', 'mermaid-blocks' ),
 			),
 			Options::SAVE_IMAGES => array(
 				'title'       => __( 'Saved images', 'mermaid-blocks' ),
 				'label'       => __( 'Save an image of each diagram', 'mermaid-blocks' ),
-				'description' => __( 'Feeds, and browsers that run no JavaScript, then show the diagram instead of its Mermaid code. The block editor makes the images when a post is opened or saved in it, so a diagram changed anywhere else shows its code until then.', 'mermaid-blocks' ),
+				'description' => __( 'Feeds and browsers without JavaScript show the image instead of the code. The block editor saves it when you open or save a post.', 'mermaid-blocks' ),
 			),
 		);
 	}
@@ -270,7 +270,7 @@ final class SettingsPage implements Hookable {
 			<?php endforeach; ?>
 		</select>
 		<p class="description" id="mermaid_blocks_theme_description">
-			<?php esc_html_e( 'Automatic is the theme Mermaid picks for each type of diagram, or its dark counterpart where the diagram sits on a dark background. A diagram block can have a theme of its own.', 'mermaid-blocks' ); ?>
+			<?php esc_html_e( 'Automatic turns dark on dark backgrounds. Each diagram block can use its own theme.', 'mermaid-blocks' ); ?>
 		</p>
 		<?php
 	}

@@ -32,7 +32,7 @@ final class DiagramTypes {
 		return array(
 			'class-diagram'    => array(
 				'title'       => __( 'Class Diagram', 'mermaid-blocks' ),
-				'description' => __( 'A preconfigured MermaidJS block for creating class diagrams.', 'mermaid-blocks' ),
+				'description' => __( 'A class diagram to start from.', 'mermaid-blocks' ),
 				'keyword'     => 'classDiagram',
 				'code'        => implode(
 					"\n",
@@ -64,7 +64,7 @@ final class DiagramTypes {
 			),
 			'flowchart'        => array(
 				'title'       => __( 'Flowchart', 'mermaid-blocks' ),
-				'description' => __( 'A preconfigured MermaidJS block for creating flowcharts.', 'mermaid-blocks' ),
+				'description' => __( 'A flowchart to start from.', 'mermaid-blocks' ),
 				'keyword'     => 'flowchart',
 				'code'        => implode(
 					"\n",
@@ -85,7 +85,7 @@ final class DiagramTypes {
 			),
 			'mindmap'          => array(
 				'title'       => __( 'Mind Map', 'mermaid-blocks' ),
-				'description' => __( 'A preconfigured MermaidJS block for creating mind maps.', 'mermaid-blocks' ),
+				'description' => __( 'A mind map to start from.', 'mermaid-blocks' ),
 				'keyword'     => 'mindmap',
 				'code'        => implode(
 					"\n",
@@ -116,7 +116,7 @@ final class DiagramTypes {
 			),
 			'sequence-diagram' => array(
 				'title'       => __( 'Sequence Diagram', 'mermaid-blocks' ),
-				'description' => __( 'A preconfigured MermaidJS block for creating sequence diagrams.', 'mermaid-blocks' ),
+				'description' => __( 'A sequence diagram to start from.', 'mermaid-blocks' ),
 				'keyword'     => 'sequenceDiagram',
 				'code'        => implode(
 					"\n",
@@ -141,7 +141,7 @@ final class DiagramTypes {
 			),
 			'state-diagram'    => array(
 				'title'       => __( 'State Diagram', 'mermaid-blocks' ),
-				'description' => __( 'A preconfigured MermaidJS block for creating state diagrams.', 'mermaid-blocks' ),
+				'description' => __( 'A state diagram to start from.', 'mermaid-blocks' ),
 				'keyword'     => 'stateDiagram-v2',
 				'code'        => implode(
 					"\n",

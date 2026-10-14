@@ -71,7 +71,7 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 					help={
 						<>
 							{ __(
-								'Automatic is the theme Mermaid picks for each type of diagram, or its dark counterpart on a dark background. A theme set in the code of the diagram takes precedence.',
+								'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.',
 								'mermaid-blocks'
 							) }
 							{ SETTINGS_URL && (
@@ -97,7 +97,7 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 			<PanelBody title={ __( 'Visitor controls', 'mermaid-blocks' ) }>
 				<p className="mermaid-blocks-panel-help">
 					{ __(
-						'What visitors can do with the diagram on the published page.',
+						'Buttons on the published diagram.',
 						'mermaid-blocks'
 					) }
 				</p>
@@ -119,7 +119,7 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 					__next40pxDefaultSize
 					label={ __( 'Title', 'mermaid-blocks' ) }
 					help={ __(
-						'A short name for the diagram, read out by screen readers.',
+						'A short name, read by screen readers.',
 						'mermaid-blocks'
 					) }
 					value={ accTitle || '' }
@@ -131,7 +131,7 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 					__nextHasNoMarginBottom
 					label={ __( 'Description', 'mermaid-blocks' ) }
 					help={ __(
-						'What the diagram shows, for people who cannot see it.',
+						'What the diagram shows, read by screen readers.',
 						'mermaid-blocks'
 					) }
 					value={ accDescr || '' }

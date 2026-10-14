@@ -182,7 +182,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 					help={
 						<>
 							{ __(
-								'Tab and Shift+Tab indent and outdent. To leave the field, press Escape, then Tab.',
+								'Tab indents. To leave the field, press Esc, then Tab.',
 								'mermaid-blocks'
 							) }{ ' ' }
 							<ExternalLink href={ SYNTAX_URL }>
