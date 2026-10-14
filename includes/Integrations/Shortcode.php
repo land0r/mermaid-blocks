@@ -59,11 +59,6 @@ final class Shortcode implements Hookable {
 	const FLAGS = array( 'zoom', 'download' );
 
 	/**
-	 * The alignments, as the block has them.
-	 */
-	const ALIGNMENTS = array( 'center', 'wide', 'full' );
-
-	/**
 	 * The diagram markup.
 	 *
 	 * @var Diagram
@@ -213,27 +208,23 @@ final class Shortcode implements Hookable {
 	 */
 	public function render( $attributes, $content = '', $tag = '' ): string {
 		$attributes = shortcode_atts( self::ATTRIBUTES, $this->read_flags( (array) $attributes ), (string) $tag );
-		$wrapper    = array();
 
-		if ( in_array( $attributes['align'], self::ALIGNMENTS, true ) ) {
-			$wrapper['class'] = 'align' . $attributes['align'];
-		}
+		// The settings of the block that these attributes are.
+		$settings = array(
+			'code'     => $this->get_code( $content ),
+			'theme'    => $attributes['theme'],
+			'caption'  => (string) $attributes['caption'],
+			'accTitle' => $attributes['title'],
+			'accDescr' => $attributes['description'],
+			'align'    => $attributes['align'],
+		);
 
-		// An unknown theme, or none, gives the diagram the site's.
-		if ( is_string( $attributes['theme'] ) && '' !== $attributes['theme'] ) {
-			$wrapper['data-mermaid-theme'] = $attributes['theme'];
-		}
-
-		$controls = array();
+		// As true or false: `zoom="false"` is off, though the string isn't empty.
 		foreach ( self::FLAGS as $flag ) {
-			if ( filter_var( $attributes[ $flag ], FILTER_VALIDATE_BOOLEAN ) ) {
-				$controls[] = $flag;
-			}
+			$settings[ $flag ] = filter_var( $attributes[ $flag ], FILTER_VALIDATE_BOOLEAN );
 		}
 
-		$wrapper += $this->diagram->get_data_attributes( $controls, $attributes['title'], $attributes['description'] );
-
-		return $this->diagram->get_markup( $this->get_code( $content ), $wrapper, (string) $attributes['caption'] );
+		return $this->diagram->render( $settings );
 	}
 
 	/**

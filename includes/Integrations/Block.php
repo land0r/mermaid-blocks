@@ -126,17 +126,9 @@ final class Block implements Hookable {
 			'data-mermaid-theme' => $this->diagram->get_theme( $theme ),
 		);
 
-		// The controls visitors get. The front-end script adds them to the rendered diagram.
-		$controls = array();
-		foreach ( Diagram::CONTROLS as $control ) {
-			if ( ! empty( $attributes[ $control ] ) ) {
-				$controls[] = $control;
-			}
-		}
-
-		// With what assistive technology reads for the diagram. The front-end script writes both into the rendered SVG.
+		// The controls visitors get, and what assistive technology reads for the diagram. The front-end script adds them to the rendered diagram.
 		$wrapper += $this->diagram->get_data_attributes(
-			$controls,
+			$this->diagram->get_controls( (array) $attributes ),
 			isset( $attributes['accTitle'] ) ? $attributes['accTitle'] : '',
 			isset( $attributes['accDescr'] ) ? $attributes['accDescr'] : ''
 		);

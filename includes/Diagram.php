@@ -16,7 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Builds the markup of a diagram: its source, escaped, in a wrapper that the
  * front-end script finds and renders.
  *
- * An integration outputs get_markup() and makes sure the
+ * An integration whose settings are named as the block's attributes, such as
+ * a page builder widget, outputs render(). Others output get_markup(), and
+ * make sure the
  * `mermaid-blocks-diagram` script and style are loaded: the method enqueues
  * them, and an integration that renders outside a normal page load declares
  * both handles as its dependencies instead. Diagrams added to the page later,
@@ -44,6 +46,12 @@ final class Diagram {
 	 * on.
 	 */
 	const CONTROLS = array( 'zoom', 'download', 'copy', 'fullscreen' );
+
+	/**
+	 * The alignments of a diagram, as the block has them: each is a class,
+	 * such as `aligncenter`.
+	 */
+	const ALIGNMENTS = array( 'center', 'wide', 'full' );
 
 	/**
 	 * The themes a diagram can be drawn in.
@@ -80,6 +88,27 @@ final class Diagram {
 	 */
 	public function get_theme( $theme = '' ): string {
 		return $this->themes->resolve( $theme );
+	}
+
+	/**
+	 * Returns the controls a diagram gives visitors, from settings named as
+	 * the block's attributes: each of CONTROLS whose setting is on.
+	 *
+	 * @param array $settings The settings, such as `zoom` => true. A setting
+	 *                        is on when it isn't empty.
+	 *
+	 * @return string[] The controls, in the order of CONTROLS.
+	 */
+	public function get_controls( array $settings ): array {
+		$controls = array();
+
+		foreach ( self::CONTROLS as $control ) {
+			if ( ! empty( $settings[ $control ] ) ) {
+				$controls[] = $control;
+			}
+		}
+
+		return $controls;
 	}
 
 	/**
@@ -310,5 +339,56 @@ final class Diagram {
 		$this->assets->enqueue_renderer();
 
 		return $this->wrap( implode( ' ', $attribute_markup ), $code, $caption );
+	}
+
+	/**
+	 * Returns the markup of a diagram from settings named as the block's
+	 * attributes, and enqueues the assets that render it.
+	 *
+	 * For an integration that has the block's settings, such as a page builder
+	 * widget. The shortcode passes its attributes under these names too. The
+	 * block builds its wrapper with the attributes the block editor adds, so
+	 * it uses the parts of this method instead: get_theme(), get_controls(),
+	 * get_data_attributes() and wrap().
+	 *
+	 * @param array $settings The settings, each optional:
+	 *                        `code`, the Mermaid source;
+	 *                        `theme`, a name from Themes::get_all(): without
+	 *                        one, or with an unknown one, the site's;
+	 *                        `zoom`, `download`, `copy` and `fullscreen`, the
+	 *                        controls visitors get, each when it isn't empty;
+	 *                        `caption`, which may contain the HTML allowed in
+	 *                        post content;
+	 *                        `accTitle` and `accDescr`, a title and a
+	 *                        description for assistive technology;
+	 *                        `align`, one of ALIGNMENTS.
+	 *                        Other settings are ignored.
+	 *
+	 * @return string The diagram markup, or an empty string when there is no code.
+	 */
+	public function render( array $settings ): string {
+		$wrapper = array();
+
+		$align = isset( $settings['align'] ) ? $settings['align'] : '';
+		if ( in_array( $align, self::ALIGNMENTS, true ) ) {
+			$wrapper['class'] = 'align' . $align;
+		}
+
+		// An unknown theme, or none, gives the diagram the site's.
+		if ( isset( $settings['theme'] ) && is_string( $settings['theme'] ) && '' !== $settings['theme'] ) {
+			$wrapper['data-mermaid-theme'] = $settings['theme'];
+		}
+
+		$wrapper += $this->get_data_attributes(
+			$this->get_controls( $settings ),
+			isset( $settings['accTitle'] ) ? $settings['accTitle'] : '',
+			isset( $settings['accDescr'] ) ? $settings['accDescr'] : ''
+		);
+
+		return $this->get_markup(
+			isset( $settings['code'] ) ? $settings['code'] : '',
+			$wrapper,
+			isset( $settings['caption'] ) ? $settings['caption'] : ''
+		);
 	}
 }

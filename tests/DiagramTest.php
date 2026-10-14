@@ -8,6 +8,7 @@
 namespace MermaidBlocks\Tests;
 
 use MermaidBlocks\Diagram;
+use MermaidBlocks\Integrations\Shortcode;
 use WP_UnitTestCase;
 
 /**
@@ -142,6 +143,113 @@ class DiagramTest extends WP_UnitTestCase {
 		$this->assertSame(
 			'<div class="mermaid-blocks-diagram alignwide" data-mermaid-controls="zoom fullscreen" data-mermaid-title="A &quot;title&quot;" data-mermaid-theme="auto">' . self::SOURCE . '</div>',
 			$this->diagram->get_markup( 'A[x] --> B', $attributes )
+		);
+	}
+
+	/**
+	 * The controls of settings named as the block's attributes: those that
+	 * are on, in the order of CONTROLS, whatever the order of the settings.
+	 */
+	public function test_reads_the_controls_of_settings(): void {
+		$this->assertSame( array(), $this->diagram->get_controls( array() ) );
+		$this->assertSame(
+			array( 'zoom', 'copy', 'fullscreen' ),
+			$this->diagram->get_controls(
+				array(
+					'fullscreen' => 'yes',
+					'download'   => '',
+					'copy'       => true,
+					'zoom'       => 1,
+					'caption'    => 'Not a control',
+				)
+			)
+		);
+		$this->assertSame(
+			array(),
+			$this->diagram->get_controls(
+				array(
+					'zoom'     => false,
+					'download' => '0',
+				)
+			)
+		);
+	}
+
+	/**
+	 * Settings named as the block's attributes, as a page builder widget has
+	 * them, give the diagram the shortcode gives for the same settings.
+	 */
+	public function test_renders_settings_as_the_shortcode_does(): void {
+		$code      = "flowchart LR\nA[\"Tom & Jerry\"] --> B{x < y}\nB --> C[gallery]";
+		$shortcode = mermaid_blocks()->get( Shortcode::class );
+
+		// As WordPress calls it, with the code as the editors store it. Not through do_shortcode(), which decodes the brackets of its output.
+		$this->assertSame(
+			$shortcode->render(
+				shortcode_parse_atts( 'theme="forest" zoom download caption="A <em>caption</em>" title="A &quot;title&quot;" description="What it shows" align="center"' ),
+				esc_html( $code ),
+				Shortcode::PREFIXED_TAG
+			),
+			$this->diagram->render(
+				array(
+					'code'     => $code,
+					'theme'    => 'forest',
+					'zoom'     => 'yes',
+					'download' => 'yes',
+					'copy'     => '',
+					'caption'  => 'A <em>caption</em>',
+					'accTitle' => 'A "title"',
+					'accDescr' => 'What it shows',
+					'align'    => 'center',
+				)
+			)
+		);
+
+		$this->assertSame(
+			$shortcode->render( '', 'A[x] --&gt; B', Shortcode::PREFIXED_TAG ),
+			$this->diagram->render( array( 'code' => 'A[x] --> B' ) )
+		);
+	}
+
+	/**
+	 * Each setting has its place in the markup. The controls the shortcode
+	 * lacks, copy and fullscreen, are there too.
+	 */
+	public function test_renders_settings(): void {
+		$markup = $this->diagram->render(
+			array(
+				'code'       => 'A[x] --> B',
+				'theme'      => 'dark',
+				'copy'       => 'yes',
+				'fullscreen' => 'yes',
+				'caption'    => 'Checkout',
+				'align'      => 'wide',
+				'widgetType' => 'ignored',
+			)
+		);
+
+		$this->assertSame(
+			'<figure class="mermaid-blocks-diagram alignwide" data-mermaid-theme="dark" data-mermaid-controls="copy fullscreen">' . self::SOURCE . '<figcaption class="mermaid-blocks-diagram__caption wp-element-caption">Checkout</figcaption></figure>',
+			$markup
+		);
+	}
+
+	/**
+	 * Without code there is no diagram. An unknown theme or alignment is left
+	 * out: the diagram gets the site's theme, and no alignment.
+	 */
+	public function test_renders_what_settings_allow(): void {
+		$this->assertSame( '', $this->diagram->render( array() ) );
+		$this->assertSame( '', $this->diagram->render( array( 'code' => " \n " ) ) );
+		$this->assertSame(
+			'<div data-mermaid-theme="auto" class="mermaid-blocks-diagram">' . self::SOURCE . '</div>',
+			$this->diagram->render(
+				array(
+					'code'  => 'A[x] --> B',
+					'theme' => 'no-such-theme',
+					'align' => 'left',
+				)
+			)
 		);
 	}
 }
