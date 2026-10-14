@@ -69,7 +69,9 @@ const mermaidCopyPlugin = new CopyWebpackPlugin( {
 
 // block.json refers to the front-end renderer by its script handle, which
 // includes/Assets.php registers so other integrations can load it too. The
-// build only finds entries through `file:` paths in block.json, so add it here.
+// build only finds entries through `file:` paths in block.json, so add it here,
+// with the script of the Elementor widget, a file of its own so a page without
+// the widget never loads it.
 const withRendererAndMermaid = ( config ) => ( {
 	...config,
 	entry: () => ( {
@@ -77,6 +79,7 @@ const withRendererAndMermaid = ( config ) => ( {
 			? config.entry()
 			: config.entry ),
 		view: path.resolve( __dirname, 'src/view.js' ),
+		elementor: path.resolve( __dirname, 'src/elementor.js' ),
 	} ),
 	plugins: [ ...config.plugins, mermaidCopyPlugin ],
 } );

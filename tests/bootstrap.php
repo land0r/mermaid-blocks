@@ -25,6 +25,11 @@ require_once $mermaid_blocks_root . '/vendor/wp-phpunit/wp-phpunit/includes/func
 tests_add_filter(
 	'muplugins_loaded',
 	static function () use ( $mermaid_blocks_root ) {
+		// The tests of the Elementor widget run with Elementor, a development dependency, active (phpunit-elementor.xml.dist). The others run as on a site without it.
+		if ( getenv( 'MERMAID_BLOCKS_TESTS_ELEMENTOR' ) ) {
+			require $mermaid_blocks_root . '/vendor/wordpress-plugin/elementor/elementor.php';
+		}
+
 		require $mermaid_blocks_root . '/mermaid-blocks.php';
 	}
 );

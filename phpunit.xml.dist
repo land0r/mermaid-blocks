@@ -11,6 +11,8 @@
 	<testsuites>
 		<testsuite name="Mermaid Blocks">
 			<directory suffix="Test.php">./tests/</directory>
+			<!-- With Elementor active: phpunit-elementor.xml.dist. -->
+			<exclude>./tests/Elementor/</exclude>
 		</testsuite>
 	</testsuites>
 </phpunit>

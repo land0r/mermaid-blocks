@@ -24,6 +24,8 @@ use MermaidBlocks\Images\ImageSync;
 use MermaidBlocks\Images\SavedImages;
 use MermaidBlocks\Integrations\Block;
 use MermaidBlocks\Integrations\CodeBlocks;
+use MermaidBlocks\Integrations\Elementor\DiagramWidget;
+use MermaidBlocks\Integrations\Elementor\Registrar as ElementorRegistrar;
 use MermaidBlocks\Integrations\Shortcode;
 use MermaidBlocks\Options;
 use MermaidBlocks\Plugin;
@@ -161,7 +163,7 @@ class PluginTest extends WP_UnitTestCase {
 
 		$container = $this->get_container( $plugin );
 		$created   = array( Files::class, Assets::class, Block::class, Shortcode::class, CodeBlocks::class, SavedImages::class, Diagram::class, DiagramTypes::class, Themes::class, Options::class );
-		$waiting   = array( SettingsPage::class, Editor::class, ImageSync::class, ImagesController::class, Registrar::class, ClientAbilities::class, PostDiagrams::class, EditablePosts::class, Schemas::class, ListDiagrams::class );
+		$waiting   = array( SettingsPage::class, Editor::class, ImageSync::class, ImagesController::class, Registrar::class, ClientAbilities::class, PostDiagrams::class, EditablePosts::class, Schemas::class, ListDiagrams::class, ElementorRegistrar::class );
 
 		foreach ( $created as $class ) {
 			$this->assertTrue( $container->has( $class ), $class );
@@ -178,6 +180,25 @@ class PluginTest extends WP_UnitTestCase {
 		$this->assertSame( 10, has_action( 'before_delete_post', array( $plugin->get( SavedImages::class ), 'delete_all' ) ) );
 		$this->assertFalse( has_action( 'admin_menu', array( $plugin->get( SettingsPage::class ), 'add_page' ) ) );
 		$this->assertFalse( has_action( 'enqueue_block_assets', array( $plugin->get( Editor::class ), 'enqueue_canvas_assets' ) ) );
+	}
+
+	/**
+	 * On a site without Elementor, the plugin waits for Elementor's actions
+	 * and nothing else: a page, with its scripts, loads nothing of the widget.
+	 * These tests run without Elementor; those of the widget run with it.
+	 */
+	public function test_loads_nothing_of_elementor_without_it(): void {
+		$this->assertSame( 0, did_action( 'elementor/loaded' ) );
+
+		$plugin = $this->create_plugin();
+		$plugin->init();
+
+		$this->go_to( get_permalink( self::factory()->post->create( array( 'post_content' => '[mermaid]graph TD; A-->B[/mermaid]' ) ) ) );
+		do_action( 'wp_enqueue_scripts' );
+
+		$this->assertFalse( $this->get_container( $plugin )->has( ElementorRegistrar::class ) );
+		$this->assertFalse( class_exists( DiagramWidget::class, false ) );
+		$this->assertFalse( wp_script_is( ElementorRegistrar::SCRIPT, 'registered' ) );
 	}
 
 	/**

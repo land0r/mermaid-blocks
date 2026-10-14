@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b9019ef5d79585e50ca6e41700a08d00",
+    "content-hash": "18ed459eae82c74f6635996642ca663a",
     "packages": [],
     "packages-dev": [
         {
@@ -2437,6 +2437,16 @@
             "time": "2025-11-17T20:03:58+00:00"
         },
         {
+            "name": "wordpress-plugin/elementor",
+            "version": "4.3.5",
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/elementor.4.3.5.zip",
+                "shasum": "41309f1bd27df5cb014f6dc16b229a477e6fc3ce"
+            },
+            "type": "library"
+        },
+        {
             "name": "wp-coding-standards/wpcs",
             "version": "3.4.1",
             "source": {
@@ -2628,5 +2638,5 @@
     "platform-overrides": {
         "php": "7.4"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
