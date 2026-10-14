@@ -59,8 +59,9 @@ function applyEdit( textarea, edit, onChange ) {
  * trap; say so in `help`.
  *
  * @param {Object}      props               The component props.
+ * @param {string}      [props.className]   Class of the field's wrapper.
  * @param {string}      props.label         Label of the field.
- * @param {string}      [props.help]        Help text shown under the field.
+ * @param {Element}     [props.help]        Help text shown under the field.
  * @param {string}      [props.placeholder] Placeholder of the field.
  * @param {string}      props.value         The code.
  * @param {Function}    props.onChange      Called with the new code.
@@ -72,6 +73,7 @@ function applyEdit( textarea, edit, onChange ) {
  * @return {JSX.Element} The code field.
  */
 export default function CodeInput( {
+	className,
 	label,
 	help,
 	placeholder,
@@ -141,6 +143,7 @@ export default function CodeInput( {
 
 	return (
 		<BaseControl
+			className={ className }
 			id={ id }
 			label={ label }
 			help={ help }

@@ -96,10 +96,18 @@
 
 /*
  * The preview: a figure, for its caption. Doubled class: themes style
- * `figure` in the editor canvas.
+ * `figure` in the editor canvas. The code field, while it shows, comes after.
  */
 .wp-block-mermaid-blocks-diagram .mermaid-blocks-preview {
-	margin: 20px 0 0;
+	margin: 0;
+
+	&[hidden] {
+		display: none;
+	}
+}
+
+.mermaid-blocks-preview:not([hidden]) + .mermaid-blocks-code {
+	margin-top: 20px;
 }
 
 /*
@@ -120,4 +128,11 @@
 	font-size: 13px;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
+}
+
+/* The line of help of a panel in the sidebar. */
+.mermaid-blocks-panel-help {
+	margin: 0 0 16px;
+	color: #757575;
+	font-size: 12px;
 }
