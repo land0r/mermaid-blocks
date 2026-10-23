@@ -11,6 +11,7 @@ use MermaidBlocks\Images\ImagesController;
 use MermaidBlocks\Images\SavedImages;
 use MermaidBlocks\Options;
 use MermaidBlocks\Posts\EditablePosts;
+use WP_REST_Request;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/ImageHelpers.php';
@@ -139,6 +140,49 @@ class ImagesControllerTest extends WP_UnitTestCase {
 		$this->assertSame( $pele, $response->get_data()['key'] );
 		$this->assertSame( 'pele', $this->images->get_all( $post->ID )[ $pele ]['renderer'] );
 		$this->assertSame( array( 'missing' => array() ), $this->request( 'GET', '/posts/' . $post->ID . '/images' )->get_data() );
+	}
+
+	/**
+	 * The editor says which renderer it draws with, and the images are those
+	 * of that one: a filter may give the request of the routes another.
+	 */
+	public function test_the_renderer_of_the_editor_decides_what_is_asked_for_and_kept(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::FLOW ) ) );
+		add_filter(
+			'mermaid_blocks_renderer',
+			static function () {
+				return 'pele';
+			}
+		);
+
+		$mermaid = $this->images->get_key( self::FLOW, '', 'mermaid' );
+		$pele    = $this->images->get_key( self::FLOW, '', 'pele' );
+		$route   = '/' . ImagesController::REST_NAMESPACE . '/posts/' . $post->ID . '/images';
+
+		$list = static function ( array $params ) use ( $route ) {
+			$request = new WP_REST_Request( 'GET', $route );
+			$request->set_query_params( $params );
+
+			return rest_get_server()->dispatch( $request );
+		};
+
+		$this->assertSame( array( $mermaid ), wp_list_pluck( $list( array( 'renderer' => 'mermaid' ) )->get_data()['missing'], 'key' ) );
+		$this->assertSame( array( $pele ), wp_list_pluck( $list( array() )->get_data()['missing'], 'key' ) );
+
+		// A renderer that does not exist is refused.
+		$this->assertSame( 400, $list( array( 'renderer' => 'other' ) )->get_status() );
+
+		$request = new WP_REST_Request( 'POST', $route . '/' . $mermaid );
+		$request->set_query_params( array( 'renderer' => 'mermaid' ) );
+		$request->set_header( 'Content-Type', 'image/png' );
+		$request->set_body( $this->png() );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 201, $response->get_status() );
+		$this->assertSame( 'mermaid', $this->images->get_all( $post->ID )[ $mermaid ]['renderer'] );
+		$this->assertStringNotContainsString( '-pele-', $this->images->get_all( $post->ID )[ $mermaid ]['file'] );
+
+		remove_all_filters( 'mermaid_blocks_renderer' );
 	}
 
 	/**

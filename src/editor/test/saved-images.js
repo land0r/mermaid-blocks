@@ -40,6 +40,9 @@ let getPngBlob;
 
 const SVG = '<svg viewBox="0 0 300 150"><g></g></svg>';
 const PATH = '/mermaid-blocks/v1/posts/7/images';
+// The editor says which renderer it draws with.
+const QUERY = '?renderer=mermaid';
+const LIST = PATH + QUERY;
 
 // What the editor says about the post, and the listener that watches it.
 let editor;
@@ -323,15 +326,15 @@ describe( 'saveImages', () => {
 
 		expect( saved ).toBe( 2 );
 		expect( requests ).toEqual( [
-			{ path: PATH },
+			{ path: LIST },
 			{
-				path: `${ PATH }/${ 'a'.repeat( 32 ) }`,
+				path: `${ PATH }/${ 'a'.repeat( 32 ) }${ QUERY }`,
 				method: 'POST',
 				headers: { 'Content-Type': 'image/png' },
 				body: { png: SVG, background: '#fff' },
 			},
 			{
-				path: `${ PATH }/${ 'b'.repeat( 32 ) }`,
+				path: `${ PATH }/${ 'b'.repeat( 32 ) }${ QUERY }`,
 				method: 'POST',
 				headers: { 'Content-Type': 'image/png' },
 				body: { png: SVG, background: '#fff' },
@@ -343,9 +346,11 @@ describe( 'saveImages', () => {
 	} );
 
 	it( 'draws nothing when no diagram lacks an image', async () => {
-		await expect( saveImages( 7 ) ).resolves.toBe( 0 );
+		await expect( withoutCanvas( () => saveImages( 7 ) ) ).resolves.toBe(
+			0
+		);
 
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 		expect( renderDiagram ).not.toHaveBeenCalled();
 	} );
 
@@ -363,15 +368,49 @@ describe( 'saveImages', () => {
 
 		expect( saved ).toBe( 1 );
 		expect( requests.map( ( request ) => request.path ) ).toEqual( [
-			PATH,
-			`${ PATH }/${ 'b'.repeat( 32 ) }`,
+			LIST,
+			`${ PATH }/${ 'b'.repeat( 32 ) }${ QUERY }`,
 		] );
+	} );
+} );
+
+describe( 'saveImages and the renderer', () => {
+	it( 'asks for the images of the renderer of the editor canvas, and sends them with its name', async () => {
+		missing = [ { key: 'a'.repeat( 32 ), code: 'graph', theme: 'auto' } ];
+		const frame = document.createElement( 'iframe' );
+		frame.name = 'editor-canvas';
+		document.body.appendChild( frame );
+		frame.contentWindow.pele = {
+			render: jest.fn( () => ( { svg: SVG } ) ),
+		};
+
+		await saveImages( 7 );
+
+		expect( requests.map( ( request ) => request.path ) ).toEqual( [
+			`${ PATH }?renderer=pele`,
+			`${ PATH }/${ 'a'.repeat( 32 ) }?renderer=pele`,
+		] );
+	} );
+
+	it( 'does nothing where no renderer is loaded', async () => {
+		delete window.mermaid;
+
+		await expect( withoutCanvas( () => saveImages( 7 ) ) ).resolves.toBe(
+			0
+		);
+		expect( requests ).toEqual( [] );
 	} );
 } );
 
 describe( 'watchPost', () => {
 	beforeEach( () => {
 		jest.useRealTimers();
+
+		// The editor canvas has loaded, so a run needn't wait for it.
+		const frame = document.createElement( 'iframe' );
+		frame.name = 'editor-canvas';
+		document.body.appendChild( frame );
+		frame.contentWindow.mermaid = { initialize: jest.fn() };
 		jest.spyOn( console, 'warn' ).mockImplementation( () => {} );
 	} );
 
@@ -394,7 +433,7 @@ describe( 'watchPost', () => {
 		await change();
 		await change();
 
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 	} );
 
 	it( 'checks the post again each time it is saved', async () => {
@@ -405,9 +444,9 @@ describe( 'watchPost', () => {
 		await save();
 
 		expect( requests ).toEqual( [
-			{ path: PATH },
-			{ path: PATH },
-			{ path: PATH },
+			{ path: LIST },
+			{ path: LIST },
+			{ path: LIST },
 		] );
 	} );
 
@@ -418,7 +457,7 @@ describe( 'watchPost', () => {
 		await save( { autosave: true } );
 		await save( { fails: true } );
 
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 	} );
 
 	it( 'checks another post the editor moves to', async () => {
@@ -428,8 +467,8 @@ describe( 'watchPost', () => {
 		await change( { id: 8 } );
 
 		expect( requests.map( ( request ) => request.path ) ).toEqual( [
-			PATH,
-			'/mermaid-blocks/v1/posts/8/images',
+			LIST,
+			`/mermaid-blocks/v1/posts/8/images${ QUERY }`,
 		] );
 	} );
 
@@ -467,12 +506,12 @@ describe( 'watchPost', () => {
 		await change();
 		await save();
 
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 
 		answer( { missing: [] } );
 		await settle();
 
-		expect( requests ).toEqual( [ { path: PATH }, { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST }, { path: LIST } ] );
 	} );
 
 	it( 'keeps watching after a run failed', async () => {
@@ -484,6 +523,6 @@ describe( 'watchPost', () => {
 
 		// eslint-disable-next-line no-console
 		expect( console.warn ).toHaveBeenCalledTimes( 1 );
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 	} );
 } );

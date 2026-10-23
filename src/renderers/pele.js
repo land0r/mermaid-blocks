@@ -12,8 +12,10 @@ import { getPaletteName } from '../utils/pele-palette';
  */
 
 // Pele's prefix on a syntax error, which counts the lines of the text it
-// parsed: the line is reported separately, as a line of the code.
-const PARSE_PREFIX = /^Parse error on line \d+:\n/;
+// parsed: the line is reported separately, as a line of the code. A lexical
+// error has its own: "Lexical error on line 3. Unrecognized text."
+const PARSE_PREFIX =
+	/^(?:Parse error on line \d+:\n|Lexical error on line \d+\.\s*)/;
 
 /**
  * Returns the message and the line of an error Pele threw.
@@ -72,11 +74,12 @@ function withFont( svg, font ) {
 		return svg;
 	}
 
-	const value = font.replace( /"/g, '&quot;' );
+	const value = font.replace( /&/g, '&amp;' ).replace( /"/g, '&quot;' );
 
+	// A function, so a `$` in the font is not taken for a pattern of the replacement.
 	return svg.replace(
-		/^(<svg\b[^>]*?\sstyle=")/,
-		`$1--pele-font:${ value };`
+		/^<svg\b[^>]*?\sstyle="/,
+		( start ) => `${ start }--pele-font:${ value };`
 	);
 }
 

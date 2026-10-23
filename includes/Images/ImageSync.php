@@ -80,14 +80,16 @@ final class ImageSync implements Hookable {
 	/**
 	 * Returns the diagrams of a post that can have an image: those with code.
 	 *
-	 * @param WP_Post $post The post.
+	 * @param WP_Post $post     The post.
+	 * @param string  $renderer Optional. The renderer the images are drawn with.
+	 *                          Default: the one of the request.
 	 *
 	 * @return array[] For each diagram, by the key of its image: that key,
 	 *                 the code, and the theme to draw the image in, a name
 	 *                 from Themes::get_all(). Two diagrams with the same code
 	 *                 and theme share an image.
 	 */
-	public function get_diagrams( WP_Post $post ): array {
+	public function get_diagrams( WP_Post $post, string $renderer = '' ): array {
 		$diagrams = array();
 
 		foreach ( $this->diagrams->get_all( $post ) as $block ) {
@@ -98,7 +100,7 @@ final class ImageSync implements Hookable {
 				continue;
 			}
 
-			$key = $this->images->get_key( $code, $theme );
+			$key = $this->images->get_key( $code, $theme, $renderer );
 
 			$diagrams[ $key ] = array(
 				'key'   => $key,
@@ -117,12 +119,14 @@ final class ImageSync implements Hookable {
 	 * site's theme changed since. The last keep their image until the new one
 	 * arrives.
 	 *
-	 * @param WP_Post $post The post.
+	 * @param WP_Post $post     The post.
+	 * @param string  $renderer Optional. The renderer the images are drawn with.
+	 *                          Default: the one of the request.
 	 *
 	 * @return array[] The diagrams: see get_diagrams(). None for a post that
 	 *                 has no page of its own, such as a synced pattern.
 	 */
-	public function get_missing( WP_Post $post ): array {
+	public function get_missing( WP_Post $post, string $renderer = '' ): array {
 		if ( ! is_post_type_viewable( $post->post_type ) ) {
 			return array();
 		}
@@ -130,7 +134,7 @@ final class ImageSync implements Hookable {
 		$images  = $this->images->get_all( $post->ID );
 		$missing = array();
 
-		foreach ( $this->get_diagrams( $post ) as $key => $diagram ) {
+		foreach ( $this->get_diagrams( $post, $renderer ) as $key => $diagram ) {
 			if (
 				! isset( $images[ $key ] ) ||
 				$images[ $key ]['theme'] !== $diagram['theme'] ||

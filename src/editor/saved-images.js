@@ -147,15 +147,24 @@ export async function drawImage( code, theme ) {
 }
 
 /**
- * Draws and saves the images the diagrams of a post lack.
+ * Draws and saves the images the diagrams of a post lack, with the renderer of
+ * the editor canvas.
  *
  * @param {number} postId The ID of the post.
  *
  * @return {Promise<number>} The number of images saved.
  */
 export async function saveImages( postId ) {
+	// The server keys an image by the renderer it is drawn with, which only the editor knows.
+	const renderer = await getCanvasRenderer();
+
+	if ( ! renderer ) {
+		return 0;
+	}
+
 	const path = `/mermaid-blocks/v1/posts/${ postId }/images`;
-	const { missing = [] } = await apiFetch( { path } );
+	const query = `?renderer=${ renderer.name }`;
+	const { missing = [] } = await apiFetch( { path: path + query } );
 
 	let saved = 0;
 
@@ -167,7 +176,7 @@ export async function saveImages( postId ) {
 		}
 
 		await apiFetch( {
-			path: `${ path }/${ key }`,
+			path: `${ path }/${ key }${ query }`,
 			method: 'POST',
 			headers: { 'Content-Type': 'image/png' },
 			body,

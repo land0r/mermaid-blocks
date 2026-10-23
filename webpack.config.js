@@ -59,11 +59,13 @@ const peleVersion = JSON.parse(
 const checkPeleImports = ( content, absoluteFrom ) => {
 	const code = content.toString();
 	const imports = [
+		// `import "x"`, `import a from "x"`, `import { a } from "x"`, `export * from "x"`.
 		...code.matchAll(
-			/\b(?:import|export)\s*(?:\{[^}]*\}|\*\s*as\s*\w+)?\s*(?:from)?\s*"([^"]+)"/g
+			/\b(?:import|export)\b[^"'`;(]*?(?:\bfrom\b)?\s*(["'])([^"']+)\1/g
 		),
-		...code.matchAll( /\bimport\(\s*"([^"]+)"\s*\)/g ),
-	].map( ( match ) => match[ 1 ] );
+		// `import("x")`.
+		...code.matchAll( /\bimport\(\s*(["'])([^"']+)\1\s*\)/g ),
+	].map( ( match ) => match[ 2 ] );
 
 	imports.forEach( ( request ) => {
 		if ( ! /^\.\.?\/[^"]+\.js$/.test( request ) ) {

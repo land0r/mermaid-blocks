@@ -79,6 +79,9 @@ final class Assets implements Hookable {
 		 * once the query ran.
 		 */
 		add_action( 'wp_enqueue_scripts', array( $this, 'add_settings' ), 0 );
+
+		// A screen of the admin that shows diagrams, such as the preview of a page builder.
+		add_action( 'admin_enqueue_scripts', array( $this, 'add_settings' ), 0 );
 	}
 
 	/**
@@ -133,9 +136,17 @@ final class Assets implements Hookable {
 
 	/**
 	 * Tells the front-end script the renderer, where to load it and the
-	 * controls from, and the labels of the controls.
+	 * controls from, and the labels of the controls. It is told when the
+	 * scripts of the page are enqueued, on the front end and in the admin.
 	 */
 	public function add_settings(): void {
+		// Once: the script is enqueued by one action or the other, on most requests by both.
+		foreach ( array_filter( (array) wp_scripts()->get_data( self::DIAGRAM, 'before' ) ) as $before ) {
+			if ( 0 === strpos( (string) $before, 'var mermaidBlocksSettings = ' ) ) {
+				return;
+			}
+		}
+
 		$mermaid  = $this->files->get_build_asset( 'mermaid' );
 		$pele     = $this->files->get_build_asset( 'pele' );
 		$controls = $this->files->get_build_asset( 'controls' );

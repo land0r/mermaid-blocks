@@ -136,6 +136,25 @@ describe( 'the Pele renderer', () => {
 			expect( svg ).toContain( '--pele-font:Georgia, serif;' );
 		} );
 
+		it( 'writes a font with $ and & in it into the SVG as it is', async () => {
+			const element = document.createElement( 'div' );
+			element.style.fontFamily = '"A $\' B & C", serif';
+			document.body.appendChild( element );
+
+			const { svg } = await draw( 'flowchart LR\nA --> B', 'f', element );
+			element.remove();
+
+			const template = document.createElement( 'template' );
+			template.innerHTML = svg;
+			const root = template.content.querySelector( 'svg' );
+
+			expect( root.getAttribute( 'style' ) ).toContain(
+				'--pele-font:"A $\' B & C", serif;max-width:100%'
+			);
+			// Nothing of the SVG ended up in the attribute.
+			expect( root.getAttribute( 'style' ) ).not.toContain( '<' );
+		} );
+
 		it( 'draws a diagram it has no code for as a failed diagram', async () => {
 			const result = await draw( 'nonsense' );
 
@@ -157,6 +176,18 @@ describe( 'the Pele renderer', () => {
 			);
 			// The snippet and the mark under the column stay.
 			expect( result.error.message ).toContain( 'bad here ]]\n----^' );
+		} );
+
+		it( 'drops the prefix of a lexical error too, so the line is given once', async () => {
+			const code = '---\ntitle: Hi\n---\npie\n"a": 1\n"b": $$x$$';
+
+			const result = await draw( code );
+
+			expect( result.error.line ).toBe( 6 );
+			expect( result.error.message ).not.toMatch(
+				/^Lexical error on line/
+			);
+			expect( result.error.message ).toContain( 'Unrecognized text' );
 		} );
 
 		it( 'counts the front matter, directives, comments and blank lines', async () => {

@@ -120,6 +120,25 @@ class AssetsTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A diagram shown in the admin, such as in the preview of a page builder,
+	 * is told the same, once however many actions enqueue the script.
+	 */
+	public function test_tells_the_script_when_scripts_are_enqueued_in_the_admin(): void {
+		set_current_screen( 'dashboard' );
+		wp_scripts()->add_data( Assets::DIAGRAM, 'before', array() );
+
+		do_action( 'admin_enqueue_scripts', 'index.php' );
+		do_action( 'wp_enqueue_scripts' );
+		do_action( 'admin_enqueue_scripts', 'index.php' );
+
+		$before = array_filter( (array) wp_scripts()->get_data( Assets::DIAGRAM, 'before' ) );
+
+		$this->assertSame( 1, substr_count( implode( "\n", $before ), 'var mermaidBlocksSettings = ' ) );
+
+		set_current_screen( 'front' );
+	}
+
+	/**
 	 * The controls are a module of their own, which the script imports by its
 	 * URL, with the version of that file.
 	 */

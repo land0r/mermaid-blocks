@@ -181,22 +181,21 @@ async function renderInTheme( mermaid, renderId, code, doc, theme ) {
  * The source decides before the theme does: a theme set in its front matter
  * or in a directive wins.
  *
- * @param {Object}      mermaid The Mermaid API object.
- * @param {string}      code    The Mermaid source.
- * @param {string}      theme   What to draw the diagram in, as resolveTheme()
- *                              returns it.
- * @param {HTMLElement} element The element the diagram is shown in. Its
- *                              document is the one Mermaid draws in.
- * @param {string}      id      A unique element id for this drawing.
+ * @param {Object}   mermaid The Mermaid API object.
+ * @param {Document} doc     The document of the window Mermaid runs in.
+ * @param {string}   code    The Mermaid source.
+ * @param {string}   theme   What to draw the diagram in, as resolveTheme()
+ *                           returns it.
+ * @param {string}   id      A unique element id for this drawing.
  *
  * @return {Promise<{svg: string, bindFunctions: (Function|undefined)}|{error: {message: string, line: (number|null)}}>}
  * The SVG markup and Mermaid's function that binds its event handlers once the
  * SVG is in the page, or a normalised error: its message, and the 1-based line
  * of `code` it points at when known. Leftover DOM is removed on failure.
  */
-function draw( mermaid, code, theme, element, id ) {
+function draw( mermaid, doc, code, theme, id ) {
 	const result = ( renders.get( mermaid ) || Promise.resolve() ).then( () =>
-		renderInTheme( mermaid, id, code, element.ownerDocument, theme )
+		renderInTheme( mermaid, id, code, doc, theme )
 	);
 
 	renders.set( mermaid, result );
@@ -258,8 +257,9 @@ export function createMermaidRenderer( mermaid, doc = document ) {
 	return {
 		name: 'mermaid',
 		document: doc,
+		// What a failed drawing leaves is in the document Mermaid runs in.
 		draw: ( code, theme, element, id ) =>
-			draw( mermaid, code, theme || AUTO_LIGHT, element, id ),
+			draw( mermaid, doc, code, theme || AUTO_LIGHT, id ),
 		parse: ( code ) => parse( mermaid, code ),
 	};
 }
