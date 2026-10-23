@@ -30,6 +30,8 @@ import { getRenderer } from '../renderers';
 import { THEMES, resolveTheme } from '../utils/themes';
 import { withAccessibleText } from '../utils/accessible-text';
 import watchSurface from '../utils/watch-surface';
+import { getPaletteVariables } from '../utils/pele-palette';
+import { getSurface } from '../utils/surface';
 
 /**
  * Mermaid Diagram Component
@@ -81,6 +83,9 @@ export default function MermaidDiagram( {
 	const renderCounter = useRef( 0 );
 
 	const [ svg, setSvg ] = useState( '' );
+
+	// The colours of a Pele diagram: CSS variables on the preview.
+	const [ palette, setPalette ] = useState( null );
 	const [ error, setError ] = useState( null );
 
 	// What the diagram is drawn in, known once the preview is in the canvas.
@@ -111,6 +116,7 @@ export default function MermaidDiagram( {
 		// Empty or whitespace-only code clears the preview and any error.
 		if ( ! code || ! code.trim() ) {
 			setSvg( '' );
+			setPalette( null );
 			setError( null );
 			return;
 		}
@@ -122,9 +128,10 @@ export default function MermaidDiagram( {
 
 		if ( ! renderer ) {
 			setSvg( '' );
+			setPalette( null );
 			setError( {
 				message: __(
-					'The Mermaid library is not loaded.',
+					'The diagram renderer is not loaded.',
 					'mermaid-blocks'
 				),
 				line: null,
@@ -151,9 +158,18 @@ export default function MermaidDiagram( {
 
 				if ( result.error ) {
 					setSvg( '' );
+					setPalette( null );
 					setError( result.error );
 				} else {
 					setSvg( result.svg );
+					setPalette(
+						result.palette
+							? getPaletteVariables(
+									result.palette,
+									getSurface( containerRef.current )
+							  )
+							: null
+					);
 					setError( null );
 				}
 			} );
@@ -205,6 +221,7 @@ export default function MermaidDiagram( {
 				// Mermaid's own sanitised SVG output.
 				<div
 					className="mermaid-container__diagram"
+					style={ palette || undefined }
 					dangerouslySetInnerHTML={ { __html: markup } }
 				/>
 			) }

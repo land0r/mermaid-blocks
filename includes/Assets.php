@@ -15,7 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Registers the Mermaid library, and the script and style that turn diagram
  * markup into SVGs.
  *
- * - `mermaid-js`: the Mermaid library, for the editor.
+ * - `mermaid-js` and `pele-js`: the Mermaid and Pele libraries, for the
+ *   editor, which loads the site's renderer and not the other.
  * - `mermaid-blocks-diagram` (script): renders each diagram on the page when
  *   it scrolls into view, and adds its controls. It loads Mermaid's ES module
  *   build from `build/mermaid/` on demand, so Mermaid isn't one of its
@@ -29,6 +30,11 @@ final class Assets implements Hookable {
 	 * The handle of the Mermaid library.
 	 */
 	const MERMAID = 'mermaid-js';
+
+	/**
+	 * The handle of the Pele library, for the editor.
+	 */
+	const PELE = 'pele-js';
 
 	/**
 	 * The handle of the script, and of the style, that render diagrams.
@@ -76,8 +82,8 @@ final class Assets implements Hookable {
 	}
 
 	/**
-	 * Registers the Mermaid library, and the script and style that render
-	 * diagrams.
+	 * Registers the Mermaid and Pele libraries, and the script and style that
+	 * render diagrams.
 	 */
 	public function register(): void {
 		$mermaid = $this->files->get_build_asset( 'mermaid' );
@@ -86,6 +92,15 @@ final class Assets implements Hookable {
 			$this->files->get_build_url( 'mermaid.min.js' ),
 			array(),
 			$mermaid['version'],
+			true
+		);
+
+		$pele = $this->files->get_build_asset( 'pele' );
+		wp_register_script(
+			self::PELE,
+			$this->files->get_build_url( 'pele.global.js' ),
+			array(),
+			$pele['version'],
 			true
 		);
 

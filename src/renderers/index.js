@@ -3,6 +3,7 @@
  */
 import MERMAID_CONFIG from '../utils/mermaid-config';
 import { createMermaidRenderer } from './mermaid';
+import { createPeleRenderer } from './pele';
 
 /**
  * The renderers made for each loaded library, so a window always gets the
@@ -13,6 +14,19 @@ import { createMermaidRenderer } from './mermaid';
 const renderers = new WeakMap();
 
 /**
+ * Returns the library a window loaded: Pele's single-file build (the global
+ * `pele`) or Mermaid.js (`mermaid`). The editor loads the site's renderer
+ * and not the other.
+ *
+ * @param {Window} [view] The window.
+ *
+ * @return {Object|null} The library, or null when the window has none.
+ */
+function getLibrary( view ) {
+	return ( view && ( view.pele || view.mermaid ) ) || null;
+}
+
+/**
  * Tells whether a window has loaded a renderer of its own.
  *
  * @param {Window} view The window.
@@ -20,7 +34,7 @@ const renderers = new WeakMap();
  * @return {boolean} Whether it has.
  */
 export function hasRenderer( view ) {
-	return !! ( view && view.mermaid );
+	return !! getLibrary( view );
 }
 
 /**
@@ -38,19 +52,26 @@ export function hasRenderer( view ) {
  */
 export function getRenderer( view ) {
 	const owner = hasRenderer( view ) ? view : window;
-	const { mermaid } = owner;
+	const library = getLibrary( owner );
 
-	if ( ! mermaid ) {
+	if ( ! library ) {
 		return null;
 	}
 
-	if ( ! renderers.has( mermaid ) ) {
-		mermaid.initialize( MERMAID_CONFIG );
-		renderers.set(
-			mermaid,
-			createMermaidRenderer( mermaid, owner.document )
-		);
+	if ( ! renderers.has( library ) ) {
+		if ( owner.pele ) {
+			renderers.set(
+				library,
+				createPeleRenderer( library, { doc: owner.document } )
+			);
+		} else {
+			library.initialize( MERMAID_CONFIG );
+			renderers.set(
+				library,
+				createMermaidRenderer( library, owner.document )
+			);
+		}
 	}
 
-	return renderers.get( mermaid );
+	return renderers.get( library );
 }

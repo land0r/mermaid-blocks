@@ -167,6 +167,18 @@ class AssetsTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Pele's single-file build is the editor's, apart from the lazy build the
+	 * front end imports.
+	 */
+	public function test_registers_the_pele_library_for_the_editor(): void {
+		$script = wp_scripts()->registered[ Assets::PELE ];
+
+		$this->assertStringEndsWith( 'build/pele.global.js', $script->src );
+		$this->assertSame( $this->files->get_build_asset( 'pele' )['version'], $script->ver );
+		$this->assertSame( array(), $script->deps );
+	}
+
+	/**
 	 * Diagram markup loads the script and the style that render it.
 	 */
 	public function test_enqueues_what_renders_diagrams(): void {

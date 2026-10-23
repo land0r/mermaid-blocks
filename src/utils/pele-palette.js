@@ -78,12 +78,32 @@ export function getPaletteName( theme, code ) {
 }
 
 /**
- * Puts a palette on the element that holds a Pele SVG.
+ * Returns the CSS variables of a palette, as a Pele SVG reads them.
  *
  * `--pele-bg` fills the boxes behind edge labels and the gaps between pie
  * slices, so it takes the colour of the surface under the diagram when that
  * can be read and is as dark or as light as the palette: a dark diagram on a
  * light page keeps its own background.
+ *
+ * @param {string}                                  name    LIGHT or DARK.
+ * @param {{isDark: boolean, color: (string|null)}} surface What the diagram
+ *                                                          sits on: see
+ *                                                          getSurface().
+ *
+ * @return {Object<string, string>} The value of each variable.
+ */
+export function getPaletteVariables( name, surface ) {
+	const variables = { ...PALETTES[ name ] };
+
+	if ( surface && surface.color && surface.isDark === ( name === DARK ) ) {
+		variables[ '--pele-bg' ] = surface.color;
+	}
+
+	return variables;
+}
+
+/**
+ * Puts a palette on the element that holds a Pele SVG.
  *
  * @param {HTMLElement}                             element The canvas.
  * @param {string}                                  name    LIGHT or DARK.
@@ -92,13 +112,9 @@ export function getPaletteName( theme, code ) {
  *                                                          getSurface().
  */
 export function applyPalette( element, name, surface ) {
-	Object.entries( PALETTES[ name ] ).forEach( ( [ property, value ] ) =>
-		element.style.setProperty( property, value )
+	Object.entries( getPaletteVariables( name, surface ) ).forEach(
+		( [ property, value ] ) => element.style.setProperty( property, value )
 	);
-
-	if ( surface && surface.color && surface.isDark === ( name === DARK ) ) {
-		element.style.setProperty( '--pele-bg', surface.color );
-	}
 
 	element.dataset.mermaidPalette = name;
 }

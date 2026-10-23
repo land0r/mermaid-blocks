@@ -1,3 +1,6 @@
+// eslint-disable-next-line import/no-unresolved
+import * as pele from 'pele/lazy';
+
 import { validateDiagram } from '../validate-diagram';
 
 describe( 'validateDiagram', () => {
@@ -52,5 +55,45 @@ describe( 'validateDiagram', () => {
 		await expect( validateDiagram( { code: 'graph' } ) ).rejects.toThrow(
 			'Mermaid is not loaded'
 		);
+	} );
+
+	describe( 'with Pele', () => {
+		beforeEach( () => {
+			jest.spyOn(
+				window.HTMLCanvasElement.prototype,
+				'getContext'
+			).mockReturnValue( null );
+			window.pele = pele;
+		} );
+
+		afterEach( () => {
+			jest.restoreAllMocks();
+		} );
+
+		it.each( [
+			[ 'flowchart LR\nA --> B', 'flowchart-v2' ],
+			[ 'sequenceDiagram\nA->>B: Hi', 'sequence' ],
+			[ 'classDiagram\nA <|-- B', 'classDiagram' ],
+			[ 'stateDiagram-v2\n[*] --> A', 'stateDiagram' ],
+			[ 'pie\n"a": 1', 'pie' ],
+		] )(
+			"returns the type of %p by Mermaid.js's name",
+			async ( code, type ) => {
+				await expect( validateDiagram( { code } ) ).resolves.toEqual( {
+					valid: true,
+					type,
+				} );
+			}
+		);
+
+		it( 'returns the error and its line', async () => {
+			const result = await validateDiagram( {
+				code: '%%{init: {}}%%\nflowchart LR\nA --> B\nbad here ]]',
+			} );
+
+			expect( result.valid ).toBe( false );
+			expect( result.error.line ).toBe( 4 );
+			expect( result.error.message ).toContain( 'bad here ]]' );
+		} );
 	} );
 } );
