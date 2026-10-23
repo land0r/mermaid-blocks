@@ -135,6 +135,90 @@ class ImageSyncTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A diagram that has an image of the other renderer only is still asked
+	 * for: the editor draws it again with the site's renderer.
+	 */
+	public function test_asks_for_the_images_of_the_renderer_of_the_site(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::FLOW ), $this->diagram_block( self::PIE ) ) );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->images->save( $post, $this->images->get_key( self::FLOW ), 'auto', $this->png() );
+		$this->images->save( $post, $this->images->get_key( self::PIE ), 'auto', $this->png() );
+		$this->assertSame( array(), $this->sync->get_missing( $post ) );
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertSame( array( self::FLOW, self::PIE ), wp_list_pluck( $this->sync->get_missing( $post ), 'code' ) );
+
+		foreach ( $this->sync->get_missing( $post ) as $diagram ) {
+			$this->assertSame( $this->images->get_key( $diagram['code'], '', 'pele' ), $diagram['key'] );
+		}
+
+		$this->images->save( $post, $this->images->get_key( self::FLOW ), 'auto', $this->png() );
+		$this->assertSame( array( self::PIE ), wp_list_pluck( $this->sync->get_missing( $post ), 'code' ) );
+
+		// And back to Mermaid.js, whose images are all still there.
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertSame( array(), $this->sync->get_missing( $post ) );
+	}
+
+	/**
+	 * The other renderer's image stays as a stand-in while a post is saved
+	 * before it was drawn again, and goes once the diagram has an image of the
+	 * site's renderer: then only images of that renderer are left.
+	 */
+	public function test_removes_the_other_renderers_images_once_they_are_drawn_again(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::FLOW ), $this->diagram_block( self::PIE ) ) );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$flow = $this->images->save( $post, $this->images->get_key( self::FLOW ), 'auto', $this->png() );
+		$pie  = $this->images->save( $post, $this->images->get_key( self::PIE ), 'auto', $this->png() );
+
+		update_option( Options::RENDERER, 'pele' );
+
+		// Saved before the editor drew anything: the stand-ins stay.
+		$this->sync->prune( $post->ID );
+
+		$this->assertFileExists( $this->get_upload_path( $flow['file'] ) );
+		$this->assertFileExists( $this->get_upload_path( $pie['file'] ) );
+
+		// The post is opened in the editor, which draws what is missing, and saved.
+		foreach ( $this->sync->get_missing( $post ) as $diagram ) {
+			$this->images->save( $post, $diagram['key'], $diagram['theme'], $this->png() );
+		}
+
+		$this->sync->prune( $post->ID );
+
+		$this->assertFileDoesNotExist( $this->get_upload_path( $flow['file'] ) );
+		$this->assertFileDoesNotExist( $this->get_upload_path( $pie['file'] ) );
+
+		$renderers = array_unique( wp_list_pluck( $this->images->get_all( $post->ID ), 'renderer' ) );
+
+		$this->assertSame( array( 'pele' ), array_values( $renderers ) );
+		$this->assertCount( 2, $this->images->get_all( $post->ID ) );
+	}
+
+	/**
+	 * A diagram that was drawn again keeps no stand-in, while another that
+	 * wasn't yet keeps its own.
+	 */
+	public function test_keeps_a_stand_in_only_for_a_diagram_not_drawn_again(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::FLOW ), $this->diagram_block( self::PIE ) ) );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$flow = $this->images->save( $post, $this->images->get_key( self::FLOW ), 'auto', $this->png() );
+		$pie  = $this->images->save( $post, $this->images->get_key( self::PIE ), 'auto', $this->png() );
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->images->save( $post, $this->images->get_key( self::FLOW ), 'auto', $this->png() );
+
+		$this->sync->prune( $post->ID );
+
+		$this->assertFileDoesNotExist( $this->get_upload_path( $flow['file'] ) );
+		$this->assertFileExists( $this->get_upload_path( $pie['file'] ) );
+		$this->assertNotNull( $this->images->find( $post->ID, self::PIE ) );
+	}
+
+	/**
 	 * When the site's theme changes, the diagrams that take it keep their
 	 * image, and are drawn again the next time the editor asks.
 	 */

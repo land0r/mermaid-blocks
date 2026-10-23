@@ -107,6 +107,41 @@ class ImagesControllerTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * With Pele, the editor is asked for the images of Pele, and the images it
+	 * sends are saved as Pele's, whatever Mermaid.js's were.
+	 */
+	public function test_routes_take_the_images_of_pele(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::FLOW ) ) );
+
+		$this->send_image( $post->ID, self::FLOW );
+		$this->assertSame( array( 'missing' => array() ), $this->request( 'GET', '/posts/' . $post->ID . '/images' )->get_data() );
+
+		update_option( Options::RENDERER, 'pele' );
+
+		$pele = $this->images->get_key( self::FLOW, '', 'pele' );
+
+		$this->assertSame(
+			array(
+				'missing' => array(
+					array(
+						'key'   => $pele,
+						'code'  => self::FLOW,
+						'theme' => 'auto',
+					),
+				),
+			),
+			$this->request( 'GET', '/posts/' . $post->ID . '/images' )->get_data()
+		);
+
+		$response = $this->send_image( $post->ID, self::FLOW );
+
+		$this->assertSame( 201, $response->get_status() );
+		$this->assertSame( $pele, $response->get_data()['key'] );
+		$this->assertSame( 'pele', $this->images->get_all( $post->ID )[ $pele ]['renderer'] );
+		$this->assertSame( array( 'missing' => array() ), $this->request( 'GET', '/posts/' . $post->ID . '/images' )->get_data() );
+	}
+
+	/**
 	 * An image is taken only for a diagram the post has: one that changed in
 	 * the meantime is refused, and so is a key that isn't one.
 	 */

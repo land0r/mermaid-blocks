@@ -26,7 +26,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * When a post is saved, by anything, the images of the diagrams it no longer
  * has are removed: a diagram that an ability changed on the server loses its
- * image there and then.
+ * image there and then. So are the images of the other renderer, once a
+ * diagram has one of the site's renderer: until then, the image of the other
+ * stands in for it.
  *
  * The diagrams are those in the content of the post, as PostDiagrams finds
  * them. A diagram in a synced pattern or a template part is in another
@@ -142,8 +144,8 @@ final class ImageSync implements Hookable {
 	}
 
 	/**
-	 * Removes the images of the diagrams a post no longer has, once the post
-	 * is saved.
+	 * Removes the images of the diagrams a post no longer has, and those of the
+	 * other renderer that have been drawn again, once the post is saved.
 	 *
 	 * @param int $post_id The ID of the post.
 	 */
@@ -161,6 +163,19 @@ final class ImageSync implements Hookable {
 			return;
 		}
 
-		$this->images->forget( $post_id, array_keys( array_diff_key( $images, $this->get_diagrams( $post ) ) ) );
+		// The images to keep: those of the diagrams as the site's renderer draws them.
+		$keep = $this->get_diagrams( $post );
+
+		// And, for a diagram that has none yet, the other renderer's, which stands in.
+		foreach ( $this->diagrams->get_all( $post ) as $block ) {
+			$code  = isset( $block['attrs']['code'] ) && is_string( $block['attrs']['code'] ) ? $block['attrs']['code'] : '';
+			$theme = isset( $block['attrs']['theme'] ) && is_string( $block['attrs']['theme'] ) ? $block['attrs']['theme'] : '';
+
+			if ( '' !== trim( $code ) && ! isset( $images[ $this->images->get_key( $code, $theme ) ] ) ) {
+				$keep[ $this->images->get_key( $code, $theme, $this->images->get_other_renderer() ) ] = true;
+			}
+		}
+
+		$this->images->forget( $post_id, array_keys( array_diff_key( $images, $keep ) ) );
 	}
 }

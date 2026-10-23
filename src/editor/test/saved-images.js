@@ -176,6 +176,37 @@ describe( 'drawImage', () => {
 		}
 	);
 
+	it( 'draws a Pele diagram with the colours of its palette, on its background', async () => {
+		renderDiagram.mockResolvedValue( { svg: SVG, palette: 'dark' } );
+
+		const blob = await withoutCanvas( () =>
+			drawImage( 'graph TD', 'dark' )
+		);
+
+		expect( getPngBlob ).toHaveBeenCalledWith(
+			expect.anything(),
+			'#1e1e1e',
+			expect.objectContaining( {
+				'--pele-fg': '#e6e6e6',
+				'--pele-bg': '#1e1e1e',
+			} )
+		);
+		expect( blob.background ).toBe( '#1e1e1e' );
+	} );
+
+	it( 'draws a Pele diagram that follows the page as on a light page', async () => {
+		renderDiagram.mockResolvedValue( { svg: SVG, palette: 'light' } );
+
+		await withoutCanvas( () => drawImage( 'graph TD', 'auto' ) );
+
+		expect( renderDiagram.mock.calls[ 0 ][ 1 ] ).toBe( 'auto-light' );
+		expect( getPngBlob ).toHaveBeenCalledWith(
+			expect.anything(),
+			'#ffffff',
+			expect.objectContaining( { '--pele-fg': '#1f1f1f' } )
+		);
+	} );
+
 	it( 'gives each render an id of its own', async () => {
 		await withoutCanvas( () => drawImage( 'graph TD', 'auto' ) );
 		await withoutCanvas( () => drawImage( 'graph TD', 'auto' ) );

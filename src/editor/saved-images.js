@@ -17,6 +17,7 @@ import { select, subscribe } from '@wordpress/data';
 import { getRenderer, hasRenderer } from '../renderers';
 import { AUTO_LIGHT, THEMES } from '../utils/themes';
 import { getPngBlob, getThemeBackground } from '../utils/export-diagram';
+import { getPaletteVariables } from '../utils/pele-palette';
 
 // How long to wait for the editor canvas and its Mermaid when the editor
 // opens, and how often to look for them.
@@ -88,7 +89,7 @@ async function getCanvasRenderer() {
  *
  * An image has one look, wherever it is shown. A diagram that follows the
  * page is drawn as on a light page, and every image has the background its
- * theme is made for.
+ * theme is made for, or, with Pele, its palette's.
  *
  * @param {string} code  The Mermaid source.
  * @param {string} theme The theme of the diagram, as the server names it: one
@@ -130,7 +131,19 @@ export async function drawImage( code, theme ) {
 
 	const svg = template.content.querySelector( 'svg' );
 
-	return svg ? getPngBlob( svg, getThemeBackground( drawnTheme ) ) : null;
+	if ( ! svg ) {
+		return null;
+	}
+
+	// A Pele diagram has no colours of its own: the file gets those of its
+	// palette, in the look of a light page, and the background to match.
+	if ( result.palette ) {
+		const variables = getPaletteVariables( result.palette, null );
+
+		return getPngBlob( svg, variables[ '--pele-bg' ], variables );
+	}
+
+	return getPngBlob( svg, getThemeBackground( drawnTheme ) );
 }
 
 /**

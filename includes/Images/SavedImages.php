@@ -9,6 +9,7 @@ namespace MermaidBlocks\Images;
 
 use MermaidBlocks\Hookable;
 use MermaidBlocks\Options;
+use MermaidBlocks\Renderers;
 use WP_Error;
 use WP_Post;
 
@@ -36,9 +37,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   the media library and outlive its diagram. The post meta is loaded with
  *   the post, so a page view that shows a diagram costs no query.
  * - **An image is found by its key**: a hash of the code and of the theme of
- *   the diagram. A diagram that changed, in the editor or on the server, has
- *   another key and so no image, until the editor draws it again. Nothing has
- *   to notice the change for an outdated image to stop being shown.
+ *   the diagram, and, for Pele, of the renderer: Mermaid.js's key is what it
+ *   was before there was a choice, so its images keep working. A diagram that
+ *   changed, in the editor or on the server, has another key and so no image,
+ *   until the editor draws it again. Nothing has to notice the change for an
+ *   outdated image to stop being shown. After the site switched renderer, the
+ *   image of the other renderer stands in until the post is drawn again.
  * - **An image holds SCALE times the pixels it is shown at**, to stay sharp
  *   on dense screens.
  */
@@ -47,7 +51,7 @@ final class SavedImages implements Hookable {
 	/**
 	 * The post meta field that lists the images of a post, by key: for each,
 	 * its file, relative to the uploads directory, its size in pixels, and
-	 * the theme it was drawn in.
+	 * the theme it was drawn in and the renderer.
 	 */
 	const META_KEY = '_mermaid_blocks_images';
 
@@ -113,15 +117,45 @@ final class SavedImages implements Hookable {
 	/**
 	 * Returns the key of the image of a diagram.
 	 *
-	 * @param string $code  The Mermaid source.
-	 * @param string $theme Optional. The theme chosen for the diagram, as its
-	 *                      block has it: an empty string for a diagram that
-	 *                      takes the site's theme.
+	 * @param string $code     The Mermaid source.
+	 * @param string $theme    Optional. The theme chosen for the diagram, as its
+	 *                         block has it: an empty string for a diagram that
+	 *                         takes the site's theme.
+	 * @param string $renderer Optional. The renderer of the image. Default: the
+	 *                         one of the request.
 	 *
-	 * @return string The key: 32 hexadecimal digits.
+	 * @return string The key: 32 hexadecimal digits. The key of an image of
+	 *                Mermaid.js doesn't name the renderer, as it never did.
 	 */
-	public function get_key( string $code, string $theme = '' ): string {
-		return md5( $theme . "\n" . $code );
+	public function get_key( string $code, string $theme = '', string $renderer = '' ): string {
+		$renderer = $this->get_renderer( $renderer );
+
+		if ( Renderers::MERMAID === $renderer ) {
+			return md5( $theme . "\n" . $code );
+		}
+
+		return md5( $renderer . "\n" . $theme . "\n" . $code );
+	}
+
+	/**
+	 * Returns the other renderer: the one whose image stands in for the one of
+	 * the request until it is drawn.
+	 *
+	 * @return string The name of the renderer.
+	 */
+	public function get_other_renderer(): string {
+		return Renderers::PELE === $this->get_renderer() ? Renderers::MERMAID : Renderers::PELE;
+	}
+
+	/**
+	 * Returns a renderer, the request's when none is given.
+	 *
+	 * @param string $renderer Optional. A renderer.
+	 *
+	 * @return string One of Renderers::ALL.
+	 */
+	private function get_renderer( string $renderer = '' ): string {
+		return Renderers::exists( $renderer ) ? $renderer : $this->options->get_renderer();
 	}
 
 	/**
@@ -135,8 +169,8 @@ final class SavedImages implements Hookable {
 	 *
 	 * @param int $post_id The ID of the post.
 	 *
-	 * @return array[] The file, the width, the height and the theme of each
-	 *                 image, by key.
+	 * @return array[] The file, the width, the height, the theme and the
+	 *                 renderer of each image, by key.
 	 */
 	public function get_all( int $post_id ): array {
 		$stored = get_post_meta( $post_id, self::META_KEY, true );
@@ -158,10 +192,12 @@ final class SavedImages implements Hookable {
 			}
 
 			$images[ $key ] = array(
-				'file'   => $image['file'],
-				'width'  => max( 1, (int) $image['width'] ),
-				'height' => max( 1, (int) $image['height'] ),
-				'theme'  => isset( $image['theme'] ) && is_string( $image['theme'] ) ? $image['theme'] : '',
+				'file'     => $image['file'],
+				'width'    => max( 1, (int) $image['width'] ),
+				'height'   => max( 1, (int) $image['height'] ),
+				'theme'    => isset( $image['theme'] ) && is_string( $image['theme'] ) ? $image['theme'] : '',
+				// Images saved before there was a choice are Mermaid.js's.
+				'renderer' => isset( $image['renderer'] ) && Renderers::exists( $image['renderer'] ) ? $image['renderer'] : Renderers::MERMAID,
 			);
 		}
 
@@ -169,7 +205,9 @@ final class SavedImages implements Hookable {
 	}
 
 	/**
-	 * Returns the image to show for a diagram, if it has one.
+	 * Returns the image to show for a diagram, if it has one: the one of the
+	 * request's renderer, or else the other renderer's, in its old look, until
+	 * the post is drawn again with this one.
 	 *
 	 * The post's meta is looked at before the setting: the first comes with
 	 * the post, the second is an option, which a page without images then
@@ -192,6 +230,10 @@ final class SavedImages implements Hookable {
 
 		$images = $this->get_all( (int) $post_id );
 		$key    = $this->get_key( $code, $theme );
+
+		if ( ! isset( $images[ $key ] ) ) {
+			$key = $this->get_key( $code, $theme, $this->get_other_renderer() );
+		}
 
 		if ( ! isset( $images[ $key ] ) || ! $this->is_on() ) {
 			return null;
@@ -249,16 +291,19 @@ final class SavedImages implements Hookable {
 	/**
 	 * Saves the image of a diagram of a post.
 	 *
-	 * @param WP_Post $post  The post.
-	 * @param string  $key   The key of the diagram: see get_key().
-	 * @param string  $theme The theme the image was drawn in.
-	 * @param string  $png   The image: the content of a PNG file.
+	 * @param WP_Post $post     The post.
+	 * @param string  $key      The key of the diagram: see get_key().
+	 * @param string  $theme    The theme the image was drawn in.
+	 * @param string  $png      The image: the content of a PNG file.
+	 * @param string  $renderer Optional. The renderer it was drawn with.
+	 *                          Default: the one of the request.
 	 *
-	 * @return array|WP_Error The file, the width, the height and the theme of
-	 *                        the image, or the error: what was given is no
-	 *                        PNG, or too large, or couldn't be written.
+	 * @return array|WP_Error The file, the width, the height, the theme and the
+	 *                        renderer of the image, or the error: what was
+	 *                        given is no PNG, or too large, or couldn't be
+	 *                        written.
 	 */
-	public function save( WP_Post $post, string $key, string $theme, string $png ) {
+	public function save( WP_Post $post, string $key, string $theme, string $png, string $renderer = '' ) {
 		$size = $this->get_size( $png );
 
 		if ( is_wp_error( $size ) ) {
@@ -276,8 +321,16 @@ final class SavedImages implements Hookable {
 		// An image drawn again, in another theme, replaces the one before it.
 		$this->forget( $post->ID, array( $key ) );
 
-		// The name tells the theme, so an image drawn again has another URL than the one caches may hold.
-		$name = sprintf( '%d-%s-%s.png', $post->ID, $key, sanitize_key( $theme ) );
+		$renderer = $this->get_renderer( $renderer );
+
+		// The name tells the theme, and Pele, so an image drawn again has another URL than the one caches may hold.
+		$name = sprintf(
+			'%d-%s-%s%s.png',
+			$post->ID,
+			$key,
+			Renderers::MERMAID === $renderer ? '' : $renderer . '-',
+			sanitize_key( $theme )
+		);
 
 		// WordPress creates a directory it hasn't seen in this request, not one that was removed since.
 		wp_mkdir_p( $this->get_path( self::DIRECTORY ) );
@@ -299,10 +352,11 @@ final class SavedImages implements Hookable {
 		}
 
 		$image = array(
-			'file'   => self::DIRECTORY . '/' . wp_basename( $upload['file'] ),
-			'width'  => $size['width'],
-			'height' => $size['height'],
-			'theme'  => $theme,
+			'file'     => self::DIRECTORY . '/' . wp_basename( $upload['file'] ),
+			'width'    => $size['width'],
+			'height'   => $size['height'],
+			'theme'    => $theme,
+			'renderer' => $renderer,
 		);
 
 		$images         = $this->get_all( $post->ID );
