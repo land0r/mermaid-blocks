@@ -40,8 +40,8 @@ class ShortcodeTest extends WP_UnitTestCase {
 
 		$this->shortcode = mermaid_blocks()->get( Shortcode::class );
 
-		wp_dequeue_script( Assets::RENDERER );
-		wp_dequeue_style( Assets::RENDERER );
+		wp_dequeue_script( Assets::DIAGRAM );
+		wp_dequeue_style( Assets::DIAGRAM );
 	}
 
 	/**
@@ -116,8 +116,8 @@ class ShortcodeTest extends WP_UnitTestCase {
 
 		$this->assertStringStartsWith( '<div class="mermaid-blocks-diagram" data-mermaid-theme="', $markup );
 		$this->assertSame( self::CODE, $this->get_source( $markup ) );
-		$this->assertTrue( wp_script_is( Assets::RENDERER ) );
-		$this->assertTrue( wp_style_is( Assets::RENDERER ) );
+		$this->assertTrue( wp_script_is( Assets::DIAGRAM ) );
+		$this->assertTrue( wp_style_is( Assets::DIAGRAM ) );
 	}
 
 	/**
@@ -132,7 +132,7 @@ class ShortcodeTest extends WP_UnitTestCase {
 	 */
 	public function test_outputs_nothing_without_code( string $shortcode ): void {
 		$this->assertSame( '', do_shortcode( $shortcode ) );
-		$this->assertFalse( wp_script_is( Assets::RENDERER ) );
+		$this->assertFalse( wp_script_is( Assets::DIAGRAM ) );
 	}
 
 	/**

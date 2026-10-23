@@ -1,8 +1,10 @@
-import MERMAID_CONFIG, { mergeConfig } from './mermaid-config';
-import { AUTO_LIGHT, getThemeConfig } from './themes';
-import { getParsedText, toSourceLine } from './source-line';
+import MERMAID_CONFIG, { mergeConfig } from '../utils/mermaid-config';
+import { AUTO_LIGHT, getThemeConfig } from '../utils/themes';
+import { getParsedText, toSourceLine } from '../utils/source-line';
 
 /*
+ * Mermaid.js as a renderer: see createMermaidRenderer() for the interface.
+ *
  * Mermaid has one configuration per window, and no theme per render. A
  * diagram is drawn in its own theme by initialising Mermaid again before it
  * renders, and no other diagram may render in the meantime: Mermaid reads its
@@ -14,7 +16,7 @@ import { getParsedText, toSourceLine } from './source-line';
 const configs = new WeakMap();
 const renders = new WeakMap();
 
-// What Mermaid starts out with: see load-mermaid.js and mermaid-init.js.
+// What Mermaid starts out with: see load-mermaid.js and index.js.
 const INITIAL_CONFIG = JSON.stringify( MERMAID_CONFIG );
 
 // The keyword flowcharts asked for the ELK layout with before Mermaid 11.
@@ -145,7 +147,7 @@ function removeLeftovers( renderId, doc ) {
  * @param {Document} doc      The document of the window Mermaid runs in.
  * @param {string}   theme    What to draw the diagram in.
  *
- * @return {Promise<Object>} The result: see renderDiagram().
+ * @return {Promise<Object>} The result: see draw().
  */
 async function renderInTheme( mermaid, renderId, code, doc, theme ) {
 	try {
@@ -174,32 +176,27 @@ async function renderInTheme( mermaid, renderId, code, doc, theme ) {
 }
 
 /**
- * Renders Mermaid code to SVG and never throws.
+ * Draws Mermaid code as SVG and never throws.
  *
  * The source decides before the theme does: a theme set in its front matter
  * or in a directive wins.
  *
- * @param {Object}   mermaid  The Mermaid API object.
- * @param {string}   renderId A unique element id for this render call.
- * @param {string}   code     The Mermaid source.
- * @param {Document} [doc]    The document of the window Mermaid runs in.
- * @param {string}   [theme]  What to draw the diagram in, as resolveTheme()
- *                            returns it. Defaults to what Mermaid picks.
+ * @param {Object}      mermaid The Mermaid API object.
+ * @param {string}      code    The Mermaid source.
+ * @param {string}      theme   What to draw the diagram in, as resolveTheme()
+ *                              returns it.
+ * @param {HTMLElement} element The element the diagram is shown in. Its
+ *                              document is the one Mermaid draws in.
+ * @param {string}      id      A unique element id for this drawing.
  *
  * @return {Promise<{svg: string, bindFunctions: (Function|undefined)}|{error: {message: string, line: (number|null)}}>}
  * The SVG markup and Mermaid's function that binds its event handlers once the
  * SVG is in the page, or a normalised error: its message, and the 1-based line
  * of `code` it points at when known. Leftover DOM is removed on failure.
  */
-export function renderDiagram(
-	mermaid,
-	renderId,
-	code,
-	doc = document,
-	theme = AUTO_LIGHT
-) {
+function draw( mermaid, code, theme, element, id ) {
 	const result = ( renders.get( mermaid ) || Promise.resolve() ).then( () =>
-		renderInTheme( mermaid, renderId, code, doc, theme )
+		renderInTheme( mermaid, id, code, element.ownerDocument, theme )
 	);
 
 	renders.set( mermaid, result );
@@ -208,18 +205,18 @@ export function renderDiagram(
 }
 
 /**
- * Parses Mermaid code without rendering it, and never throws. It waits for
- * the renders before it, as renderDiagram() does: Mermaid applies the code's
- * own configuration while it parses.
+ * Parses Mermaid code without drawing it, and never throws. It waits for the
+ * drawings before it, as draw() does: Mermaid applies the code's own
+ * configuration while it parses.
  *
  * @param {Object} mermaid The Mermaid API object.
  * @param {string} code    The Mermaid source.
  *
  * @return {Promise<{type: string}|{error: {message: string, line: (number|null)}}>}
  * The type Mermaid detected, such as `flowchart-v2` or `sequence`, or the
- * error, normalised as renderDiagram() does.
+ * error, normalised as draw() does.
  */
-export function parseDiagram( mermaid, code ) {
+function parse( mermaid, code ) {
 	const result = ( renders.get( mermaid ) || Promise.resolve() ).then(
 		async () => {
 			try {
@@ -241,4 +238,28 @@ export function parseDiagram( mermaid, code ) {
 	renders.set( mermaid, result );
 
 	return result;
+}
+
+/**
+ * Wraps a Mermaid API object in the renderer interface, which Pele has too:
+ *
+ * - `draw( code, theme, element, id )` resolves to `{ svg }`, or to
+ *   `{ error: { message, line } }` with the 1-based line of the code. It never
+ *   rejects, and leaves nothing behind in the document.
+ * - `parse( code )` resolves to `{ type }`, or to the same error.
+ *
+ * @param {Object}   mermaid The Mermaid API object.
+ * @param {Document} [doc]   The document of the window Mermaid runs in.
+ *
+ * @return {{name: string, document: Document, draw: Function, parse: Function}}
+ * The renderer.
+ */
+export function createMermaidRenderer( mermaid, doc = document ) {
+	return {
+		name: 'mermaid',
+		document: doc,
+		draw: ( code, theme, element, id ) =>
+			draw( mermaid, code, theme || AUTO_LIGHT, element, id ),
+		parse: ( code ) => parse( mermaid, code ),
+	};
 }

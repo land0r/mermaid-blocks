@@ -44,7 +44,7 @@ describe( 'renderWidget', () => {
 		expect( window.mermaidBlocks.render ).toHaveBeenCalledWith( element );
 	} );
 
-	it( 'does nothing before the renderer loaded, or without an element', () => {
+	it( 'does nothing before the diagram script loaded, or without an element', () => {
 		expect( () =>
 			renderWidget( [ document.createElement( 'div' ) ] )
 		).not.toThrow();

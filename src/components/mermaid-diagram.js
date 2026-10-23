@@ -26,8 +26,7 @@ import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
  */
 import { useInstanceId } from '@wordpress/compose';
 
-import { getMermaid } from '../utils/mermaid-init';
-import { renderDiagram } from '../utils/render-diagram';
+import { getRenderer } from '../renderers';
 import { THEMES, resolveTheme } from '../utils/themes';
 import { withAccessibleText } from '../utils/accessible-text';
 import watchSurface from '../utils/watch-surface';
@@ -116,12 +115,12 @@ export default function MermaidDiagram( {
 			return;
 		}
 
-		const owner = getMermaid(
+		const renderer = getRenderer(
 			containerRef.current &&
 				containerRef.current.ownerDocument.defaultView
 		);
 
-		if ( ! owner ) {
+		if ( ! renderer ) {
 			setSvg( '' );
 			setError( {
 				message: __(
@@ -137,26 +136,27 @@ export default function MermaidDiagram( {
 		renderCounter.current += 1;
 		const renderId = `mermaid-diagram-${ instanceId }-${ renderCounter.current }`;
 
-		renderDiagram(
-			owner.mermaid,
-			renderId,
-			code,
-			owner.document,
-			drawnTheme
-		).then( ( result ) => {
-			// A newer render started, or the component unmounted.
-			if ( cancelled ) {
-				return;
-			}
+		renderer
+			.draw(
+				code,
+				drawnTheme,
+				containerRef.current || renderer.document.body,
+				renderId
+			)
+			.then( ( result ) => {
+				// A newer render started, or the component unmounted.
+				if ( cancelled ) {
+					return;
+				}
 
-			if ( result.error ) {
-				setSvg( '' );
-				setError( result.error );
-			} else {
-				setSvg( result.svg );
-				setError( null );
-			}
-		} );
+				if ( result.error ) {
+					setSvg( '' );
+					setError( result.error );
+				} else {
+					setSvg( result.svg );
+					setError( null );
+				}
+			} );
 
 		return () => {
 			cancelled = true;

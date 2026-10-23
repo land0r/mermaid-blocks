@@ -1,4 +1,14 @@
-import renderDiagrams, { isOutdated, redrawDiagram } from '../render-diagrams';
+import renderDraw, {
+	isOutdated,
+	redrawDiagram as redrawWith,
+} from '../render-diagrams';
+import { createMermaidRenderer } from '../../renderers/mermaid';
+
+// The tests drive Mermaid.js through the renderer interface.
+const renderDiagrams = ( mermaid, ...rest ) =>
+	renderDraw( createMermaidRenderer( mermaid ), ...rest );
+const redrawDiagram = ( mermaid, ...rest ) =>
+	redrawWith( createMermaidRenderer( mermaid ), ...rest );
 
 const CODE = 'graph TD\nA["x & y <b> &amp; z"] --> B';
 

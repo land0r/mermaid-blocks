@@ -1,6 +1,12 @@
-import { parseDiagram, renderDiagram } from '../render-diagram';
-import MERMAID_CONFIG from '../mermaid-config';
-import { AUTO_DARK, AUTO_LIGHT } from '../themes';
+import { createMermaidRenderer } from '../mermaid';
+import MERMAID_CONFIG from '../../utils/mermaid-config';
+import { AUTO_DARK, AUTO_LIGHT } from '../../utils/themes';
+
+// Draws through the renderer interface, in the document of the window.
+const renderDiagram = ( mermaid, id, code, doc = document, theme ) =>
+	createMermaidRenderer( mermaid ).draw( code, theme, doc.body, id );
+const parseDiagram = ( mermaid, code ) =>
+	createMermaidRenderer( mermaid ).parse( code );
 
 describe( 'renderDiagram', () => {
 	afterEach( () => {

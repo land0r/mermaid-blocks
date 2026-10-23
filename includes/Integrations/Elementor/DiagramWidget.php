@@ -102,7 +102,7 @@ final class DiagramWidget extends Widget_Base {
 	 * @return string[] The handles.
 	 */
 	public function get_script_depends(): array {
-		return array( Assets::RENDERER, Registrar::SCRIPT );
+		return array( Assets::DIAGRAM, Registrar::SCRIPT );
 	}
 
 	/**
@@ -111,7 +111,7 @@ final class DiagramWidget extends Widget_Base {
 	 * @return string[] The handles.
 	 */
 	public function get_style_depends(): array {
-		return array( Assets::RENDERER );
+		return array( Assets::DIAGRAM );
 	}
 
 	/**

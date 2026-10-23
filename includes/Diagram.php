@@ -182,7 +182,7 @@ final class Diagram {
 	 * - Square brackets are output as numeric entities: do_shortcode() also runs
 	 *   over post content, so a node such as `A[gallery]` or `B[audio]` would be
 	 *   replaced by the shortcode's output. The browser decodes the entities back
-	 *   to brackets before the renderer reads the source. See encode_brackets().
+	 *   to brackets before Mermaid reads the source. See encode_brackets().
 	 *
 	 * @param string $code Mermaid source.
 	 *
@@ -336,7 +336,7 @@ final class Diagram {
 			$attribute_markup[] = sprintf( '%s="%s"', $name, esc_attr( $value ) );
 		}
 
-		$this->assets->enqueue_renderer();
+		$this->assets->enqueue_diagram();
 
 		return $this->wrap( implode( ' ', $attribute_markup ), $code, $caption );
 	}

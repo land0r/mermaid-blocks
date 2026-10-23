@@ -1,4 +1,3 @@
-import { renderDiagram } from '../utils/render-diagram';
 import { resolveTheme } from '../utils/themes';
 import { setAccessibleText } from '../utils/accessible-text';
 
@@ -50,26 +49,23 @@ export function isOutdated( diagram ) {
  * with the accessible title and description of its `data-mermaid-title` and
  * `data-mermaid-description` attributes.
  *
- * @param {Object}      mermaid         The Mermaid library object.
- * @param {HTMLElement} diagram         The diagram element.
- * @param {HTMLElement} source          The element holding its source.
- * @param {Document}    mermaidDocument The document of the window Mermaid
- *                                      runs in.
+ * @param {Object}      renderer The renderer to draw with.
+ * @param {HTMLElement} diagram  The diagram element.
+ * @param {HTMLElement} source   The element holding its source.
  *
  * @return {Promise<HTMLElement|null>} The element holding the SVG, which says
  * the theme it was drawn in, or null when the diagram failed to render.
  */
-async function createCanvas( mermaid, diagram, source, mermaidDocument ) {
+async function createCanvas( renderer, diagram, source ) {
 	const theme = resolveTheme( diagram.dataset.mermaidTheme, diagram );
 
 	counter += 1;
 
-	const result = await renderDiagram(
-		mermaid,
-		`mermaid-blocks-diagram-${ counter }`,
+	const result = await renderer.draw(
 		source.textContent,
-		mermaidDocument,
-		theme
+		theme,
+		diagram,
+		`mermaid-blocks-diagram-${ counter }`
 	);
 
 	if ( result.error ) {
@@ -109,18 +105,12 @@ async function createCanvas( mermaid, diagram, source, mermaidDocument ) {
  * Renders every not-yet-processed diagram under `root`: the block's, and any
  * other integration's that outputs the same markup (see includes/Diagram.php).
  *
- * @param {Object}               mermaid           The Mermaid library object.
- * @param {Document|HTMLElement} [root]            Where to look for diagrams.
- * @param {Document}             [mermaidDocument] The document of the window
- *                                                 Mermaid runs in.
+ * @param {Object}               renderer Draws the diagrams.
+ * @param {Document|HTMLElement} [root]   Where to look for diagrams.
  *
  * @return {Promise<void>} Resolves when all diagrams have been processed.
  */
-export default async function renderDiagrams(
-	mermaid,
-	root = document,
-	mermaidDocument = root.ownerDocument || root
-) {
+export default async function renderDiagrams( renderer, root = document ) {
 	for ( const diagram of findDiagrams( root ) ) {
 		const source = diagram.querySelector( SOURCE_SELECTOR );
 
@@ -135,12 +125,7 @@ export default async function renderDiagrams(
 
 		diagram.dataset.mermaidProcessing = '1';
 
-		const canvas = await createCanvas(
-			mermaid,
-			diagram,
-			source,
-			mermaidDocument
-		);
+		const canvas = await createCanvas( renderer, diagram, source );
 
 		if ( canvas ) {
 			// In place of the source, so above a caption.
@@ -162,18 +147,12 @@ export default async function renderDiagrams(
  * The diagram stays as it is until the new drawing is ready, and when that
  * fails.
  *
- * @param {Object}      mermaid           The Mermaid library object.
- * @param {HTMLElement} diagram           The diagram element.
- * @param {Document}    [mermaidDocument] The document of the window Mermaid
- *                                        runs in.
+ * @param {Object}      renderer Draws the diagram.
+ * @param {HTMLElement} diagram  The diagram element.
  *
  * @return {Promise<boolean>} Whether the diagram was drawn again.
  */
-export async function redrawDiagram(
-	mermaid,
-	diagram,
-	mermaidDocument = diagram.ownerDocument
-) {
+export async function redrawDiagram( renderer, diagram ) {
 	const source = diagram.querySelector( SOURCE_SELECTOR );
 
 	if (
@@ -186,12 +165,7 @@ export async function redrawDiagram(
 
 	diagram.dataset.mermaidProcessing = '1';
 
-	const canvas = await createCanvas(
-		mermaid,
-		diagram,
-		source,
-		mermaidDocument
-	);
+	const canvas = await createCanvas( renderer, diagram, source );
 	const previous = diagram.querySelector( CANVAS_SELECTOR );
 
 	if ( canvas && previous ) {

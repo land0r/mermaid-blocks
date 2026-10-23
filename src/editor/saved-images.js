@@ -14,8 +14,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { select, subscribe } from '@wordpress/data';
 
-import { getMermaid } from '../utils/mermaid-init';
-import { renderDiagram } from '../utils/render-diagram';
+import { getRenderer, hasRenderer } from '../renderers';
 import { AUTO_LIGHT, THEMES } from '../utils/themes';
 import { getPngBlob, getThemeBackground } from '../utils/export-diagram';
 
@@ -33,46 +32,44 @@ let waited = false;
 const runs = new Map();
 
 /**
- * Returns the Mermaid instance of the editor canvas, once the canvas can be
+ * Returns the renderer of the editor canvas, once the canvas can be
  * drawn in.
  *
  * The scripts of the canvas run before its document has a body, and Mermaid
  * draws in the body: until the document has loaded, a render fails.
  *
- * @return {{mermaid: Object, document: Document}|null} The Mermaid instance
- * and the document it renders in, or null.
+ * @return {Object|null} The renderer of the canvas, or null.
  */
-function findCanvasMermaid() {
+function findCanvasRenderer() {
 	const frame = document.querySelector( 'iframe[name="editor-canvas"]' );
 	const view = frame && frame.contentWindow;
 
 	if (
-		! view ||
-		! view.mermaid ||
+		! hasRenderer( view ) ||
 		! view.document.body ||
 		view.document.readyState !== 'complete'
 	) {
 		return null;
 	}
 
-	return getMermaid( view );
+	return getRenderer( view );
 }
 
 /**
- * Returns the Mermaid instance to draw the images with: the one of the editor
+ * Returns the renderer to draw the images with: the one of the editor
  * canvas, where the previews are drawn, so an image is measured as they are.
  * The canvas and its scripts load after the editor does, so the first image
  * waits for them. An editor without a canvas of its own has the admin
  * window's Mermaid.
  *
- * @return {Promise<{mermaid: Object, document: Document}|null>} The Mermaid
- * instance and the document it renders in, or null when there is none.
+ * @return {Promise<Object|null>} The renderer, which tells the document it
+ * draws in, or null when there is none.
  */
-async function getCanvasMermaid() {
+async function getCanvasRenderer() {
 	const timeout = waited ? 0 : CANVAS_TIMEOUT;
 
 	for ( let elapsed = 0; elapsed < timeout; elapsed += CANVAS_INTERVAL ) {
-		if ( findCanvasMermaid() ) {
+		if ( findCanvasRenderer() ) {
 			break;
 		}
 
@@ -83,7 +80,7 @@ async function getCanvasMermaid() {
 
 	waited = true;
 
-	return findCanvasMermaid() || getMermaid( window );
+	return findCanvasRenderer() || getRenderer( window );
 }
 
 /**
@@ -101,7 +98,7 @@ async function getCanvasMermaid() {
  * drawn, such as one with a syntax error.
  */
 export async function drawImage( code, theme ) {
-	const owner = await getCanvasMermaid();
+	const owner = await getCanvasRenderer();
 
 	if ( ! owner ) {
 		return null;
@@ -111,12 +108,11 @@ export async function drawImage( code, theme ) {
 
 	counter += 1;
 
-	const result = await renderDiagram(
-		owner.mermaid,
-		`mermaid-blocks-image-${ counter }`,
+	const result = await owner.draw(
 		code,
-		owner.document,
-		drawnTheme
+		drawnTheme,
+		owner.document.body,
+		`mermaid-blocks-image-${ counter }`
 	);
 
 	if ( result.error ) {

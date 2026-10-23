@@ -10,9 +10,18 @@ jest.mock(
 );
 
 // Rendering and drawing have tests of their own.
-jest.mock( '../../utils/render-diagram', () => ( {
-	renderDiagram: jest.fn(),
-} ) );
+jest.mock( '../../renderers/mermaid', () => {
+	const mockDraw = jest.fn();
+
+	return {
+		mockDraw,
+		createMermaidRenderer: ( mermaid, doc ) => ( {
+			name: 'mermaid',
+			document: doc,
+			draw: mockDraw,
+		} ),
+	};
+} );
 jest.mock( '../../utils/export-diagram', () => ( {
 	...jest.requireActual( '../../utils/export-diagram' ),
 	getPngBlob: jest.fn(),
@@ -87,7 +96,7 @@ beforeEach( () => {
 	jest.resetModules();
 	apiFetch = require( '@wordpress/api-fetch' );
 	( { select, subscribe } = require( '@wordpress/data' ) );
-	( { renderDiagram } = require( '../../utils/render-diagram' ) );
+	renderDiagram = require( '../../renderers/mermaid' ).mockDraw;
 	( { getPngBlob } = require( '../../utils/export-diagram' ) );
 	( {
 		default: watchPost,
@@ -147,11 +156,10 @@ describe( 'drawImage', () => {
 		);
 
 		expect( renderDiagram ).toHaveBeenCalledWith(
-			window.mermaid,
-			expect.stringMatching( /^mermaid-blocks-image-\d+$/ ),
 			'graph TD',
-			document,
-			'dark'
+			'dark',
+			document.body,
+			expect.stringMatching( /^mermaid-blocks-image-\d+$/ )
 		);
 		expect( blob ).toEqual( { png: SVG, background: '#333' } );
 	} );
@@ -163,7 +171,7 @@ describe( 'drawImage', () => {
 				drawImage( 'graph TD', theme )
 			);
 
-			expect( renderDiagram.mock.calls[ 0 ][ 4 ] ).toBe( 'auto-light' );
+			expect( renderDiagram.mock.calls[ 0 ][ 1 ] ).toBe( 'auto-light' );
 			expect( blob.background ).toBe( '#fff' );
 		}
 	);
@@ -172,8 +180,8 @@ describe( 'drawImage', () => {
 		await withoutCanvas( () => drawImage( 'graph TD', 'auto' ) );
 		await withoutCanvas( () => drawImage( 'graph TD', 'auto' ) );
 
-		expect( renderDiagram.mock.calls[ 0 ][ 1 ] ).not.toBe(
-			renderDiagram.mock.calls[ 1 ][ 1 ]
+		expect( renderDiagram.mock.calls[ 0 ][ 3 ] ).not.toBe(
+			renderDiagram.mock.calls[ 1 ][ 3 ]
 		);
 	} );
 
@@ -192,11 +200,10 @@ describe( 'drawImage', () => {
 		await drawing;
 
 		expect( renderDiagram ).toHaveBeenCalledWith(
-			frame.contentWindow.mermaid,
-			expect.any( String ),
 			'graph TD',
-			frame.contentWindow.document,
-			'forest'
+			'forest',
+			frame.contentWindow.document.body,
+			expect.any( String )
 		);
 	} );
 
@@ -220,8 +227,8 @@ describe( 'drawImage', () => {
 		await jest.advanceTimersByTimeAsync( 200 );
 		await drawing;
 
-		expect( renderDiagram.mock.calls[ 0 ][ 0 ] ).toBe(
-			frame.contentWindow.mermaid
+		expect( renderDiagram.mock.calls[ 0 ][ 2 ].ownerDocument ).toBe(
+			frame.contentWindow.document
 		);
 	} );
 
@@ -299,7 +306,7 @@ describe( 'saveImages', () => {
 				body: { png: SVG, background: '#fff' },
 			},
 		] );
-		expect( renderDiagram.mock.calls.map( ( call ) => call[ 2 ] ) ).toEqual(
+		expect( renderDiagram.mock.calls.map( ( call ) => call[ 0 ] ) ).toEqual(
 			[ 'graph TD', 'pie' ]
 		);
 	} );

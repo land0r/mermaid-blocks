@@ -1,8 +1,7 @@
 /**
  * Internal dependencies
  */
-import { getMermaid } from '../utils/mermaid-init';
-import { parseDiagram } from '../utils/render-diagram';
+import { getRenderer } from '../renderers';
 
 /**
  * The name of the ability.
@@ -62,13 +61,13 @@ export const OUTPUT_SCHEMA = {
  * @return {Promise<Object>} The output: see OUTPUT_SCHEMA.
  */
 export async function validateDiagram( { code } ) {
-	const instance = getMermaid( window );
+	const renderer = getRenderer( window );
 
-	if ( ! instance ) {
+	if ( ! renderer ) {
 		throw new Error( 'Mermaid is not loaded on this page.' );
 	}
 
-	const result = await parseDiagram( instance.mermaid, code );
+	const result = await renderer.parse( code );
 
 	if ( ! result.error ) {
 		return { valid: true, type: result.type };

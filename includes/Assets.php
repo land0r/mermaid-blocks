@@ -33,7 +33,7 @@ final class Assets implements Hookable {
 	/**
 	 * The handle of the script, and of the style, that render diagrams.
 	 */
-	const RENDERER = 'mermaid-blocks-diagram';
+	const DIAGRAM = 'mermaid-blocks-diagram';
 
 	/**
 	 * The plugin's files, to find those of the build.
@@ -75,7 +75,7 @@ final class Assets implements Hookable {
 
 		$view = $this->files->get_build_asset( 'view' );
 		wp_register_script(
-			self::RENDERER,
+			self::DIAGRAM,
 			$this->files->get_build_url( 'view.js' ),
 			$view['dependencies'],
 			$view['version'],
@@ -103,14 +103,14 @@ final class Assets implements Hookable {
 			),
 		);
 		wp_add_inline_script(
-			self::RENDERER,
+			self::DIAGRAM,
 			'var mermaidBlocksSettings = ' . wp_json_encode( $settings ) . ';',
 			'before'
 		);
 
 		$style_file = $this->files->get_build_path( 'style-index.css' );
 		wp_register_style(
-			self::RENDERER,
+			self::DIAGRAM,
 			$this->files->get_build_url( 'style-index.css' ),
 			array(),
 			file_exists( $style_file ) ? (string) filemtime( $style_file ) : false
@@ -119,18 +119,18 @@ final class Assets implements Hookable {
 		// Same handling WordPress gives stylesheets declared as files in block.json.
 		$rtl_style_file = $this->files->get_build_path( 'style-index-rtl.css' );
 		if ( is_rtl() && file_exists( $rtl_style_file ) ) {
-			wp_style_add_data( self::RENDERER, 'rtl', 'replace' );
-			wp_style_add_data( self::RENDERER, 'path', $rtl_style_file );
+			wp_style_add_data( self::DIAGRAM, 'rtl', 'replace' );
+			wp_style_add_data( self::DIAGRAM, 'path', $rtl_style_file );
 		} else {
-			wp_style_add_data( self::RENDERER, 'path', $style_file );
+			wp_style_add_data( self::DIAGRAM, 'path', $style_file );
 		}
 	}
 
 	/**
 	 * Enqueues the script and style that render diagrams on the page.
 	 */
-	public function enqueue_renderer(): void {
-		wp_enqueue_script( self::RENDERER );
-		wp_enqueue_style( self::RENDERER );
+	public function enqueue_diagram(): void {
+		wp_enqueue_script( self::DIAGRAM );
+		wp_enqueue_style( self::DIAGRAM );
 	}
 }

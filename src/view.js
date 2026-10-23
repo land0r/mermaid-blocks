@@ -19,7 +19,7 @@ import renderDiagrams, {
 	isOutdated,
 	redrawDiagram,
 } from './frontend/render-diagrams';
-import loadMermaid from './frontend/load-mermaid';
+import loadRenderer from './frontend/load-renderer';
 import loadControls from './frontend/load-controls';
 import watchSurface from './utils/watch-surface';
 
@@ -82,8 +82,8 @@ function redrawOutdated() {
 	findDiagrams( document )
 		.filter( isOutdated )
 		.forEach( ( diagram ) => {
-			loadMermaid( mermaidUrl )
-				.then( ( mermaid ) => redrawDiagram( mermaid, diagram ) )
+			loadRenderer( mermaidUrl )
+				.then( ( renderer ) => redrawDiagram( renderer, diagram ) )
 				.then( ( redrawn ) => {
 					if ( redrawn ) {
 						addControls( diagram );
@@ -100,15 +100,15 @@ function redrawOutdated() {
 }
 
 /**
- * Loads Mermaid if needed, renders one diagram and adds its controls.
+ * Loads the renderer if needed, renders one diagram and adds its controls.
  *
  * @param {HTMLElement} diagram The diagram element.
  *
  * @return {Promise<void>} Resolves when the diagram has been processed.
  */
 function renderNow( diagram ) {
-	return loadMermaid( mermaidUrl )
-		.then( ( mermaid ) => renderDiagrams( mermaid, diagram ) )
+	return loadRenderer( mermaidUrl )
+		.then( ( renderer ) => renderDiagrams( renderer, diagram ) )
 		.catch( ( error ) => {
 			diagram.classList.add( 'has-error' );
 			// eslint-disable-next-line no-console

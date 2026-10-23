@@ -145,7 +145,7 @@ describe( 'the types laid out with dagre', () => {
 		return layout;
 	}
 
-	// The types whose renderer takes its layout from the configuration, by the
+	// The types whose Mermaid diagram takes its layout from the configuration, by the
 	// directory of their source, which is the name of their options.
 	const configurable = new Set();
 

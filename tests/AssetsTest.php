@@ -40,7 +40,7 @@ class AssetsTest extends WP_UnitTestCase {
 	 * @return array The settings.
 	 */
 	private function get_settings(): array {
-		$before = array_filter( (array) wp_scripts()->get_data( Assets::RENDERER, 'before' ) );
+		$before = array_filter( (array) wp_scripts()->get_data( Assets::DIAGRAM, 'before' ) );
 		$script = implode( "\n", $before );
 
 		$this->assertSame( 1, preg_match( '/^var mermaidBlocksSettings = (\{.*\});$/s', $script, $matches ) );
@@ -93,7 +93,7 @@ class AssetsTest extends WP_UnitTestCase {
 	 * controls itself, when a diagram needs them.
 	 */
 	public function test_script_has_no_dependencies(): void {
-		$script = wp_scripts()->registered[ Assets::RENDERER ];
+		$script = wp_scripts()->registered[ Assets::DIAGRAM ];
 
 		$this->assertSame( array(), $script->deps );
 		$this->assertStringEndsWith( 'build/view.js', $script->src );
@@ -113,12 +113,12 @@ class AssetsTest extends WP_UnitTestCase {
 	 * Diagram markup loads the script and the style that render it.
 	 */
 	public function test_enqueues_what_renders_diagrams(): void {
-		wp_dequeue_script( Assets::RENDERER );
-		wp_dequeue_style( Assets::RENDERER );
+		wp_dequeue_script( Assets::DIAGRAM );
+		wp_dequeue_style( Assets::DIAGRAM );
 
-		mermaid_blocks()->get( Assets::class )->enqueue_renderer();
+		mermaid_blocks()->get( Assets::class )->enqueue_diagram();
 
-		$this->assertTrue( wp_script_is( Assets::RENDERER ) );
-		$this->assertTrue( wp_style_is( Assets::RENDERER ) );
+		$this->assertTrue( wp_script_is( Assets::DIAGRAM ) );
+		$this->assertTrue( wp_style_is( Assets::DIAGRAM ) );
 	}
 }
