@@ -3,8 +3,9 @@
  * other integration that outputs the same markup (see includes/Diagram.php).
  * Registered as the `mermaid-blocks-diagram` script.
  *
- * Each diagram renders when it scrolls into view, and Mermaid is loaded when
- * the first one does, so a page whose diagrams are never seen never loads it.
+ * Each diagram renders when it scrolls into view, and the renderer (Mermaid.js
+ * or Pele) is loaded when the first one does, so a page whose diagrams are
+ * never seen never loads it.
  * A diagram inside a hidden element, such as a closed tab, renders when it is
  * shown, at its real size. Once rendered, a diagram gets the controls its
  * markup asks for: zoom, download, copy, fullscreen. Their code is loaded when
@@ -19,7 +20,7 @@ import renderDiagrams, {
 	isOutdated,
 	redrawDiagram,
 } from './frontend/render-diagrams';
-import loadRenderer from './frontend/load-renderer';
+import loadRenderer, { getRendererUrl } from './frontend/load-renderer';
 import loadControls from './frontend/load-controls';
 import watchSurface from './utils/watch-surface';
 
@@ -28,7 +29,8 @@ import watchSurface from './utils/watch-surface';
 const ROOT_MARGIN = '100% 0px';
 
 // Printed before this script by includes/Assets.php.
-const { mermaidUrl, controlsUrl, i18n } = window.mermaidBlocksSettings || {};
+const settings = window.mermaidBlocksSettings || {};
+const { mermaidUrl, controlsUrl, i18n } = settings;
 
 // Whether the page is watched for turning dark or light.
 let watching = false;
@@ -82,7 +84,7 @@ function redrawOutdated() {
 	findDiagrams( document )
 		.filter( isOutdated )
 		.forEach( ( diagram ) => {
-			loadRenderer( mermaidUrl )
+			loadRenderer( settings )
 				.then( ( renderer ) => redrawDiagram( renderer, diagram ) )
 				.then( ( redrawn ) => {
 					if ( redrawn ) {
@@ -107,7 +109,7 @@ function redrawOutdated() {
  * @return {Promise<void>} Resolves when the diagram has been processed.
  */
 function renderNow( diagram ) {
-	return loadRenderer( mermaidUrl )
+	return loadRenderer( settings )
 		.then( ( renderer ) => renderDiagrams( renderer, diagram ) )
 		.catch( ( error ) => {
 			diagram.classList.add( 'has-error' );
@@ -151,10 +153,10 @@ const observer =
  *                                      document of this script.
  */
 function render( root = document ) {
-	if ( ! mermaidUrl ) {
+	if ( ! getRendererUrl( settings ) ) {
 		// eslint-disable-next-line no-console
 		console.warn(
-			'Mermaid Blocks: the URL of Mermaid is missing. Mermaid diagrams will not be rendered.'
+			'Mermaid Blocks: the URL of the renderer is missing. Mermaid diagrams will not be rendered.'
 		);
 		return;
 	}

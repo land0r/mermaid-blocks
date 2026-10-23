@@ -2,7 +2,10 @@ import renderDraw, {
 	isOutdated,
 	redrawDiagram as redrawWith,
 } from '../render-diagrams';
+// eslint-disable-next-line import/no-unresolved
+import * as pele from 'pele/lazy';
 import { createMermaidRenderer } from '../../renderers/mermaid';
+import { createPeleRenderer } from '../../renderers/pele';
 
 // The tests drive Mermaid.js through the renderer interface.
 const renderDiagrams = ( mermaid, ...rest ) =>
@@ -384,5 +387,83 @@ describe( 'redrawDiagram', () => {
 		expect(
 			diagram.querySelectorAll( '.mermaid-blocks-diagram__canvas' )
 		).toHaveLength( 1 );
+	} );
+} );
+
+describe( 'renderDiagrams with Pele', () => {
+	// jsdom has no canvas, so the text is measured by an estimate.
+	const renderer = createPeleRenderer( pele, {
+		measurer: { width: ( text, size ) => text.length * size * 0.55 },
+	} );
+
+	beforeEach( () => {
+		jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+	} );
+	afterEach( () => jest.restoreAllMocks() );
+
+	it( 'draws the markup as a canvas with an SVG, and hides the source', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+
+		await renderDraw( renderer );
+
+		const diagram = getDiagram();
+
+		expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
+		expect( getCanvas( diagram ).querySelector( 'svg' ) ).not.toBeNull();
+		expect(
+			diagram.querySelector( '.mermaid-blocks-diagram__source' ).hidden
+		).toBe( true );
+	} );
+
+	it( 'writes the accessible title and description into the SVG', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		getDiagram().dataset.mermaidTitle = 'A title';
+		getDiagram().dataset.mermaidDescription = 'A description';
+
+		await renderDraw( renderer );
+
+		const svg = getCanvas( getDiagram() ).querySelector( 'svg' );
+
+		expect( svg.querySelector( 'title' ).textContent ).toBe( 'A title' );
+		expect( svg.querySelector( 'desc' ).textContent ).toBe(
+			'A description'
+		);
+	} );
+
+	it( 'gives each diagram of a page ids of its own', async () => {
+		setup( [ 'flowchart LR\nA --> B', 'flowchart LR\nA --> B' ] );
+		document
+			.querySelectorAll( '.mermaid-blocks-diagram' )
+			.forEach( ( diagram ) => {
+				diagram.dataset.mermaidTitle = 'T';
+			} );
+
+		await renderDraw( renderer );
+
+		const ids = Array.from( document.querySelectorAll( '[id]' ) ).map(
+			( element ) => element.id
+		);
+
+		expect( ids.length ).toBeGreaterThan( 1 );
+		expect( new Set( ids ).size ).toBe( ids.length );
+	} );
+
+	it( 'leaves the code and logs the line of a failed diagram', async () => {
+		setup( [ 'flowchart LR\nA --> B\nbad here ]]' ] );
+
+		await renderDraw( renderer );
+
+		const diagram = getDiagram();
+
+		expect( diagram.classList.contains( 'has-error' ) ).toBe( true );
+		expect( getCanvas( diagram ) ).toBeNull();
+		expect(
+			diagram.querySelector( '.mermaid-blocks-diagram__source' ).hidden
+		).toBe( false );
+		// eslint-disable-next-line no-console
+		expect( console.error ).toHaveBeenCalledWith(
+			'Mermaid Blocks: failed to render diagram.',
+			expect.stringMatching( /^Line 3: / )
+		);
 	} );
 } );

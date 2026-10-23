@@ -6,12 +6,16 @@ const FITTED_WIDTH = 400;
 /**
  * Builds a rendered diagram. jsdom lays nothing out, so the SVG reports the
  * size its inline width gives it, at the position the canvas is scrolled to.
+ *
+ * @param {string} [svgStyle] The inline style of the SVG.
  */
-function setup() {
+function setup( svgStyle = 'max-width: 800px;' ) {
 	document.body.innerHTML =
 		'<div class="mermaid-blocks-diagram is-rendered">' +
 		'<div class="mermaid-blocks-diagram__canvas">' +
-		'<svg width="100%" viewBox="0 0 800 400" style="max-width: 800px;"><a href="#node"><rect></rect></a></svg>' +
+		'<svg width="100%" viewBox="0 0 800 400" style="' +
+		svgStyle +
+		'"><a href="#node"><rect></rect></a></svg>' +
 		'</div></div>';
 
 	const diagram = document.body.firstElementChild;
@@ -101,6 +105,20 @@ describe( 'createZoom', () => {
 			canZoomIn: true,
 			canZoomOut: true,
 		} );
+	} );
+
+	it( 'zooms past the max-width Pele draws its SVG with, and restores it', () => {
+		const { svg, zoom } = setup( 'max-width:100%;height:auto' );
+
+		zoom.zoomIn();
+
+		expect( svg.style.width ).toBe( '600px' );
+		expect( svg.style.maxWidth ).toBe( 'none' );
+
+		zoom.zoomOut();
+
+		expect( svg.style.width ).toBe( '' );
+		expect( svg.style.maxWidth ).toBe( '100%' );
 	} );
 
 	it( 'keeps the centre of the view in place', () => {

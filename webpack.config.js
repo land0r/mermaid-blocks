@@ -1,9 +1,9 @@
 /**
  * Extends the @wordpress/scripts webpack config to build the front-end
  * renderer, and the controls of diagrams as a module it loads on demand, and
- * to ship Mermaid (installed from npm) alongside the block assets in `build/`:
- * the minified build for the editor, and the code-split ES module build that
- * the front end loads on demand.
+ * to ship Mermaid and Pele (installed from npm) alongside the block assets in
+ * `build/`: the single-file build of each for the editor, and the code-split ES
+ * module build that the front end loads on demand.
  */
 const fs = require( 'fs' );
 const path = require( 'path' );
@@ -41,6 +41,41 @@ const toJsImports = ( content, absoluteFrom ) => {
 	return code;
 };
 
+const peleDir = path.dirname( require.resolve( 'pele/package.json' ) );
+const peleVersion = JSON.parse(
+	fs.readFileSync( path.join( peleDir, 'package.json' ), 'utf8' )
+).version;
+
+/**
+ * Checks that the files of Pele's ES module build import each other by
+ * relative `.js` paths, which the copy keeps: any other import would break
+ * the build once it is served from `build/pele/`.
+ *
+ * @param {Buffer} content      The file's content.
+ * @param {string} absoluteFrom The file's path.
+ *
+ * @return {Buffer} The content, as it is.
+ */
+const checkPeleImports = ( content, absoluteFrom ) => {
+	const code = content.toString();
+	const imports = [
+		...code.matchAll(
+			/\b(?:import|export)\s*(?:\{[^}]*\}|\*\s*as\s*\w+)?\s*(?:from)?\s*"([^"]+)"/g
+		),
+		...code.matchAll( /\bimport\(\s*"([^"]+)"\s*\)/g ),
+	].map( ( match ) => match[ 1 ] );
+
+	imports.forEach( ( request ) => {
+		if ( ! /^\.\.?\/[^"]+\.js$/.test( request ) ) {
+			throw new Error(
+				`Unexpected import "${ request }" in ${ absoluteFrom }. Pele's files must import each other by relative .js paths: check the copy in webpack.config.js.`
+			);
+		}
+	} );
+
+	return content;
+};
+
 const mermaidCopyPlugin = new CopyWebpackPlugin( {
 	patterns: [
 		{
@@ -56,6 +91,27 @@ const mermaidCopyPlugin = new CopyWebpackPlugin( {
 			to: 'mermaid/[path][name].js',
 			transform: toJsImports,
 			info: { minimized: true },
+		},
+		{
+			// Pele's lazy build, for the front end: the entry, and the code of
+			// each diagram type, which it imports on first use.
+			context: path.join( peleDir, 'dist', 'esm' ),
+			from: '**/*.js',
+			to: 'pele/[path][name].js',
+			transform: checkPeleImports,
+			info: { minimized: true },
+		},
+		{
+			// Pele's single-file build, for the editor.
+			from: path.join( peleDir, 'dist', 'pele.global.js' ),
+			to: 'pele.global.js',
+			info: { minimized: true },
+		},
+		{
+			from: path.join( peleDir, 'package.json' ),
+			to: 'pele.asset.php',
+			transform: () =>
+				`<?php return array( 'version' => '${ peleVersion }' );\n`,
 		},
 		{
 			// Emit an asset file so PHP never hardcodes the Mermaid version.

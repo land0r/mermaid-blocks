@@ -8,6 +8,7 @@
 namespace MermaidBlocks\Tests;
 
 use MermaidBlocks\Options;
+use MermaidBlocks\Renderers;
 use ReflectionClass;
 use WP_UnitTestCase;
 
@@ -51,6 +52,117 @@ class OptionsTest extends WP_UnitTestCase {
 
 		update_option( Options::THEME, array( 'forest' ) );
 		$this->assertSame( '', $this->options->get_theme() );
+	}
+
+	/**
+	 * Removes the filter some tests add.
+	 */
+	public function tear_down(): void {
+		remove_all_filters( 'mermaid_blocks_renderer' );
+
+		parent::tear_down();
+	}
+
+	/**
+	 * Mermaid.js draws until the site chooses Pele.
+	 */
+	public function test_the_renderer_is_mermaid_by_default(): void {
+		delete_option( Options::RENDERER );
+
+		$this->assertSame( Renderers::MERMAID, $this->options->get_renderer() );
+	}
+
+	/**
+	 * The stored renderer, with the one the request gets.
+	 *
+	 * @return array[] The stored value, and the renderer.
+	 */
+	public function data_stored_renderers(): array {
+		return array(
+			'Pele'           => array( 'pele', 'pele' ),
+			'Mermaid.js'     => array( 'mermaid', 'mermaid' ),
+			'a typo'         => array( 'pelle', 'mermaid' ),
+			'another case'   => array( 'Pele', 'mermaid' ),
+			'an empty value' => array( '', 'mermaid' ),
+			'something else' => array( array( 'pele' ), 'mermaid' ),
+			'a number'       => array( 1, 'mermaid' ),
+		);
+	}
+
+	/**
+	 * The renderer is the stored one when that names a renderer.
+	 *
+	 * @dataProvider data_stored_renderers
+	 *
+	 * @param mixed  $stored   The stored value.
+	 * @param string $renderer The renderer of the request.
+	 */
+	public function test_reads_the_stored_renderer( $stored, string $renderer ): void {
+		update_option( Options::RENDERER, $stored );
+
+		$this->assertSame( $renderer, $this->options->get_renderer() );
+	}
+
+	/**
+	 * A filter picks the renderer of a request, whatever is stored.
+	 */
+	public function test_a_filter_picks_the_renderer_of_a_request(): void {
+		update_option( Options::RENDERER, 'mermaid' );
+		add_filter(
+			'mermaid_blocks_renderer',
+			static function ( $renderer ) {
+				return 'mermaid' === $renderer ? 'pele' : $renderer;
+			}
+		);
+
+		$this->assertSame( 'pele', $this->options->get_renderer() );
+
+		update_option( Options::RENDERER, 'pele' );
+		remove_all_filters( 'mermaid_blocks_renderer' );
+		add_filter(
+			'mermaid_blocks_renderer',
+			static function () {
+				return 'mermaid';
+			}
+		);
+
+		$this->assertSame( 'mermaid', $this->options->get_renderer() );
+	}
+
+	/**
+	 * Values that name no renderer.
+	 *
+	 * @return array[] A value each.
+	 */
+	public function data_values_that_name_no_renderer(): array {
+		return array(
+			'a typo'         => array( 'pelle' ),
+			'another case'   => array( 'Pele' ),
+			'an empty value' => array( '' ),
+			'nothing'        => array( null ),
+			'a list'         => array( array( 'pele' ) ),
+			'a number'       => array( 1 ),
+		);
+	}
+
+	/**
+	 * A filter that names no renderer, such as a typo, gives Mermaid.js, and
+	 * never breaks diagrams.
+	 *
+	 * @dataProvider data_values_that_name_no_renderer
+	 *
+	 * @param mixed $value The value the filter returns.
+	 */
+	public function test_a_filter_value_that_names_no_renderer_gives_mermaid( $value ): void {
+		update_option( Options::RENDERER, 'pele' );
+		add_filter(
+			'mermaid_blocks_renderer',
+			static function () use ( $value ) {
+				return $value;
+			}
+		);
+
+		$this->assertSame( 'mermaid', $this->options->get_renderer() );
 	}
 
 	/**

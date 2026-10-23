@@ -43,12 +43,21 @@ final class Assets implements Hookable {
 	private Files $files;
 
 	/**
+	 * The stored settings, for the renderer.
+	 *
+	 * @var Options
+	 */
+	private Options $options;
+
+	/**
 	 * Sets up the assets.
 	 *
-	 * @param Files $files The plugin's files.
+	 * @param Files   $files   The plugin's files.
+	 * @param Options $options The stored settings.
 	 */
-	public function __construct( Files $files ) {
-		$this->files = $files;
+	public function __construct( Files $files, Options $options ) {
+		$this->files   = $files;
+		$this->options = $options;
 	}
 
 	/**
@@ -57,6 +66,13 @@ final class Assets implements Hookable {
 	public function hooks(): void {
 		// Before the block, which refers to them by handle, at the default priority.
 		add_action( 'init', array( $this, 'register' ), 9 );
+
+		/*
+		 * What the script is told depends on the renderer, which a filter may
+		 * pick for the request, such as for some pages: those are known only
+		 * once the query ran.
+		 */
+		add_action( 'wp_enqueue_scripts', array( $this, 'add_settings' ), 0 );
 	}
 
 	/**
@@ -82,10 +98,38 @@ final class Assets implements Hookable {
 			true
 		);
 
-		// The script has no dependencies, so its few labels are translated here.
+		$style_file = $this->files->get_build_path( 'style-index.css' );
+		wp_register_style(
+			self::DIAGRAM,
+			$this->files->get_build_url( 'style-index.css' ),
+			array(),
+			file_exists( $style_file ) ? (string) filemtime( $style_file ) : false
+		);
+
+		// Same handling WordPress gives stylesheets declared as files in block.json.
+		$rtl_style_file = $this->files->get_build_path( 'style-index-rtl.css' );
+		if ( is_rtl() && file_exists( $rtl_style_file ) ) {
+			wp_style_add_data( self::DIAGRAM, 'rtl', 'replace' );
+			wp_style_add_data( self::DIAGRAM, 'path', $rtl_style_file );
+		} else {
+			wp_style_add_data( self::DIAGRAM, 'path', $style_file );
+		}
+	}
+
+	/**
+	 * Tells the front-end script the renderer, where to load it and the
+	 * controls from, and the labels of the controls.
+	 */
+	public function add_settings(): void {
+		$mermaid  = $this->files->get_build_asset( 'mermaid' );
+		$pele     = $this->files->get_build_asset( 'pele' );
 		$controls = $this->files->get_build_asset( 'controls' );
+
+		// The script has no dependencies, so its few labels are translated here.
 		$settings = array(
+			'renderer'    => $this->options->get_renderer(),
 			'mermaidUrl'  => add_query_arg( 'ver', $mermaid['version'], $this->files->get_build_url( 'mermaid/mermaid.esm.min.js' ) ),
+			'peleUrl'     => add_query_arg( 'ver', $pele['version'], $this->files->get_build_url( 'pele/lazy.js' ) ),
 			'controlsUrl' => add_query_arg( 'ver', $controls['version'], $this->files->get_build_url( 'controls.js' ) ),
 			'i18n'        => array(
 				'controls'       => __( 'Diagram controls', 'mermaid-blocks' ),
@@ -107,23 +151,6 @@ final class Assets implements Hookable {
 			'var mermaidBlocksSettings = ' . wp_json_encode( $settings ) . ';',
 			'before'
 		);
-
-		$style_file = $this->files->get_build_path( 'style-index.css' );
-		wp_register_style(
-			self::DIAGRAM,
-			$this->files->get_build_url( 'style-index.css' ),
-			array(),
-			file_exists( $style_file ) ? (string) filemtime( $style_file ) : false
-		);
-
-		// Same handling WordPress gives stylesheets declared as files in block.json.
-		$rtl_style_file = $this->files->get_build_path( 'style-index-rtl.css' );
-		if ( is_rtl() && file_exists( $rtl_style_file ) ) {
-			wp_style_add_data( self::DIAGRAM, 'rtl', 'replace' );
-			wp_style_add_data( self::DIAGRAM, 'path', $rtl_style_file );
-		} else {
-			wp_style_add_data( self::DIAGRAM, 'path', $style_file );
-		}
 	}
 
 	/**

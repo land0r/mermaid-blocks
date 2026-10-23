@@ -9,6 +9,7 @@ namespace MermaidBlocks\Tests;
 
 use MermaidBlocks\Assets;
 use MermaidBlocks\Files;
+use MermaidBlocks\Options;
 use WP_UnitTestCase;
 
 /**
@@ -31,6 +32,8 @@ class AssetsTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
+		delete_option( Options::RENDERER );
+
 		$this->files = mermaid_blocks()->get( Files::class );
 	}
 
@@ -40,6 +43,10 @@ class AssetsTest extends WP_UnitTestCase {
 	 * @return array The settings.
 	 */
 	private function get_settings(): array {
+		// Told when the page's scripts are enqueued, once the query ran.
+		wp_scripts()->add_data( Assets::DIAGRAM, 'before', array() );
+		mermaid_blocks()->get( Assets::class )->add_settings();
+
 		$before = array_filter( (array) wp_scripts()->get_data( Assets::DIAGRAM, 'before' ) );
 		$script = implode( "\n", $before );
 
@@ -60,6 +67,56 @@ class AssetsTest extends WP_UnitTestCase {
 			$this->files->get_build_url( 'mermaid/mermaid.esm.min.js' ) . '?ver=' . $version,
 			$this->get_settings()['mermaidUrl']
 		);
+	}
+
+	/**
+	 * The script gets the URL of Pele's lazy build, with its version, and
+	 * the renderer to load: Mermaid.js unless the site chose Pele.
+	 */
+	public function test_says_the_renderer_and_where_pele_is(): void {
+		$version = $this->files->get_build_asset( 'pele' )['version'];
+
+		$this->assertNotEmpty( $version );
+		$this->assertFileExists( $this->files->get_build_path( 'pele/lazy.js' ) );
+		$this->assertFileExists( $this->files->get_build_path( 'pele.global.js' ) );
+
+		$settings = $this->get_settings();
+
+		$this->assertSame( 'mermaid', $settings['renderer'] );
+		$this->assertSame(
+			$this->files->get_build_url( 'pele/lazy.js' ) . '?ver=' . $version,
+			$settings['peleUrl']
+		);
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertSame( 'pele', $this->get_settings()['renderer'] );
+	}
+
+	/**
+	 * The renderer a filter picks is the one the script is told, even for a
+	 * request the filter looks at once the query ran.
+	 */
+	public function test_tells_the_renderer_the_filter_picks(): void {
+		$filter = static function () {
+			return 'pele';
+		};
+		add_filter( 'mermaid_blocks_renderer', $filter );
+
+		$this->assertSame( 'pele', $this->get_settings()['renderer'] );
+
+		remove_filter( 'mermaid_blocks_renderer', $filter );
+	}
+
+	/**
+	 * The scripts are told when they are enqueued on the front end.
+	 */
+	public function test_tells_the_script_when_scripts_are_enqueued(): void {
+		wp_scripts()->add_data( Assets::DIAGRAM, 'before', array() );
+
+		do_action( 'wp_enqueue_scripts' );
+
+		$before = array_filter( (array) wp_scripts()->get_data( Assets::DIAGRAM, 'before' ) );
+		$this->assertStringContainsString( 'var mermaidBlocksSettings = ', implode( "\n", $before ) );
 	}
 
 	/**

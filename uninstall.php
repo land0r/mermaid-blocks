@@ -11,6 +11,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
+delete_option( 'mermaid_blocks_renderer' );
 delete_option( 'mermaid_blocks_code_blocks' );
 delete_option( 'mermaid_blocks_theme' );
 delete_option( 'mermaid_blocks_save_images' );

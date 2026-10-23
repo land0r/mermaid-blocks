@@ -110,7 +110,7 @@ class SettingsPageTest extends WP_UnitTestCase {
 		$this->settings->register();
 
 		$this->assertSame(
-			array( Options::THEME, Options::CODE_BLOCKS, Options::SAVE_IMAGES ),
+			array( Options::RENDERER, Options::THEME, Options::CODE_BLOCKS, Options::SAVE_IMAGES ),
 			array_keys( $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] )
 		);
 
@@ -128,6 +128,56 @@ class SettingsPageTest extends WP_UnitTestCase {
 			$this->assertNotEmpty( $field['args']['description'], $option );
 			$this->assertSame( '0', (string) get_option( $option, 'missing' ), $option );
 		}
+	}
+
+	/**
+	 * The renderer is the first field, stored from the start, with Mermaid.js
+	 * as its default.
+	 */
+	public function test_the_renderer_comes_first_and_is_mermaid_by_default(): void {
+		global $wp_settings_fields;
+
+		delete_option( Options::RENDERER );
+		$this->settings->register();
+
+		$fields = array_keys( $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] );
+
+		$this->assertSame( Options::RENDERER, $fields[0] );
+		$this->assertSame( 'mermaid', get_option( Options::RENDERER, 'missing' ) );
+		$this->assertSame( 'mermaid', get_registered_settings()[ Options::RENDERER ]['default'] );
+	}
+
+	/**
+	 * Only a known renderer is kept.
+	 */
+	public function test_keeps_only_a_known_renderer(): void {
+		$this->assertSame( 'pele', $this->settings->sanitize_renderer( 'pele' ) );
+		$this->assertSame( 'mermaid', $this->settings->sanitize_renderer( 'mermaid' ) );
+		$this->assertSame( 'mermaid', $this->settings->sanitize_renderer( 'other' ) );
+		$this->assertSame( 'mermaid', $this->settings->sanitize_renderer( array( 'pele' ) ) );
+		$this->assertSame( 'mermaid', $this->settings->sanitize_renderer( null ) );
+	}
+
+	/**
+	 * The field is two radio buttons, the stored renderer checked, and a line
+	 * of help that says what Pele changes.
+	 */
+	public function test_shows_the_renderer_as_radio_buttons(): void {
+		update_option( Options::RENDERER, 'pele' );
+
+		$markup = get_echo( array( $this->settings, 'render_renderer_field' ) );
+
+		$this->assertSame( 2, substr_count( $markup, 'type="radio"' ) );
+		$this->assertStringContainsString( 'name="mermaid_blocks_renderer" value="mermaid"', $markup );
+		$this->assertMatchesRegularExpression( '/value="pele"\s+checked=\'checked\'/', $markup );
+		$this->assertDoesNotMatchRegularExpression( '/value="mermaid"\s+checked/', $markup );
+		$this->assertStringContainsString( 'Mermaid.js', $markup );
+		$this->assertStringContainsString( 'Pele loads less and draws faster', $markup );
+
+		update_option( Options::RENDERER, 'nonsense' );
+		$markup = get_echo( array( $this->settings, 'render_renderer_field' ) );
+
+		$this->assertMatchesRegularExpression( '/value="mermaid"\s+checked=\'checked\'/', $markup );
 	}
 
 	/**
@@ -151,7 +201,7 @@ class SettingsPageTest extends WP_UnitTestCase {
 		$fields = array_keys( $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] );
 
 		$this->assertSame( $this->settings, $given );
-		$this->assertSame( Options::THEME, $fields[0] );
+		$this->assertSame( Options::RENDERER, $fields[0] );
 		$this->assertSame( self::OPTION, end( $fields ) );
 	}
 
