@@ -41,6 +41,21 @@ final class Themes {
 	}
 
 	/**
+	 * Returns the sentence that tells what themes are with the renderer of the
+	 * request: Pele has none of its own, so a theme counts as light or dark.
+	 *
+	 * @return string The sentence, or an empty string for Mermaid.js, which
+	 *                draws each theme.
+	 */
+	public function get_renderer_help(): string {
+		if ( Renderers::PELE !== $this->options->get_renderer() ) {
+			return '';
+		}
+
+		return __( 'With Pele, a theme counts as light or dark.', 'mermaid-blocks' );
+	}
+
+	/**
 	 * Returns the themes a diagram can be drawn in, in the order they are
 	 * offered.
 	 *

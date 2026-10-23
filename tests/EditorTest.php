@@ -72,6 +72,17 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The editor is told the renderer.
+	 */
+	public function test_tells_the_editor_the_renderer(): void {
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertSame( 'mermaid', $this->get_editor_settings()['renderer'] );
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertSame( 'pele', $this->get_editor_settings()['renderer'] );
+	}
+
+	/**
 	 * Only those who may change the site's theme are told where.
 	 */
 	public function test_links_to_the_settings_for_those_who_may_change_them(): void {

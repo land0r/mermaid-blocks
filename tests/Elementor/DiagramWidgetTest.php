@@ -159,6 +159,17 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The theme's help says what a theme is only when Pele is the renderer.
+	 */
+	public function test_the_theme_help_changes_only_with_pele(): void {
+		update_option( 'mermaid_blocks_renderer', 'mermaid' );
+		$this->assertStringNotContainsString( 'With Pele', $this->get_controls()['theme']['description'] );
+
+		update_option( 'mermaid_blocks_renderer', 'pele' );
+		$this->assertStringContainsString( 'With Pele, a theme counts as light or dark.', $this->get_controls()['theme']['description'] );
+	}
+
+	/**
 	 * The theme's help links to the settings page, for those who may change
 	 * it, and only in the editor: the front end builds the controls too.
 	 */

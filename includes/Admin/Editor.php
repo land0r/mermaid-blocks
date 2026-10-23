@@ -97,6 +97,7 @@ final class Editor implements Hookable {
 		}
 
 		$settings = array(
+			'renderer'    => $this->options->get_renderer(),
 			'themes'      => $this->themes->get_all(),
 			'theme'       => $this->themes->get_site_theme(),
 			'settingsUrl' => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',

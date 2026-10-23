@@ -331,7 +331,10 @@ final class SettingsPage implements Hookable {
 			<?php endforeach; ?>
 		</select>
 		<p class="description" id="mermaid_blocks_theme_description">
-			<?php esc_html_e( 'Automatic turns dark on dark backgrounds. Each diagram block can use its own theme.', 'mermaid-blocks' ); ?>
+			<?php
+			esc_html_e( 'Automatic turns dark on dark backgrounds. Each diagram block can use its own theme.', 'mermaid-blocks' );
+			echo ' ', esc_html( $this->themes->get_renderer_help() );
+			?>
 		</p>
 		<?php
 	}

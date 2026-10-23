@@ -1,6 +1,6 @@
 /**
  * What the server tells the editor about themes, printed before the editor
- * script by includes/Admin/Editor.php: the labels of the themes, by name and
+ * script by includes/Admin/Editor.php: the renderer; the labels of the themes, by name and
  * in the order they are offered; the site's theme, which a diagram without a
  * theme of its own is drawn in; and the URL of the page that theme is set on,
  * for those who may change it.
@@ -16,6 +16,9 @@ export const THEME_LABELS =
 	);
 
 export const SITE_THEME = settings.theme || AUTO_THEME;
+
+// The renderer of the site: `mermaid`, or `pele`.
+export const RENDERER = settings.renderer || 'mermaid';
 
 export const SETTINGS_URL = settings.settingsUrl || '';
 

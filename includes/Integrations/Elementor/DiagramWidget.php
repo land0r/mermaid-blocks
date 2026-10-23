@@ -186,6 +186,10 @@ final class DiagramWidget extends Widget_Base {
 
 		$help = esc_html__( 'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.', 'mermaid-blocks' );
 
+		if ( '' !== $themes->get_renderer_help() ) {
+			$help .= ' ' . esc_html( $themes->get_renderer_help() );
+		}
+
 		// Only the editor shows it: the front end loads the controls too, and needs nothing of the admin.
 		if ( is_admin() && current_user_can( 'manage_options' ) ) {
 			$help .= sprintf(

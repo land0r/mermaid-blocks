@@ -1,4 +1,5 @@
 import { toSourceLine } from '../utils/source-line';
+import { getPaletteName } from '../utils/pele-palette';
 
 /*
  * Pele as a renderer: see createMermaidRenderer() in mermaid.js for the
@@ -112,8 +113,9 @@ async function loadType( pele, code ) {
  * @param {Object}   [options.measurer] Measures text, where the browser's
  *                                      canvas can't: see Pele's `TextMeasurer`.
  *
- * @return {{name: string, document: Document, draw: Function, parse: Function}}
- * The renderer.
+ * @return {{name: string, document: Document, draw: Function, parse: Function, getPalette: Function}}
+ * The renderer. `draw()` also resolves to the `palette` the SVG is drawn in,
+ * which the caller puts on the element that holds it.
  */
 export function createPeleRenderer( pele, { doc = document, measurer } = {} ) {
 	return {
@@ -144,11 +146,25 @@ export function createPeleRenderer( pele, { doc = document, measurer } = {} ) {
 
 				const { svg } = pele.render( code, options );
 
-				return { svg: withId( withFont( svg, font ), id ) };
+				return {
+					svg: withId( withFont( svg, font ), id ),
+					palette: getPaletteName( theme, code ),
+				};
 			} catch ( error ) {
 				return normaliseError( error, code );
 			}
 		},
+
+		/**
+		 * Tells the palette a diagram is drawn in. Pele's colours are CSS
+		 * variables, so a diagram changes palette without being drawn again.
+		 *
+		 * @param {string} code  The Mermaid source.
+		 * @param {string} theme What the diagram is drawn in.
+		 *
+		 * @return {string} `light` or `dark`.
+		 */
+		getPalette: ( code, theme ) => getPaletteName( theme, code ),
 
 		async parse( code ) {
 			try {

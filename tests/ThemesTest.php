@@ -35,6 +35,26 @@ class ThemesTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Only with Pele, which has no themes of its own, does the help say that
+	 * a theme counts as light or dark.
+	 */
+	public function test_tells_what_themes_are_with_pele_only(): void {
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertSame( '', $this->themes->get_renderer_help() );
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertSame( 'With Pele, a theme counts as light or dark.', $this->themes->get_renderer_help() );
+
+		// A filter picks the renderer of a request, and the help follows it.
+		$filter = static function () {
+			return 'mermaid';
+		};
+		add_filter( 'mermaid_blocks_renderer', $filter );
+		$this->assertSame( '', $this->themes->get_renderer_help() );
+		remove_filter( 'mermaid_blocks_renderer', $filter );
+	}
+
+	/**
 	 * The theme that follows the page comes first, and each theme has a label.
 	 */
 	public function test_lists_the_themes(): void {

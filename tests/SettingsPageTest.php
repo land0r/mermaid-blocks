@@ -335,6 +335,18 @@ class SettingsPageTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The theme's help says what a theme is only when Pele is the renderer.
+	 */
+	public function test_the_theme_help_changes_only_with_pele(): void {
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertStringNotContainsString( 'With Pele', get_echo( array( $this->settings, 'render_theme_field' ) ) );
+
+		update_option( Options::RENDERER, 'pele' );
+		$markup = get_echo( array( $this->settings, 'render_theme_field' ) );
+		$this->assertStringContainsString( 'Each diagram block can use its own theme. With Pele, a theme counts as light or dark.', $markup );
+	}
+
+	/**
 	 * The page is in the admin: its hooks are those of the admin, and the row
 	 * of the plugin in the list of plugins links to it.
 	 */
