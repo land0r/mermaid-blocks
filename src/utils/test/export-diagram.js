@@ -1,3 +1,8 @@
+// eslint-disable-next-line import/no-unresolved
+import * as pele from 'pele/lazy';
+
+import { createPeleRenderer } from '../../renderers/pele';
+import { DARK, LIGHT, PALETTES, applyPalette } from '../pele-palette';
 import {
 	canCopyImage,
 	copyDiagram,
@@ -421,5 +426,170 @@ describe( 'copyDiagram', () => {
 		);
 
 		await expect( copyDiagram( createDiagram() ) ).rejects.toThrow();
+	} );
+} );
+
+describe( 'a Pele diagram', () => {
+	const png = setUpPng();
+
+	// jsdom has no canvas, so the text is measured by an estimate.
+	const renderer = createPeleRenderer( pele, {
+		measurer: { width: ( text, size ) => text.length * size * 0.55 },
+	} );
+
+	/**
+	 * Draws a diagram with Pele into a canvas on the page, with a palette, as
+	 * the front end does.
+	 *
+	 * @param {string} palette LIGHT or DARK.
+	 * @param {string} [code]  The Mermaid source.
+	 *
+	 * @return {SVGSVGElement} The SVG on the page.
+	 */
+	async function drawPele(
+		palette,
+		code = 'flowchart LR\nA --> B\nB --> C'
+	) {
+		document.body.innerHTML =
+			'<div class="canvas" style="font-family: Georgia, serif"></div>';
+
+		const canvas = document.body.firstElementChild;
+		const { svg } = await renderer.draw( code, 'auto-light', canvas, 'p1' );
+
+		canvas.innerHTML = svg;
+		applyPalette( canvas, palette, null );
+
+		return canvas.querySelector( 'svg' );
+	}
+
+	it( 'comes out with the dark colours it was drawn in, and its font', async () => {
+		const svg = await drawPele( DARK );
+
+		const markup = getSvgMarkup( svg );
+
+		expect( markup ).not.toMatch( /var\(/ );
+		expect( markup ).not.toContain( '--pele' );
+		expect( markup ).not.toContain( '--_' );
+		expect( markup ).toContain( PALETTES[ DARK ][ '--pele-fg' ] );
+		expect( markup ).toContain( PALETTES[ DARK ][ '--pele-surface' ] );
+		expect( markup ).toContain( PALETTES[ DARK ][ '--pele-border' ] );
+		expect( markup ).toContain( 'Georgia' );
+		expect( markup ).not.toContain( PALETTES[ LIGHT ][ '--pele-fg' ] );
+		expect( parse( markup ).querySelector( 'parsererror' ) ).toBeNull();
+	} );
+
+	it( 'comes out with the light colours of a light diagram', async () => {
+		const markup = getSvgMarkup( await drawPele( LIGHT ) );
+
+		expect( markup ).not.toMatch( /var\(/ );
+		expect( markup ).toContain( PALETTES[ LIGHT ][ '--pele-surface' ] );
+		expect( markup ).not.toContain( PALETTES[ DARK ][ '--pele-surface' ] );
+	} );
+
+	it( 'gets the series colours of a chart', async () => {
+		const markup = getSvgMarkup(
+			await drawPele( DARK, 'pie\n"a": 1\n"b": 2' )
+		);
+
+		expect( markup ).not.toMatch( /var\(/ );
+		expect( markup ).toContain( PALETTES[ DARK ][ '--pele-series-1' ] );
+		expect( markup ).toContain( PALETTES[ DARK ][ '--pele-series-2' ] );
+	} );
+
+	it( 'falls back to the light colours where the page sets none', async () => {
+		const svg = await drawPele( LIGHT );
+		svg.parentElement.removeAttribute( 'style' );
+
+		const markup = getSvgMarkup( svg );
+
+		expect( markup ).not.toMatch( /var\(/ );
+		expect( markup ).toContain( '#f3f3f3' );
+	} );
+
+	it( 'takes the values it is given for a diagram that is not on a page', async () => {
+		const svg = await drawPele( LIGHT );
+		const template = document.createElement( 'template' );
+		template.innerHTML = svg.outerHTML;
+		const detached = template.content.querySelector( 'svg' );
+
+		const markup = getSvgMarkup( detached, 1, PALETTES[ DARK ] );
+
+		expect( markup ).not.toMatch( /var\(/ );
+		expect( markup ).toContain( PALETTES[ DARK ][ '--pele-fg' ] );
+	} );
+
+	it( 'leaves the diagram on the page untouched', async () => {
+		const svg = await drawPele( DARK );
+		const before = svg.outerHTML;
+
+		getSvgMarkup( svg, 2 );
+
+		expect( svg.outerHTML ).toBe( before );
+	} );
+
+	it( 'states its size, like any other diagram', async () => {
+		const svg = await drawPele( DARK );
+		const { width, height } = getDiagramSize( svg );
+
+		const file = parse( getSvgMarkup( svg ) ).documentElement;
+
+		expect( file.getAttribute( 'width' ) ).toBe( String( width ) );
+		expect( file.getAttribute( 'height' ) ).toBe( String( height ) );
+		expect( file.style.maxWidth ).toBe( '' );
+	} );
+
+	it( 'gets a PNG background that matches its palette', async () => {
+		expect( getPngBackground( await drawPele( DARK ) ) ).toBe(
+			PALETTES[ DARK ][ '--pele-bg' ]
+		);
+		expect( getPngBackground( await drawPele( LIGHT ) ) ).toBe(
+			PALETTES[ LIGHT ][ '--pele-bg' ]
+		);
+	} );
+
+	it( 'gets the colour of the surface it was drawn on as the PNG background', async () => {
+		const svg = await drawPele( DARK );
+		applyPalette( svg.parentElement, DARK, {
+			isDark: true,
+			color: 'rgb(17, 24, 39)',
+		} );
+
+		expect( getPngBackground( svg ) ).toBe( 'rgb(17, 24, 39)' );
+	} );
+
+	it( 'is downloaded as a PNG drawn from the SVG with the colours, on that background', async () => {
+		const svg = await drawPele( DARK );
+
+		await downloadDiagram( svg, 'png' );
+
+		const [ url ] = FakeImage.loaded;
+		const markup = decodeURIComponent( url.split( ',' )[ 1 ] );
+
+		expect( markup ).not.toMatch( /var\(/ );
+		expect( markup ).toContain( PALETTES[ DARK ][ '--pele-fg' ] );
+		expect( png.context.fillStyle ).toBe( PALETTES[ DARK ][ '--pele-bg' ] );
+	} );
+
+	it( 'is downloaded as an SVG file with the colours', async () => {
+		await downloadDiagram( await drawPele( DARK ), 'svg' );
+
+		const [ blob ] = window.URL.createObjectURL.mock.calls[ 0 ];
+		const text = await new Promise( ( resolve ) => {
+			const reader = new window.FileReader();
+			reader.onload = () => resolve( reader.result );
+			reader.readAsText( blob );
+		} );
+
+		expect( text ).not.toMatch( /var\(/ );
+		expect( text ).toContain( PALETTES[ DARK ][ '--pele-fg' ] );
+	} );
+
+	it( 'leaves a Mermaid.js diagram as it was', () => {
+		const svg = createDiagram(
+			DIAGRAM.replace( 'style="', 'style="--pele-fg: red; ' )
+		);
+
+		expect( getSvgMarkup( svg ) ).toContain( 'xmlns' );
+		expect( getPngBackground( svg ) ).toBe( '#fff' );
 	} );
 } );

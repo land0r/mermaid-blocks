@@ -67,20 +67,182 @@ export function getPngSize( { width, height } ) {
 }
 
 /**
+ * Tells whether a diagram was drawn by Pele, whose colours and font are CSS
+ * variables of the page.
+ *
+ * @param {SVGSVGElement} svg The rendered diagram.
+ *
+ * @return {boolean} Whether it was.
+ */
+function isPele( svg ) {
+	return svg.classList.contains( 'pele' );
+}
+
+/**
+ * Reads the value a CSS variable has for a diagram: as computed on it, which
+ * includes the palette on its canvas and what a stylesheet of the site sets.
+ *
+ * @param {SVGSVGElement} svg  The rendered diagram, on the page.
+ * @param {string}        name The name of the variable.
+ *
+ * @return {string} The value, or an empty string when it has none.
+ */
+function readVariable( svg, name ) {
+	const view = svg.ownerDocument.defaultView;
+	const computed = view
+		? view.getComputedStyle( svg ).getPropertyValue( name ).trim()
+		: '';
+
+	if ( computed ) {
+		return computed;
+	}
+
+	// Where styles aren't computed through inheritance: the nearest element
+	// that sets it.
+	for ( let node = svg; node; node = node.parentElement ) {
+		const value = node.style && node.style.getPropertyValue( name ).trim();
+
+		if ( value ) {
+			return value;
+		}
+	}
+
+	return '';
+}
+
+/**
+ * Replaces each `var()` in a CSS value by what it stands for, or by its
+ * fallback.
+ *
+ * @param {string}   value  The value, such as `var(--pele-fg, #1f1f1f)`.
+ * @param {Function} lookup Given the name of a variable, returns its value, or
+ *                          a falsy value when it has none.
+ *
+ * @return {string} The value, with no variable left.
+ */
+function replaceVariables( value, lookup ) {
+	let result = '';
+	let index = 0;
+	let start = value.indexOf( 'var(' );
+
+	while ( start !== -1 ) {
+		let depth = 0;
+		let end = -1;
+
+		for ( let position = start + 3; position < value.length; position++ ) {
+			if ( value[ position ] === '(' ) {
+				depth += 1;
+			} else if ( value[ position ] === ')' ) {
+				depth -= 1;
+
+				if ( depth === 0 ) {
+					end = position;
+					break;
+				}
+			}
+		}
+
+		if ( end === -1 ) {
+			break;
+		}
+
+		const inner = value.slice( start + 4, end );
+		const comma = inner.indexOf( ',' );
+		const name = ( comma === -1 ? inner : inner.slice( 0, comma ) ).trim();
+		const fallback = comma === -1 ? '' : inner.slice( comma + 1 ).trim();
+
+		result +=
+			value.slice( index, start ) +
+			replaceVariables( lookup( name ) || fallback, lookup );
+		index = end + 1;
+		start = value.indexOf( 'var(', index );
+	}
+
+	return result + value.slice( index );
+}
+
+/**
+ * Writes the colours and the font a Pele diagram was drawn with into a copy of
+ * it, in place of the CSS variables it asks the page for: a file has no page
+ * to take them from.
+ *
+ * @param {SVGSVGElement} copy     The copy of the diagram.
+ * @param {Function}      getValue Given the name of a `--pele-*` variable,
+ *                                 returns its value, or a falsy value.
+ */
+function writePeleVariables( copy, getValue ) {
+	// What the diagram defines for itself, such as `--_fg: var(--pele-fg, …)`.
+	const own = {};
+
+	( copy.getAttribute( 'style' ) || '' ).split( ';' ).forEach( ( rule ) => {
+		const [ name, ...value ] = rule.split( ':' );
+
+		if ( name.trim().startsWith( '--_' ) ) {
+			own[ name.trim() ] = value.join( ':' ).trim();
+		}
+	} );
+
+	const lookup = ( name ) =>
+		name.startsWith( '--_' ) ? own[ name ] : getValue( name );
+
+	[ copy, ...copy.querySelectorAll( '*' ) ].forEach( ( element ) => {
+		Array.from( element.attributes ).forEach( ( { name, value } ) => {
+			if ( value.includes( 'var(' ) ) {
+				element.setAttribute( name, replaceVariables( value, lookup ) );
+			}
+		} );
+
+		if (
+			element.localName === 'style' &&
+			element.textContent.includes( 'var(' )
+		) {
+			element.textContent = replaceVariables(
+				element.textContent,
+				lookup
+			);
+		}
+	} );
+
+	// Nothing refers to the variables now.
+	const rules = ( copy.getAttribute( 'style' ) || '' )
+		.split( ';' )
+		.filter( ( rule ) => rule.trim() && ! rule.trim().startsWith( '--' ) );
+
+	copy.setAttribute( 'style', rules.join( ';' ) );
+}
+
+/**
  * Returns a diagram as the content of a standalone SVG file.
  *
  * On the page the diagram is as wide as the page allows (`width="100%"`),
  * which only a browser understands. The file states its size instead, so it
  * opens at that size anywhere.
  *
- * @param {SVGSVGElement} svg     The rendered diagram. It is left untouched.
- * @param {number}        [scale] How much to enlarge the diagram.
+ * A Pele diagram takes its colours and its font from CSS variables of the
+ * page, so the file gets the values the diagram has on the page, and no
+ * variable is left in it.
+ *
+ * @param {SVGSVGElement}         svg         The rendered diagram. It is left
+ *                                            untouched.
+ * @param {number}                [scale]     How much to enlarge the diagram.
+ * @param {Object<string,string>} [variables] The values of the Pele variables,
+ *                                            for a diagram that isn't on a
+ *                                            page. Default: those it has on
+ *                                            the page.
  *
  * @return {string} The SVG document.
  */
-export function getSvgMarkup( svg, scale = 1 ) {
+export function getSvgMarkup( svg, scale = 1, variables ) {
 	const { width, height } = getDiagramSize( svg );
 	const copy = svg.cloneNode( true );
+
+	if ( isPele( svg ) ) {
+		writePeleVariables(
+			copy,
+			( name ) =>
+				( variables && variables[ name ] ) || readVariable( svg, name )
+		);
+	}
 
 	if ( ! copy.getAttribute( 'viewBox' ) ) {
 		copy.setAttribute( 'viewBox', `0 0 ${ width } ${ height }` );
@@ -126,12 +288,23 @@ function loadImage( url ) {
 /**
  * Returns the background of the PNG of a diagram: white, or, for a diagram on
  * a dark surface, which is drawn with light text, the colour of that surface.
+ * For a Pele diagram, the one its label boxes have.
  *
  * @param {SVGSVGElement} svg The rendered diagram, on the page.
  *
  * @return {string} A CSS colour.
  */
 export function getPngBackground( svg ) {
+	// A Pele diagram has the background of its palette, or of the surface it
+	// was drawn on: its label boxes have it too.
+	if ( isPele( svg ) ) {
+		const background = readVariable( svg, '--pele-bg' );
+
+		if ( background ) {
+			return background;
+		}
+	}
+
 	const { isDark, color } = getSurface( svg );
 
 	if ( ! isDark ) {
@@ -161,19 +334,28 @@ export function getThemeBackground( theme ) {
  * The SVG is loaded from a `data:` URL. From a `blob:` URL, Chromium refuses
  * to read back a canvas that an SVG with HTML labels was drawn on.
  *
- * @param {SVGSVGElement} svg          The rendered diagram.
- * @param {string}        [background] The background, a CSS colour. Default:
- *                                     the one for the surface the diagram
- *                                     sits on in the page.
+ * @param {SVGSVGElement}         svg          The rendered diagram.
+ * @param {string}                [background] The background, a CSS colour.
+ *                                             Default: the one for the
+ *                                             surface the diagram sits on in
+ *                                             the page.
+ * @param {Object<string,string>} [variables]  The values of the Pele
+ *                                             variables: see getSvgMarkup().
  *
  * @return {Promise<Blob>} The PNG. Rejects when the browser can't draw it.
  */
-export async function getPngBlob( svg, background = getPngBackground( svg ) ) {
+export async function getPngBlob(
+	svg,
+	background = getPngBackground( svg ),
+	variables
+) {
 	const size = getDiagramSize( svg );
 	const { width, height } = getPngSize( size );
 	const image = await loadImage(
 		'data:image/svg+xml;charset=utf-8,' +
-			encodeURIComponent( getSvgMarkup( svg, width / size.width ) )
+			encodeURIComponent(
+				getSvgMarkup( svg, width / size.width, variables )
+			)
 	);
 
 	const canvas = document.createElement( 'canvas' );
