@@ -32,6 +32,28 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - A `[mermaid]` shortcode for the classic editor, page builders and text widgets.
 - Optionally, Mermaid code that is already in your posts as code, such as a `language-mermaid` code block from a Markdown import, is shown as a diagram.
 - Light on your pages: a page with a diagram loads one small script, then Mermaid when a diagram scrolls into view, and of Mermaid only the parts that diagram needs. A page without a diagram loads nothing.
+- A choice of renderer: Mermaid.js, or Pele, which draws the same Mermaid code with less to download and faster.
+
+### Pele, a lighter renderer:
+Under Settings → Mermaid Blocks, **Renderer** sets what draws the diagrams of the whole site, in the editor and on your pages: **Mermaid.js**, the default, or **Pele**. Nothing in your posts changes, so you can switch back at any time.
+
+Pele draws the same Mermaid code, every diagram type of the Mermaid version the plugin has, and loads much less: a page with a flowchart downloads 149 KB of JavaScript (62 KB compressed) where Mermaid.js takes 884 KB (242 KB compressed), and a diagram is drawn in a few milliseconds. In the editor it is 3 MB less. A page loads one renderer, never both.
+
+Pele draws in a plain look of its own, so a diagram looks different from the same diagram in Mermaid.js:
+
+- **Themes count as light or dark.** Automatic follows the page, and turns dark with it without drawing the diagram again. Dark, Neo Dark, Redux Dark and Redux Dark Color are dark, and every other theme is light. A theme written in the code, in its front matter or in an `%%{init}%%` directive, counts the same way.
+- **Colours set in the code are ignored**, such as `themeVariables`.
+- **Math between `$$` is shown as text**, and `click` with a JavaScript callback is dropped, as Mermaid.js does at its strict security level. Links (`click A "https://…"`) work.
+- A diagram's direction stays the same on every screen width.
+- A diagram that Pele can't draw is shown as an error in the editor, and left as code on the page, as a syntax error is. Pele's error message shows the line and a mark under the column.
+
+Zoom, downloads, copying, fullscreen, saved images and the accessible title and description work with both renderers. A download or a saved image of a Pele diagram has the colours of the diagram as you see it.
+
+A developer can choose the renderer for a request, such as Pele only on some pages, with the `mermaid_blocks_renderer` filter. It gets the site's renderer, `mermaid` or `pele`, and returns one of them; anything else means Mermaid.js:
+
+    add_filter( 'mermaid_blocks_renderer', function ( $renderer ) {
+        return is_page( 'landing' ) ? 'pele' : $renderer;
+    } );
 
 ### Shortcode:
 Where the block can't be used, write the diagram between `[mermaid]` and `[/mermaid]`:
@@ -85,6 +107,9 @@ A diagram is drawn in the visitor's browser, so a feed reader, or a browser that
 
 The diagrams of synced patterns, template parts, widgets and shortcodes get no image.
 
+### Libraries:
+The diagrams are drawn by [Mermaid](https://mermaid.js.org/), by the Mermaid project (MIT licence), or by [Pele](https://pele.run/), by Obsidian (MIT licence). Both are included in the plugin.
+
 == Installation ==
 
 1. Upload the plugin to the `/wp-content/plugins/mermaid-blocks` directory, or install it through the WordPress plugin screen.
@@ -110,6 +135,12 @@ Yes, it is compatible with most modern WordPress themes.
 A page with a diagram gets one script of 8 KB (3.5 KB compressed) and 3.5 KB of styles, and nothing more until a diagram scrolls into view. Then it loads Mermaid, and of Mermaid only what the type of that diagram needs. For a flowchart that is 870 KB of JavaScript, or 240 KB as a server sends it, compressed. Class, state and entity relationship diagrams take as much, sequence diagrams and Gantt charts a little less, and the other types between 190 and 370 KB compressed, except architecture diagrams with 520 KB and use case diagrams with 760 KB. Three quarters of it is the same for every type, so a page with several types loads that part once.
 
 Three things are loaded only for a diagram that uses them: formulas (80 KB compressed), the ELK layout (500 KB) and the controls for visitors (4 KB). A page without a diagram loads nothing from the plugin.
+
+= Should I use Pele? =
+If page weight and speed matter more to you than the look of Mermaid.js's themes, yes: choose it under Settings → Mermaid Blocks, look at your diagrams, and switch back if you prefer the old look. Pele draws every diagram type the plugin offers, but in a plainer look of its own, with a light and a dark palette in place of Mermaid's themes. The section "Pele, a lighter renderer" above says what is different.
+
+= Why does my theme look the same in Pele? =
+Pele has no named themes. A theme counts as light or dark: Automatic follows the page, Dark, Neo Dark, Redux Dark and Redux Dark Color are dark, and Forest, Neutral, Base and the others are light. The same goes for a theme written in the diagram's code.
 
 = Can I use the ELK layout? =
 Yes, for one diagram at a time. Start its code with these lines:

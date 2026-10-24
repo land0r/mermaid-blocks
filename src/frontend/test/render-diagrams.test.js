@@ -1,4 +1,18 @@
-import renderDiagrams, { isOutdated, redrawDiagram } from '../render-diagrams';
+import renderDraw, {
+	isOutdated,
+	redrawDiagram as redrawWith,
+} from '../render-diagrams';
+// eslint-disable-next-line import/no-unresolved
+import * as pele from 'pele/lazy';
+import { createMermaidRenderer } from '../../renderers/mermaid';
+import { createPeleRenderer } from '../../renderers/pele';
+import { DARK, LIGHT, PALETTES } from '../../utils/pele-palette';
+
+// The tests drive Mermaid.js through the renderer interface.
+const renderDiagrams = ( mermaid, ...rest ) =>
+	renderDraw( createMermaidRenderer( mermaid ), ...rest );
+const redrawDiagram = ( mermaid, ...rest ) =>
+	redrawWith( createMermaidRenderer( mermaid ), ...rest );
 
 const CODE = 'graph TD\nA["x & y <b> &amp; z"] --> B';
 
@@ -33,6 +47,14 @@ const getDiagram = () => document.querySelector( '.mermaid-blocks-diagram' );
 
 const getCanvas = ( diagram ) =>
 	diagram.querySelector( '.mermaid-blocks-diagram__canvas' );
+
+// The palette of a Pele diagram, by the colour its canvas gives the text.
+const getPalette = ( canvas ) =>
+	[ LIGHT, DARK ].find(
+		( name ) =>
+			PALETTES[ name ][ '--pele-fg' ] ===
+			canvas.style.getPropertyValue( '--pele-fg' )
+	);
 
 // Puts a diagram on a dark surface.
 function darken( diagram ) {
@@ -374,5 +396,165 @@ describe( 'redrawDiagram', () => {
 		expect(
 			diagram.querySelectorAll( '.mermaid-blocks-diagram__canvas' )
 		).toHaveLength( 1 );
+	} );
+} );
+
+describe( 'renderDiagrams with Pele', () => {
+	// jsdom has no canvas, so the text is measured by an estimate.
+	const renderer = createPeleRenderer( pele, {
+		measurer: { width: ( text, size ) => text.length * size * 0.55 },
+	} );
+
+	beforeEach( () => {
+		jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+	} );
+	afterEach( () => jest.restoreAllMocks() );
+
+	it( 'draws the markup as a canvas with an SVG, and hides the source', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+
+		await renderDraw( renderer );
+
+		const diagram = getDiagram();
+
+		expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
+		expect( getCanvas( diagram ).querySelector( 'svg' ) ).not.toBeNull();
+		expect(
+			diagram.querySelector( '.mermaid-blocks-diagram__source' ).hidden
+		).toBe( true );
+	} );
+
+	it( 'writes the accessible title and description into the SVG', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		getDiagram().dataset.mermaidTitle = 'A title';
+		getDiagram().dataset.mermaidDescription = 'A description';
+
+		await renderDraw( renderer );
+
+		const svg = getCanvas( getDiagram() ).querySelector( 'svg' );
+
+		expect( svg.querySelector( 'title' ).textContent ).toBe( 'A title' );
+		expect( svg.querySelector( 'desc' ).textContent ).toBe(
+			'A description'
+		);
+	} );
+
+	it( 'gives each diagram of a page ids of its own', async () => {
+		setup( [ 'flowchart LR\nA --> B', 'flowchart LR\nA --> B' ] );
+		document
+			.querySelectorAll( '.mermaid-blocks-diagram' )
+			.forEach( ( diagram ) => {
+				diagram.dataset.mermaidTitle = 'T';
+			} );
+
+		await renderDraw( renderer );
+
+		const ids = Array.from( document.querySelectorAll( '[id]' ) ).map(
+			( element ) => element.id
+		);
+
+		expect( ids.length ).toBeGreaterThan( 1 );
+		expect( new Set( ids ).size ).toBe( ids.length );
+	} );
+
+	it( 'leaves the code and logs the line of a failed diagram', async () => {
+		setup( [ 'flowchart LR\nA --> B\nbad here ]]' ] );
+
+		await renderDraw( renderer );
+
+		const diagram = getDiagram();
+
+		expect( diagram.classList.contains( 'has-error' ) ).toBe( true );
+		expect( getCanvas( diagram ) ).toBeNull();
+		expect(
+			diagram.querySelector( '.mermaid-blocks-diagram__source' ).hidden
+		).toBe( false );
+		// eslint-disable-next-line no-console
+		expect( console.error ).toHaveBeenCalledWith(
+			'Mermaid Blocks: failed to render diagram.',
+			expect.stringMatching( /^Line 3: / )
+		);
+	} );
+
+	it( 'draws a diagram that follows a dark surface in the dark palette', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		darken( getDiagram() );
+
+		await renderDraw( renderer );
+
+		const canvas = getCanvas( getDiagram() );
+
+		expect( getPalette( canvas ) ).toBe( 'dark' );
+		expect( canvas.style.getPropertyValue( '--pele-fg' ) ).toBe(
+			'#e6e6e6'
+		);
+		// The boxes behind the labels take the colour of the surface.
+		expect( canvas.style.getPropertyValue( '--pele-bg' ) ).toBe(
+			'rgb(17, 24, 39)'
+		);
+	} );
+
+	it( "draws a light page in the light palette, with the palette's background", async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+
+		await renderDraw( renderer );
+
+		const canvas = getCanvas( getDiagram() );
+
+		expect( getPalette( canvas ) ).toBe( 'light' );
+		expect( canvas.style.getPropertyValue( '--pele-bg' ) ).toBe(
+			'#ffffff'
+		);
+	} );
+
+	it( 'draws a theme written in the code in the palette it counts as', async () => {
+		setup( [ '%%{init: {"theme": "dark"}}%%\nflowchart LR\nA --> B' ] );
+
+		await renderDraw( renderer );
+
+		expect( getPalette( getCanvas( getDiagram() ) ) ).toBe( 'dark' );
+	} );
+
+	it( 'gives the other palette in place when the page turns dark', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+
+		await renderDraw( renderer );
+
+		const canvas = getCanvas( diagram );
+		const svg = canvas.querySelector( 'svg' );
+		const toolbar = document.createElement( 'div' );
+		toolbar.className = 'mermaid-blocks-diagram__toolbar';
+		diagram.appendChild( toolbar );
+
+		expect( getPalette( canvas ) ).toBe( 'light' );
+		expect( isOutdated( diagram ) ).toBe( false );
+
+		darken( diagram );
+
+		expect( isOutdated( diagram ) ).toBe( true );
+
+		// Not drawn again: the controls are not to be added again.
+		await expect( redrawWith( renderer, diagram ) ).resolves.toBe( false );
+
+		expect( getCanvas( diagram ) ).toBe( canvas );
+		expect( canvas.querySelector( 'svg' ) ).toBe( svg );
+		expect(
+			diagram.querySelector( '.mermaid-blocks-diagram__toolbar' )
+		).toBe( toolbar );
+		expect( getPalette( canvas ) ).toBe( 'dark' );
+		expect( canvas.dataset.mermaidTheme ).toBe( 'auto-dark' );
+		expect( isOutdated( diagram ) ).toBe( false );
+	} );
+
+	it( 'keeps the palette of a theme written in the code when the page turns dark', async () => {
+		setup( [ '%%{init: {"theme": "forest"}}%%\nflowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+
+		await renderDraw( renderer );
+		darken( diagram );
+		await redrawWith( renderer, diagram );
+
+		expect( getPalette( getCanvas( diagram ) ) ).toBe( 'light' );
 	} );
 } );

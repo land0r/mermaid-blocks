@@ -9,6 +9,7 @@ namespace MermaidBlocks\Images;
 
 use MermaidBlocks\Hookable;
 use MermaidBlocks\Posts\EditablePosts;
+use MermaidBlocks\Renderers;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -92,6 +93,13 @@ final class ImagesController implements Hookable {
 			'required'    => true,
 		);
 
+		// The editor says which renderer it draws with: a filter may give the request another one.
+		$renderer = array(
+			'description' => __( 'The renderer the images are drawn with. Default: the one of the request.', 'mermaid-blocks' ),
+			'type'        => 'string',
+			'enum'        => Renderers::ALL,
+		);
+
 		register_rest_route(
 			self::REST_NAMESPACE,
 			'/posts/(?P<id>[\d]+)/images',
@@ -99,7 +107,10 @@ final class ImagesController implements Hookable {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_items' ),
 				'permission_callback' => array( $this, 'check_permission' ),
-				'args'                => array( 'id' => $post_id ),
+				'args'                => array(
+					'id'       => $post_id,
+					'renderer' => $renderer,
+				),
 			)
 		);
 
@@ -111,8 +122,9 @@ final class ImagesController implements Hookable {
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
-					'id'  => $post_id,
-					'key' => array(
+					'id'       => $post_id,
+					'renderer' => $renderer,
+					'key'      => array(
 						'description' => __( 'The key of the diagram, as the list of diagrams to draw gives it.', 'mermaid-blocks' ),
 						'type'        => 'string',
 						'required'    => true,
@@ -159,7 +171,7 @@ final class ImagesController implements Hookable {
 	 */
 	public function get_items( $request ) {
 		return rest_ensure_response(
-			array( 'missing' => $this->sync->get_missing( get_post( (int) $request['id'] ) ) )
+			array( 'missing' => $this->sync->get_missing( get_post( (int) $request['id'] ), (string) $request['renderer'] ) )
 		);
 	}
 
@@ -177,7 +189,8 @@ final class ImagesController implements Hookable {
 	public function create_item( $request ) {
 		$post     = get_post( (int) $request['id'] );
 		$key      = (string) $request['key'];
-		$diagrams = is_post_type_viewable( $post->post_type ) ? $this->sync->get_diagrams( $post ) : array();
+		$renderer = (string) $request['renderer'];
+		$diagrams = is_post_type_viewable( $post->post_type ) ? $this->sync->get_diagrams( $post, $renderer ) : array();
 
 		if ( ! isset( $diagrams[ $key ] ) ) {
 			return new WP_Error(
@@ -187,7 +200,7 @@ final class ImagesController implements Hookable {
 			);
 		}
 
-		$image = $this->images->save( $post, $key, $diagrams[ $key ]['theme'], (string) $request->get_body() );
+		$image = $this->images->save( $post, $key, $diagrams[ $key ]['theme'], (string) $request->get_body(), $renderer );
 
 		if ( is_wp_error( $image ) ) {
 			return $image;

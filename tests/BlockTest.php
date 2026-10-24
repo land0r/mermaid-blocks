@@ -192,6 +192,26 @@ class BlockTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Right after the site switches renderer, a feed and a browser without
+	 * JavaScript still get a picture: the image of the other renderer.
+	 */
+	public function test_carries_the_image_of_the_other_renderer_as_a_stand_in(): void {
+		$post  = $this->enter_post_with_image();
+		$image = $this->get_image_markup( $post );
+
+		update_option( Options::RENDERER, 'pele' );
+
+		$this->assertStringContainsString( '<noscript>' . $image . '</noscript>', $this->render() );
+
+		// In a feed it is the diagram.
+		add_filter( 'mermaid_blocks_image_replaces_source', '__return_true' );
+		$markup = $this->render();
+
+		$this->assertStringContainsString( $image, $markup );
+		$this->assertStringNotContainsString( '<noscript>', $markup );
+	}
+
+	/**
 	 * A diagram with a theme of its own has the image drawn in that theme.
 	 */
 	public function test_carries_the_image_of_its_theme(): void {

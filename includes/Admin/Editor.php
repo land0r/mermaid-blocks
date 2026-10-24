@@ -19,8 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Gives the block editor what the preview of a diagram needs: Mermaid in the
- * editor canvas, and the themes, the site's theme and where to change it.
+ * Gives the block editor what the preview of a diagram needs: the site's
+ * renderer in the editor canvas, and the themes, the site's theme and where to change it.
  */
 final class Editor implements Hookable {
 
@@ -63,15 +63,46 @@ final class Editor implements Hookable {
 	 */
 	public function hooks(): void {
 		add_action( 'enqueue_block_assets', array( $this, 'enqueue_canvas_assets' ) );
+
+		// Before WordPress enqueues the block's scripts, at the default priority.
+		add_action( 'enqueue_block_editor_assets', array( $this, 'add_renderer_to_block' ), 5 );
 		add_action( 'enqueue_block_editor_assets', array( $this, 'add_editor_settings' ) );
 	}
 
 	/**
-	 * Enqueues Mermaid in the editor canvas.
+	 * Returns the handle of the library of the site's renderer.
+	 *
+	 * @return string The handle of Mermaid.js's or of Pele's single-file build.
+	 */
+	private function get_renderer_handle(): string {
+		return Assets::LIBRARIES[ $this->options->get_renderer() ];
+	}
+
+	/**
+	 * Makes the block's editor script load the site's renderer, and not the
+	 * other: the block doesn't depend on a library of its own, in
+	 * `block.json`, so the admin window loads one only for the editors that
+	 * are not iframed to draw their previews in, and the editor canvas gets
+	 * its own copy: see enqueue_canvas_assets().
+	 */
+	public function add_renderer_to_block(): void {
+		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
+
+		if ( ! $block_type ) {
+			return;
+		}
+
+		$handles = array_diff( $block_type->editor_script_handles, Assets::LIBRARIES );
+
+		$block_type->editor_script_handles = array_merge( array( $this->get_renderer_handle() ), $handles );
+	}
+
+	/**
+	 * Enqueues the site's renderer in the editor canvas.
 	 */
 	public function enqueue_canvas_assets(): void {
 		/*
-		 * Load Mermaid inside the editor canvas iframe, so previews are measured
+		 * Load the renderer inside the editor canvas iframe, so previews are measured
 		 * and rendered in the document they are shown in, as on the front end.
 		 * WordPress collects the iframe's assets by firing `enqueue_block_assets`
 		 * with block editor scripts switched off, which is the only admin context
@@ -79,15 +110,16 @@ final class Editor implements Hookable {
 		 * the editor script's dependency, for editors that are not iframed.
 		 */
 		if ( is_admin() && ! wp_should_load_block_editor_scripts_and_styles() ) {
-			wp_enqueue_script( Assets::MERMAID );
+			wp_enqueue_script( $this->get_renderer_handle() );
 		}
 	}
 
 	/**
-	 * Tells the editor the themes a diagram can have, the site's theme, which
-	 * the preview of a block without a theme of its own is drawn in, and, to
-	 * those who may change that one, where. It also tells whether to draw the
-	 * images of the diagrams of a post: see Images\ImageSync.
+	 * Tells the editor the themes a diagram can have, what they are with the
+	 * site's renderer, the site's theme, which the preview of a block without a
+	 * theme of its own is drawn in, and, to those who may change that one,
+	 * where. It also tells whether to draw the images of the diagrams of a
+	 * post: see Images\ImageSync.
 	 */
 	public function add_editor_settings(): void {
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
@@ -97,14 +129,15 @@ final class Editor implements Hookable {
 		}
 
 		$settings = array(
-			'themes'      => $this->themes->get_all(),
-			'theme'       => $this->themes->get_site_theme(),
-			'settingsUrl' => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
-			'saveImages'  => $this->options->is_on( Options::SAVE_IMAGES ),
+			'themes'       => $this->themes->get_all(),
+			'rendererHelp' => $this->themes->get_renderer_help(),
+			'theme'        => $this->themes->get_site_theme(),
+			'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
+			'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
 		);
 
-		// The block's own editor script: `mermaid-js` is the library.
-		foreach ( array_diff( $block_type->editor_script_handles, array( Assets::MERMAID ) ) as $handle ) {
+		// The block's own editor script: the libraries are not.
+		foreach ( array_diff( $block_type->editor_script_handles, Assets::LIBRARIES ) as $handle ) {
 			wp_add_inline_script(
 				$handle,
 				'var mermaidBlocksEditorSettings = ' . wp_json_encode( $settings ) . ';',

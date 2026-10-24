@@ -10,6 +10,7 @@ namespace MermaidBlocks\Admin;
 use MermaidBlocks\Files;
 use MermaidBlocks\Hookable;
 use MermaidBlocks\Options;
+use MermaidBlocks\Renderers;
 use MermaidBlocks\Themes;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -92,8 +93,8 @@ final class SettingsPage implements Hookable {
 	}
 
 	/**
-	 * Registers the theme setting and its field on the settings page, then the
-	 * switches of the optional parts of the plugin, then lets other code add
+	 * Registers the renderer and the theme settings and their fields on the
+	 * settings page, then the switches of the optional parts of the plugin, then lets other code add
 	 * its own.
 	 */
 	public function register(): void {
@@ -101,9 +102,23 @@ final class SettingsPage implements Hookable {
 		 * Stored even when it was never changed: reading an option that doesn't
 		 * exist takes a query, on every page that shows a diagram.
 		 */
+		if ( false === get_option( Options::RENDERER, false ) ) {
+			add_option( Options::RENDERER, Renderers::MERMAID );
+		}
+
 		if ( false === get_option( Options::THEME, false ) ) {
 			add_option( Options::THEME, Themes::AUTO );
 		}
+
+		register_setting(
+			self::GROUP,
+			Options::RENDERER,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( Renderers::class, 'sanitize' ),
+				'default'           => Renderers::MERMAID,
+			)
+		);
 
 		register_setting(
 			self::GROUP,
@@ -120,6 +135,14 @@ final class SettingsPage implements Hookable {
 			__( 'Diagrams', 'mermaid-blocks' ),
 			'__return_null',
 			self::PAGE
+		);
+
+		add_settings_field(
+			Options::RENDERER,
+			__( 'Renderer', 'mermaid-blocks' ),
+			array( $this, 'render_renderer_field' ),
+			self::PAGE,
+			self::SECTION
 		);
 
 		add_settings_field(
@@ -248,6 +271,32 @@ final class SettingsPage implements Hookable {
 	}
 
 	/**
+	 * Outputs the field of the renderer setting: a radio button for each.
+	 */
+	public function render_renderer_field(): void {
+		$labels = array(
+			Renderers::MERMAID => __( 'Mermaid.js', 'mermaid-blocks' ),
+			Renderers::PELE    => __( 'Pele', 'mermaid-blocks' ),
+		);
+		$stored = $this->options->get_site_renderer();
+		?>
+		<fieldset aria-describedby="mermaid_blocks_renderer_description">
+			<legend class="screen-reader-text"><span><?php esc_html_e( 'Renderer', 'mermaid-blocks' ); ?></span></legend>
+			<?php foreach ( $labels as $name => $label ) : ?>
+				<label>
+					<input type="radio" name="<?php echo esc_attr( Options::RENDERER ); ?>" value="<?php echo esc_attr( $name ); ?>" <?php checked( $stored, $name ); ?>>
+					<?php echo esc_html( $label ); ?>
+				</label>
+				<br>
+			<?php endforeach; ?>
+			<p class="description" id="mermaid_blocks_renderer_description">
+				<?php esc_html_e( 'Draws every diagram of the site. Pele loads less and draws faster, in a plain look of its own: themes then count as light or dark.', 'mermaid-blocks' ); ?>
+			</p>
+		</fieldset>
+		<?php
+	}
+
+	/**
 	 * Sanitizes the theme setting.
 	 *
 	 * @param mixed $value The submitted value.
@@ -270,7 +319,10 @@ final class SettingsPage implements Hookable {
 			<?php endforeach; ?>
 		</select>
 		<p class="description" id="mermaid_blocks_theme_description">
-			<?php esc_html_e( 'Automatic turns dark on dark backgrounds. Each diagram block can use its own theme.', 'mermaid-blocks' ); ?>
+			<?php
+			esc_html_e( 'Automatic turns dark on dark backgrounds. Each diagram block can use its own theme.', 'mermaid-blocks' );
+			echo ' ', esc_html( $this->themes->get_renderer_help() );
+			?>
 		</p>
 		<?php
 	}

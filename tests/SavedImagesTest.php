@@ -72,6 +72,141 @@ class SavedImagesTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The key of an image of Mermaid.js is what it was before there was a
+	 * choice, so the images made then keep working. Pele's is another, and
+	 * changes with the code and the theme too.
+	 */
+	public function test_keys_of_pele_differ_and_the_key_of_mermaid_is_what_it_was(): void {
+		$this->assertSame( md5( "forest\n" . self::CODE ), $this->images->get_key( self::CODE, 'forest' ) );
+		$this->assertSame( md5( "forest\n" . self::CODE ), $this->images->get_key( self::CODE, 'forest', 'mermaid' ) );
+
+		$pele = $this->images->get_key( self::CODE, 'forest', 'pele' );
+
+		$this->assertMatchesRegularExpression( '/^[a-f0-9]{32}$/', $pele );
+		$this->assertNotSame( $this->images->get_key( self::CODE, 'forest', 'mermaid' ), $pele );
+		$this->assertNotSame( $pele, $this->images->get_key( self::CODE . ' ', 'forest', 'pele' ) );
+		$this->assertNotSame( $pele, $this->images->get_key( self::CODE, '', 'pele' ) );
+	}
+
+	/**
+	 * Without a renderer, a key is that of the renderer of the request.
+	 */
+	public function test_a_key_is_by_default_that_of_the_renderer_of_the_request(): void {
+		$mermaid = $this->images->get_key( self::CODE, '', 'mermaid' );
+		$pele    = $this->images->get_key( self::CODE, '', 'pele' );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertSame( $mermaid, $this->images->get_key( self::CODE ) );
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertSame( $pele, $this->images->get_key( self::CODE ) );
+	}
+
+	/**
+	 * The image a diagram shows is the one of the request's renderer, or else
+	 * the other renderer's.
+	 */
+	public function test_finds_the_key_of_the_image_a_diagram_shows(): void {
+		$mermaid = $this->images->get_key( self::CODE, '', 'mermaid' );
+		$pele    = $this->images->get_key( self::CODE, '', 'pele' );
+		$image   = array( 'file' => 'f.png' );
+		$both    = array_fill_keys( array( $mermaid, $pele ), $image );
+
+		update_option( Options::RENDERER, 'pele' );
+
+		$this->assertSame( $pele, $this->images->find_key( $both, self::CODE ) );
+		$this->assertSame( $mermaid, $this->images->find_key( array( $mermaid => $image ), self::CODE ) );
+		$this->assertNull( $this->images->find_key( array( $mermaid => $image ), self::CODE, 'forest' ) );
+		$this->assertNull( $this->images->find_key( array(), self::CODE ) );
+
+		update_option( Options::RENDERER, 'mermaid' );
+
+		$this->assertSame( $mermaid, $this->images->find_key( $both, self::CODE ) );
+		$this->assertSame( $pele, $this->images->find_key( array( $pele => $image ), self::CODE ) );
+	}
+
+	/**
+	 * An image of Pele is named after the renderer too, and says it in the
+	 * list of the post's images.
+	 */
+	public function test_saves_an_image_of_pele_under_a_name_of_its_own(): void {
+		update_option( Options::RENDERER, 'pele' );
+
+		$post  = $this->create_post( array( $this->diagram_block( self::CODE ) ) );
+		$key   = $this->images->get_key( self::CODE );
+		$image = $this->images->save( $post, $key, 'auto', $this->png() );
+
+		$this->assertSame( sprintf( 'mermaid-blocks/%d-%s-pele-auto.png', $post->ID, $key ), $image['file'] );
+		$this->assertSame( 'pele', $image['renderer'] );
+		$this->assertSame( 'pele', $this->images->get_all( $post->ID )[ $key ]['renderer'] );
+		$this->assertFileExists( $this->get_upload_path( $image['file'] ) );
+	}
+
+	/**
+	 * An entry saved before there was a choice names no renderer: it is
+	 * Mermaid.js's.
+	 */
+	public function test_an_image_saved_before_the_choice_is_mermaids(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::CODE ) ) );
+		$key  = $this->images->get_key( self::CODE );
+		$this->images->save( $post, $key, 'auto', $this->png() );
+
+		$stored = get_post_meta( $post->ID, SavedImages::META_KEY, true );
+		unset( $stored[ $key ]['renderer'] );
+		update_post_meta( $post->ID, SavedImages::META_KEY, $stored );
+
+		$this->assertSame( 'mermaid', $this->images->get_all( $post->ID )[ $key ]['renderer'] );
+		$this->assertNotNull( $this->images->find( $post->ID, self::CODE ) );
+	}
+
+	/**
+	 * The image of the renderer of the request is found, and the other
+	 * renderer's only until it has been drawn again.
+	 */
+	public function test_finds_the_image_of_the_other_renderer_as_a_stand_in(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::CODE ) ) );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$old = $this->images->save( $post, $this->images->get_key( self::CODE ), 'auto', $this->png( 600, 300 ) );
+
+		$uploads = wp_get_upload_dir();
+
+		// The site switches to Pele: the old look stands in.
+		update_option( Options::RENDERER, 'pele' );
+		$found = $this->images->find( $post->ID, self::CODE );
+
+		$this->assertSame( $uploads['baseurl'] . '/' . $old['file'], $found['url'] );
+		$this->assertSame( 300, $found['width'] );
+
+		// Drawn again with Pele: the new look is found.
+		$new   = $this->images->save( $post, $this->images->get_key( self::CODE ), 'auto', $this->png( 800, 400 ) );
+		$found = $this->images->find( $post->ID, self::CODE );
+
+		$this->assertSame( $uploads['baseurl'] . '/' . $new['file'], $found['url'] );
+		$this->assertSame( 400, $found['width'] );
+
+		// And back: Mermaid.js's image is still its own.
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertSame( $uploads['baseurl'] . '/' . $old['file'], $this->images->find( $post->ID, self::CODE )['url'] );
+	}
+
+	/**
+	 * A diagram with no image of either renderer has none, and a changed
+	 * diagram finds the image of neither.
+	 */
+	public function test_finds_no_stand_in_for_another_diagram(): void {
+		$post = $this->create_post( array( $this->diagram_block( self::CODE ) ) );
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->images->save( $post, $this->images->get_key( self::CODE, 'forest' ), 'forest', $this->png() );
+
+		update_option( Options::RENDERER, 'pele' );
+
+		$this->assertNull( $this->images->find( $post->ID, self::CODE . ' ' ) );
+		$this->assertNull( $this->images->find( $post->ID, self::CODE ) );
+		$this->assertNotNull( $this->images->find( $post->ID, self::CODE, 'forest' ) );
+	}
+
+	/**
 	 * A saved image is a file in the plugin's directory, named here, and is
 	 * listed in the post's meta with its size and theme.
 	 */
@@ -85,10 +220,11 @@ class SavedImagesTest extends WP_UnitTestCase {
 
 		$this->assertSame(
 			array(
-				'file'   => $file,
-				'width'  => 600,
-				'height' => 300,
-				'theme'  => 'auto',
+				'file'     => $file,
+				'width'    => 600,
+				'height'   => 300,
+				'theme'    => 'auto',
+				'renderer' => 'mermaid',
 			),
 			$image
 		);

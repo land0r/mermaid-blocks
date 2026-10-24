@@ -26,11 +26,13 @@ import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
  */
 import { useInstanceId } from '@wordpress/compose';
 
-import { getMermaid } from '../utils/mermaid-init';
-import { renderDiagram } from '../utils/render-diagram';
+import { getRenderer } from '../renderers';
 import { THEMES, resolveTheme } from '../utils/themes';
 import { withAccessibleText } from '../utils/accessible-text';
 import watchSurface from '../utils/watch-surface';
+
+// No drawing: the preview is empty, or shows an error.
+const EMPTY = { svg: '', style: null };
 
 /**
  * Mermaid Diagram Component
@@ -81,7 +83,9 @@ export default function MermaidDiagram( {
 	// Incrementing counter so every render call gets a unique Mermaid id.
 	const renderCounter = useRef( 0 );
 
-	const [ svg, setSvg ] = useState( '' );
+	// The SVG, and the style its renderer gives the element that holds it,
+	// such as the colours of a Pele diagram.
+	const [ drawing, setDrawing ] = useState( EMPTY );
 	const [ error, setError ] = useState( null );
 
 	// What the diagram is drawn in, known once the preview is in the canvas.
@@ -111,21 +115,19 @@ export default function MermaidDiagram( {
 
 		// Empty or whitespace-only code clears the preview and any error.
 		if ( ! code || ! code.trim() ) {
-			setSvg( '' );
+			setDrawing( EMPTY );
 			setError( null );
 			return;
 		}
 
-		const owner = getMermaid(
-			containerRef.current &&
-				containerRef.current.ownerDocument.defaultView
-		);
+		const container = containerRef.current;
+		const renderer = getRenderer( container.ownerDocument.defaultView );
 
-		if ( ! owner ) {
-			setSvg( '' );
+		if ( ! renderer ) {
+			setDrawing( EMPTY );
 			setError( {
 				message: __(
-					'The Mermaid library is not loaded.',
+					'The diagram renderer is not loaded.',
 					'mermaid-blocks'
 				),
 				line: null,
@@ -137,26 +139,25 @@ export default function MermaidDiagram( {
 		renderCounter.current += 1;
 		const renderId = `mermaid-diagram-${ instanceId }-${ renderCounter.current }`;
 
-		renderDiagram(
-			owner.mermaid,
-			renderId,
-			code,
-			owner.document,
-			drawnTheme
-		).then( ( result ) => {
-			// A newer render started, or the component unmounted.
-			if ( cancelled ) {
-				return;
-			}
+		renderer
+			.draw( code, drawnTheme, container, renderId )
+			.then( ( result ) => {
+				// A newer render started, or the component unmounted.
+				if ( cancelled ) {
+					return;
+				}
 
-			if ( result.error ) {
-				setSvg( '' );
-				setError( result.error );
-			} else {
-				setSvg( result.svg );
-				setError( null );
-			}
-		} );
+				if ( result.error ) {
+					setDrawing( EMPTY );
+					setError( result.error );
+				} else {
+					setDrawing( {
+						svg: result.svg,
+						style: renderer.getStyle( code, drawnTheme, container ),
+					} );
+					setError( null );
+				}
+			} );
 
 		return () => {
 			cancelled = true;
@@ -164,6 +165,7 @@ export default function MermaidDiagram( {
 	}, [ code, drawnTheme, instanceId ] );
 
 	// As on the front end, where the script writes both into the SVG.
+	const { svg, style } = drawing;
 	const markup = useMemo(
 		() => ( svg ? withAccessibleText( svg, { title, description } ) : '' ),
 		[ svg, title, description ]
@@ -205,6 +207,7 @@ export default function MermaidDiagram( {
 				// Mermaid's own sanitised SVG output.
 				<div
 					className="mermaid-container__diagram"
+					style={ style || undefined }
 					dangerouslySetInnerHTML={ { __html: markup } }
 				/>
 			) }

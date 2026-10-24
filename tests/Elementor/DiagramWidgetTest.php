@@ -116,10 +116,10 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	public function test_declares_what_draws_it(): void {
 		$widget = $this->create_widget( array() );
 
-		$this->assertSame( array( Assets::RENDERER, Registrar::SCRIPT ), $widget->get_script_depends() );
-		$this->assertSame( array( Assets::RENDERER ), $widget->get_style_depends() );
-		$this->assertTrue( wp_script_is( Assets::RENDERER, 'registered' ) );
-		$this->assertTrue( wp_style_is( Assets::RENDERER, 'registered' ) );
+		$this->assertSame( array( Assets::DIAGRAM, Registrar::SCRIPT ), $widget->get_script_depends() );
+		$this->assertSame( array( Assets::DIAGRAM ), $widget->get_style_depends() );
+		$this->assertTrue( wp_script_is( Assets::DIAGRAM, 'registered' ) );
+		$this->assertTrue( wp_style_is( Assets::DIAGRAM, 'registered' ) );
 	}
 
 	/**
@@ -159,6 +159,17 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The theme's help says what a theme is only when Pele is the renderer.
+	 */
+	public function test_the_theme_help_changes_only_with_pele(): void {
+		update_option( 'mermaid_blocks_renderer', 'mermaid' );
+		$this->assertStringNotContainsString( 'With Pele', $this->get_controls()['theme']['description'] );
+
+		update_option( 'mermaid_blocks_renderer', 'pele' );
+		$this->assertStringContainsString( 'With Pele, a theme counts as light or dark.', $this->get_controls()['theme']['description'] );
+	}
+
+	/**
 	 * The theme's help links to the settings page, for those who may change
 	 * it, and only in the editor: the front end builds the controls too.
 	 */
@@ -179,7 +190,7 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 
 	/**
 	 * A widget gives the markup the shortcode gives for the same settings,
-	 * through the same renderer.
+	 * through the same code.
 	 */
 	public function test_outputs_what_the_shortcode_does(): void {
 		$markup = $this->render_widget(

@@ -34,6 +34,7 @@
 		"husky": "^9.1.7"
 	},
 	"dependencies": {
-		"mermaid": "12.1.0"
+		"mermaid": "12.1.0",
+		"pele": "1.9.0"
 	}
 }

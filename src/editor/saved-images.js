@@ -14,8 +14,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { select, subscribe } from '@wordpress/data';
 
-import { getMermaid } from '../utils/mermaid-init';
-import { renderDiagram } from '../utils/render-diagram';
+import { getRenderer, hasRenderer } from '../renderers';
 import { AUTO_LIGHT, THEMES } from '../utils/themes';
 import { getPngBlob, getThemeBackground } from '../utils/export-diagram';
 
@@ -33,46 +32,44 @@ let waited = false;
 const runs = new Map();
 
 /**
- * Returns the Mermaid instance of the editor canvas, once the canvas can be
+ * Returns the renderer of the editor canvas, once the canvas can be
  * drawn in.
  *
  * The scripts of the canvas run before its document has a body, and Mermaid
  * draws in the body: until the document has loaded, a render fails.
  *
- * @return {{mermaid: Object, document: Document}|null} The Mermaid instance
- * and the document it renders in, or null.
+ * @return {Object|null} The renderer of the canvas, or null.
  */
-function findCanvasMermaid() {
+function findCanvasRenderer() {
 	const frame = document.querySelector( 'iframe[name="editor-canvas"]' );
 	const view = frame && frame.contentWindow;
 
 	if (
-		! view ||
-		! view.mermaid ||
+		! hasRenderer( view ) ||
 		! view.document.body ||
 		view.document.readyState !== 'complete'
 	) {
 		return null;
 	}
 
-	return getMermaid( view );
+	return getRenderer( view );
 }
 
 /**
- * Returns the Mermaid instance to draw the images with: the one of the editor
+ * Returns the renderer to draw the images with: the one of the editor
  * canvas, where the previews are drawn, so an image is measured as they are.
  * The canvas and its scripts load after the editor does, so the first image
  * waits for them. An editor without a canvas of its own has the admin
  * window's Mermaid.
  *
- * @return {Promise<{mermaid: Object, document: Document}|null>} The Mermaid
- * instance and the document it renders in, or null when there is none.
+ * @return {Promise<Object|null>} The renderer, which tells the document it
+ * draws in, or null when there is none.
  */
-async function getCanvasMermaid() {
+async function getCanvasRenderer() {
 	const timeout = waited ? 0 : CANVAS_TIMEOUT;
 
 	for ( let elapsed = 0; elapsed < timeout; elapsed += CANVAS_INTERVAL ) {
-		if ( findCanvasMermaid() ) {
+		if ( findCanvasRenderer() ) {
 			break;
 		}
 
@@ -83,7 +80,7 @@ async function getCanvasMermaid() {
 
 	waited = true;
 
-	return findCanvasMermaid() || getMermaid( window );
+	return findCanvasRenderer() || getRenderer( window );
 }
 
 /**
@@ -91,32 +88,26 @@ async function getCanvasMermaid() {
  *
  * An image has one look, wherever it is shown. A diagram that follows the
  * page is drawn as on a light page, and every image has the background its
- * theme is made for.
+ * theme is made for, or, with Pele, its palette's.
  *
- * @param {string} code  The Mermaid source.
- * @param {string} theme The theme of the diagram, as the server names it: one
- *                       of THEMES, or the automatic theme.
+ * @param {Object} renderer The renderer to draw with: see getCanvasRenderer().
+ * @param {string} code     The Mermaid source.
+ * @param {string} theme    The theme of the diagram, as the server names it:
+ *                          one of THEMES, or the automatic theme.
  *
  * @return {Promise<Blob|null>} The PNG, or null for a diagram that can't be
  * drawn, such as one with a syntax error.
  */
-export async function drawImage( code, theme ) {
-	const owner = await getCanvasMermaid();
-
-	if ( ! owner ) {
-		return null;
-	}
-
+export async function drawImage( renderer, code, theme ) {
 	const drawnTheme = THEMES.includes( theme ) ? theme : AUTO_LIGHT;
 
 	counter += 1;
 
-	const result = await renderDiagram(
-		owner.mermaid,
-		`mermaid-blocks-image-${ counter }`,
+	const result = await renderer.draw(
 		code,
-		owner.document,
-		drawnTheme
+		drawnTheme,
+		renderer.document.body,
+		`mermaid-blocks-image-${ counter }`
 	);
 
 	if ( result.error ) {
@@ -134,31 +125,56 @@ export async function drawImage( code, theme ) {
 
 	const svg = template.content.querySelector( 'svg' );
 
-	return svg ? getPngBlob( svg, getThemeBackground( drawnTheme ) ) : null;
+	if ( ! svg ) {
+		return null;
+	}
+
+	// A Pele diagram has no colours of its own: the SVG gets those of its
+	// palette, which the file is made from, on the palette's background.
+	const style = renderer.getStyle( code, drawnTheme, null );
+
+	if ( style ) {
+		Object.entries( style ).forEach( ( [ property, value ] ) =>
+			svg.style.setProperty( property, value )
+		);
+
+		return getPngBlob( svg );
+	}
+
+	return getPngBlob( svg, getThemeBackground( drawnTheme ) );
 }
 
 /**
- * Draws and saves the images the diagrams of a post lack.
+ * Draws and saves the images the diagrams of a post lack, with the renderer of
+ * the editor canvas.
  *
  * @param {number} postId The ID of the post.
  *
  * @return {Promise<number>} The number of images saved.
  */
 export async function saveImages( postId ) {
+	// The server keys an image by the renderer it is drawn with, which only the editor knows.
+	const renderer = await getCanvasRenderer();
+
+	if ( ! renderer ) {
+		return 0;
+	}
+
 	const path = `/mermaid-blocks/v1/posts/${ postId }/images`;
-	const { missing = [] } = await apiFetch( { path } );
+	const query = `?renderer=${ renderer.name }`;
+	const { missing = [] } = await apiFetch( { path: path + query } );
 
 	let saved = 0;
 
 	for ( const { key, code, theme } of missing ) {
-		const body = await drawImage( code, theme );
+		const body = await drawImage( renderer, code, theme );
 
 		if ( ! body ) {
 			continue;
 		}
 
 		await apiFetch( {
-			path: `${ path }/${ key }`,
+			path: `${ path }/${ key }${ query }`,
 			method: 'POST',
 			headers: { 'Content-Type': 'image/png' },
 			body,

@@ -108,3 +108,38 @@ export function getThemeConfig( mermaid, theme ) {
 
 	return config;
 }
+
+const FRONT_MATTER = /^[ \t]*---[ \t]*\n([\s\S]*?)\n[ \t]*---[ \t]*(?:\n|$)/;
+const DIRECTIVE = /%{2}{\s*init(?:ialize)?\s*:([\s\S]*?)}%{2}/gi;
+const THEME_IN_DIRECTIVE = /["']?\btheme["']?\s*:\s*["']?([\w-]+)["']?/i;
+const THEME_IN_CONFIG = /^[ \t]+theme:[ \t]*["']?([\w-]+)["']?[ \t]*$/m;
+
+/**
+ * Returns the theme a diagram's code asks for, in its front matter
+ * (`config.theme`) or in an `%%{init}%%` directive. A directive wins over the
+ * front matter, and a later one over an earlier one, as in Mermaid.
+ *
+ * @param {string} code The Mermaid source.
+ *
+ * @return {string} The name of the theme as it is written, or an empty string
+ * when the code names none.
+ */
+export function getCodeTheme( code ) {
+	const text = String( code ).replace( /\r\n?/g, '\n' );
+	const frontMatter = FRONT_MATTER.exec( text );
+	let theme = '';
+
+	if ( frontMatter && /^config:/m.test( frontMatter[ 1 ] ) ) {
+		const match = THEME_IN_CONFIG.exec(
+			frontMatter[ 1 ].slice( frontMatter[ 1 ].search( /^config:/m ) )
+		);
+		theme = match ? match[ 1 ] : '';
+	}
+
+	for ( const directive of text.matchAll( DIRECTIVE ) ) {
+		const match = THEME_IN_DIRECTIVE.exec( directive[ 1 ] );
+		theme = match ? match[ 1 ] : theme;
+	}
+
+	return theme;
+}

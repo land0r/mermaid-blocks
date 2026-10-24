@@ -46,8 +46,8 @@ class CodeBlocksTest extends WP_UnitTestCase {
 
 		update_option( Options::CODE_BLOCKS, 1 );
 
-		wp_dequeue_script( Assets::RENDERER );
-		wp_dequeue_style( Assets::RENDERER );
+		wp_dequeue_script( Assets::DIAGRAM );
+		wp_dequeue_style( Assets::DIAGRAM );
 	}
 
 	/**
@@ -124,8 +124,8 @@ class CodeBlocksTest extends WP_UnitTestCase {
 		$this->assertSame( 1, substr_count( $markup, 'mermaid-blocks-diagram__source' ) );
 		$this->assertSame( $code, $this->get_source( $markup ) );
 		$this->assertStringNotContainsString( '<code', $markup );
-		$this->assertTrue( wp_script_is( Assets::RENDERER ) );
-		$this->assertTrue( wp_style_is( Assets::RENDERER ) );
+		$this->assertTrue( wp_script_is( Assets::DIAGRAM ) );
+		$this->assertTrue( wp_style_is( Assets::DIAGRAM ) );
 	}
 
 	/**
@@ -188,7 +188,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 			"\n" . $this->pre( $code, trim( 'wp-block-code ' . $class_name ), $code_class ) . "\n",
 			do_blocks( $block )
 		);
-		$this->assertFalse( wp_script_is( Assets::RENDERER ) );
+		$this->assertFalse( wp_script_is( Assets::DIAGRAM ) );
 	}
 
 	/**
@@ -221,7 +221,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 			$this->assertSame( $content, $this->code_blocks->render_content( $content ) );
 		}
 
-		$this->assertFalse( wp_script_is( Assets::RENDERER ) );
+		$this->assertFalse( wp_script_is( Assets::DIAGRAM ) );
 	}
 
 	/**
@@ -279,7 +279,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 		$pre = '<pre class="wp-block-code language-mermaid"><code> </code></pre>';
 
 		$this->assertSame( $pre, $this->code_blocks->render_block( $pre ) );
-		$this->assertFalse( wp_script_is( Assets::RENDERER ) );
+		$this->assertFalse( wp_script_is( Assets::DIAGRAM ) );
 	}
 
 	/**

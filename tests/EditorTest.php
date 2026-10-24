@@ -10,6 +10,7 @@ namespace MermaidBlocks\Tests;
 use MermaidBlocks\Admin\Editor;
 use MermaidBlocks\Admin\SettingsPage;
 use MermaidBlocks\Assets;
+use MermaidBlocks\Files;
 use MermaidBlocks\Integrations\Block;
 use MermaidBlocks\Options;
 use WP_Block_Type_Registry;
@@ -39,7 +40,20 @@ class EditorTest extends WP_UnitTestCase {
 		$this->editor = mermaid_blocks()->get( Editor::class );
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		delete_option( Options::RENDERER );
 		wp_dequeue_script( Assets::MERMAID );
+		wp_dequeue_script( Assets::PELE );
+	}
+
+	/**
+	 * Gives the block the editor scripts it is registered with.
+	 */
+	public function tear_down(): void {
+		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
+
+		$block_type->editor_script_handles = array_values( array_diff( $block_type->editor_script_handles, array( Assets::MERMAID, Assets::PELE ) ) );
+
+		parent::tear_down();
 	}
 
 	/**
@@ -72,6 +86,18 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The editor is told what a theme is with the site's renderer: the
+	 * sidebar says it with Pele, and nothing with Mermaid.js.
+	 */
+	public function test_tells_the_editor_what_themes_are_with_the_renderer(): void {
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertSame( '', $this->get_editor_settings()['rendererHelp'] );
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertSame( 'With Pele, a theme counts as light or dark.', $this->get_editor_settings()['rendererHelp'] );
+	}
+
+	/**
 	 * Only those who may change the site's theme are told where.
 	 */
 	public function test_links_to_the_settings_for_those_who_may_change_them(): void {
@@ -93,13 +119,78 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The script of the editor gets the settings, not the Mermaid library,
-	 * which is one of the block's editor scripts too.
+	 * The script of the editor gets the settings, not the library of the
+	 * renderer, which is one of the block's editor scripts too.
 	 */
 	public function test_tells_the_script_of_the_block(): void {
-		$this->get_editor_settings();
+		foreach ( array( 'mermaid', 'pele' ) as $renderer ) {
+			update_option( Options::RENDERER, $renderer );
+			$this->editor->add_renderer_to_block();
+			$this->get_editor_settings();
 
-		$this->assertEmpty( wp_scripts()->get_data( Assets::MERMAID, 'before' ) );
+			$this->assertEmpty( wp_scripts()->get_data( Assets::MERMAID, 'before' ), $renderer );
+			$this->assertEmpty( wp_scripts()->get_data( Assets::PELE, 'before' ), $renderer );
+		}
+	}
+
+	/**
+	 * The block doesn't declare a library as its own dependency: the editor
+	 * adds the one of the site's renderer, and Pele's editor loads no
+	 * Mermaid.js.
+	 */
+	public function test_the_block_loads_only_the_chosen_renderer_in_the_editor(): void {
+		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
+		$metadata   = wp_json_file_decode( mermaid_blocks()->get( Files::class )->get_build_path( 'block.json' ), array( 'associative' => true ) );
+
+		$this->assertNotContains( Assets::MERMAID, (array) $metadata['editorScript'] );
+		$this->assertNotContains( Assets::PELE, (array) $metadata['editorScript'] );
+
+		$own = array_values( array_diff( $block_type->editor_script_handles, array( Assets::MERMAID, Assets::PELE ) ) );
+		$this->assertCount( 1, $own );
+
+		$this->editor->add_renderer_to_block();
+		$this->assertSame( array_merge( array( Assets::MERMAID ), $own ), $block_type->editor_script_handles );
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->editor->add_renderer_to_block();
+		$this->assertSame( array_merge( array( Assets::PELE ), $own ), $block_type->editor_script_handles );
+
+		// Doing it again changes nothing.
+		$this->editor->add_renderer_to_block();
+		$this->assertSame( array_merge( array( Assets::PELE ), $own ), $block_type->editor_script_handles );
+	}
+
+	/**
+	 * A filter that picks the renderer decides what the editor loads too.
+	 */
+	public function test_the_block_loads_the_renderer_a_filter_picks(): void {
+		$filter = static function () {
+			return 'pele';
+		};
+		add_filter( 'mermaid_blocks_renderer', $filter );
+
+		$this->editor->add_renderer_to_block();
+		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
+
+		$this->assertContains( Assets::PELE, $block_type->editor_script_handles );
+		$this->assertNotContains( Assets::MERMAID, $block_type->editor_script_handles );
+
+		remove_filter( 'mermaid_blocks_renderer', $filter );
+	}
+
+	/**
+	 * Pele's single-file build is loaded into the editor canvas, and no
+	 * Mermaid.js, when Pele is the renderer.
+	 */
+	public function test_loads_pele_and_not_mermaid_into_the_editor_canvas(): void {
+		update_option( Options::RENDERER, 'pele' );
+		set_current_screen( 'dashboard' );
+
+		$this->editor->enqueue_canvas_assets();
+
+		$this->assertTrue( wp_script_is( Assets::PELE ) );
+		$this->assertFalse( wp_script_is( Assets::MERMAID ) );
+		$this->assertStringEndsWith( 'build/pele.global.js', wp_scripts()->registered[ Assets::PELE ]->src );
 	}
 
 	/**
@@ -120,5 +211,6 @@ class EditorTest extends WP_UnitTestCase {
 		remove_filter( 'should_load_block_editor_scripts_and_styles', '__return_true' );
 		$this->editor->enqueue_canvas_assets();
 		$this->assertTrue( wp_script_is( Assets::MERMAID ) );
+		$this->assertFalse( wp_script_is( Assets::PELE ) );
 	}
 }

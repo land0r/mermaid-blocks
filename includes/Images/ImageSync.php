@@ -26,7 +26,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * When a post is saved, by anything, the images of the diagrams it no longer
  * has are removed: a diagram that an ability changed on the server loses its
- * image there and then.
+ * image there and then. So are the images of the other renderer, once a
+ * diagram has one of the site's renderer: until then, the image of the other
+ * stands in for it.
  *
  * The diagrams are those in the content of the post, as PostDiagrams finds
  * them. A diagram in a synced pattern or a template part is in another
@@ -78,34 +80,55 @@ final class ImageSync implements Hookable {
 	/**
 	 * Returns the diagrams of a post that can have an image: those with code.
 	 *
-	 * @param WP_Post $post The post.
+	 * @param WP_Post $post     The post.
+	 * @param string  $renderer Optional. The renderer the images are drawn with.
+	 *                          Default: the one of the request.
 	 *
 	 * @return array[] For each diagram, by the key of its image: that key,
 	 *                 the code, and the theme to draw the image in, a name
 	 *                 from Themes::get_all(). Two diagrams with the same code
 	 *                 and theme share an image.
 	 */
-	public function get_diagrams( WP_Post $post ): array {
+	public function get_diagrams( WP_Post $post, string $renderer = '' ): array {
 		$diagrams = array();
+
+		foreach ( $this->get_codes( $post ) as $diagram ) {
+			$key = $this->images->get_key( $diagram['code'], $diagram['theme'], $renderer );
+
+			$diagrams[ $key ] = array(
+				'key'   => $key,
+				'code'  => $diagram['code'],
+				'theme' => $this->themes->resolve( $diagram['theme'] ),
+			);
+		}
+
+		return $diagrams;
+	}
+
+	/**
+	 * Returns the code and the theme of the diagrams of a post that have code.
+	 *
+	 * @param WP_Post $post The post.
+	 *
+	 * @return array[] For each diagram, its `code` and its `theme`, as its
+	 *                 block has them: an empty string for none.
+	 */
+	private function get_codes( WP_Post $post ): array {
+		$codes = array();
 
 		foreach ( $this->diagrams->get_all( $post ) as $block ) {
 			$code  = isset( $block['attrs']['code'] ) && is_string( $block['attrs']['code'] ) ? $block['attrs']['code'] : '';
 			$theme = isset( $block['attrs']['theme'] ) && is_string( $block['attrs']['theme'] ) ? $block['attrs']['theme'] : '';
 
-			if ( '' === trim( $code ) ) {
-				continue;
+			if ( '' !== trim( $code ) ) {
+				$codes[] = array(
+					'code'  => $code,
+					'theme' => $theme,
+				);
 			}
-
-			$key = $this->images->get_key( $code, $theme );
-
-			$diagrams[ $key ] = array(
-				'key'   => $key,
-				'code'  => $code,
-				'theme' => $this->themes->resolve( $theme ),
-			);
 		}
 
-		return $diagrams;
+		return $codes;
 	}
 
 	/**
@@ -115,12 +138,14 @@ final class ImageSync implements Hookable {
 	 * site's theme changed since. The last keep their image until the new one
 	 * arrives.
 	 *
-	 * @param WP_Post $post The post.
+	 * @param WP_Post $post     The post.
+	 * @param string  $renderer Optional. The renderer the images are drawn with.
+	 *                          Default: the one of the request.
 	 *
 	 * @return array[] The diagrams: see get_diagrams(). None for a post that
 	 *                 has no page of its own, such as a synced pattern.
 	 */
-	public function get_missing( WP_Post $post ): array {
+	public function get_missing( WP_Post $post, string $renderer = '' ): array {
 		if ( ! is_post_type_viewable( $post->post_type ) ) {
 			return array();
 		}
@@ -128,7 +153,7 @@ final class ImageSync implements Hookable {
 		$images  = $this->images->get_all( $post->ID );
 		$missing = array();
 
-		foreach ( $this->get_diagrams( $post ) as $key => $diagram ) {
+		foreach ( $this->get_diagrams( $post, $renderer ) as $key => $diagram ) {
 			if (
 				! isset( $images[ $key ] ) ||
 				$images[ $key ]['theme'] !== $diagram['theme'] ||
@@ -142,8 +167,8 @@ final class ImageSync implements Hookable {
 	}
 
 	/**
-	 * Removes the images of the diagrams a post no longer has, once the post
-	 * is saved.
+	 * Removes the images of the diagrams a post no longer has, and those of the
+	 * other renderer that have been drawn again, once the post is saved.
 	 *
 	 * @param int $post_id The ID of the post.
 	 */
@@ -161,6 +186,17 @@ final class ImageSync implements Hookable {
 			return;
 		}
 
-		$this->images->forget( $post_id, array_keys( array_diff_key( $images, $this->get_diagrams( $post ) ) ) );
+		// The images to keep: the one each diagram shows, the site's renderer's or the other's, which stands in.
+		$keep = array();
+
+		foreach ( $this->get_codes( $post ) as $diagram ) {
+			$key = $this->images->find_key( $images, $diagram['code'], $diagram['theme'] );
+
+			if ( null !== $key ) {
+				$keep[ $key ] = true;
+			}
+		}
+
+		$this->images->forget( $post_id, array_keys( array_diff_key( $images, $keep ) ) );
 	}
 }

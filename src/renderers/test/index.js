@@ -1,9 +1,9 @@
-import { getMermaid } from '../mermaid-init';
-import MERMAID_CONFIG from '../mermaid-config';
+import { getRenderer } from '..';
+import MERMAID_CONFIG from '../../utils/mermaid-config';
 
 const fakeMermaid = () => ( { initialize: jest.fn() } );
 
-describe( 'getMermaid', () => {
+describe( 'getRenderer', () => {
 	afterEach( () => {
 		delete window.mermaid;
 	} );
@@ -13,36 +13,34 @@ describe( 'getMermaid', () => {
 		const frameDocument = document.implementation.createHTMLDocument();
 		const view = { mermaid: fakeMermaid(), document: frameDocument };
 
-		const owner = getMermaid( view );
+		const renderer = getRenderer( view );
 
-		expect( owner.mermaid ).toBe( view.mermaid );
-		expect( owner.document ).toBe( frameDocument );
+		expect( renderer.document ).toBe( frameDocument );
 	} );
 
 	it( 'falls back to the admin window copy', () => {
 		window.mermaid = fakeMermaid();
 
-		const owner = getMermaid( { document: null } );
+		const renderer = getRenderer( { document: null } );
 
-		expect( owner.mermaid ).toBe( window.mermaid );
-		expect( owner.document ).toBe( document );
+		expect( renderer.document ).toBe( document );
 	} );
 
 	it( 'falls back when no window is given', () => {
 		window.mermaid = fakeMermaid();
 
-		expect( getMermaid().mermaid ).toBe( window.mermaid );
+		expect( getRenderer().document ).toBe( document );
 	} );
 
 	it( 'returns null when Mermaid is not loaded anywhere', () => {
-		expect( getMermaid( {} ) ).toBeNull();
+		expect( getRenderer( {} ) ).toBeNull();
 	} );
 
 	it( 'initialises each copy once, with the front-end configuration', () => {
 		const view = { mermaid: fakeMermaid(), document };
 
-		getMermaid( view );
-		getMermaid( view );
+		getRenderer( view );
+		getRenderer( view );
 
 		expect( view.mermaid.initialize ).toHaveBeenCalledTimes( 1 );
 		expect( view.mermaid.initialize ).toHaveBeenCalledWith(

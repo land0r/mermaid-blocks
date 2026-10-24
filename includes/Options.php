@@ -24,6 +24,11 @@ final class Options {
 	const THEME = 'mermaid_blocks_theme';
 
 	/**
+	 * The option that holds the site's renderer: see get_renderer().
+	 */
+	const RENDERER = 'mermaid_blocks_renderer';
+
+	/**
 	 * The option that switches on showing code marked as Mermaid as diagrams:
 	 * see Integrations\CodeBlocks.
 	 */
@@ -39,7 +44,7 @@ final class Options {
 	 * Every option of the plugin. `uninstall.php` deletes each of them: a unit
 	 * test tells when it misses one.
 	 */
-	const ALL = array( self::THEME, self::CODE_BLOCKS, self::SAVE_IMAGES );
+	const ALL = array( self::THEME, self::RENDERER, self::CODE_BLOCKS, self::SAVE_IMAGES );
 
 	/**
 	 * Returns the theme stored for the site, as it is stored.
@@ -51,6 +56,33 @@ final class Options {
 		$theme = get_option( self::THEME, '' );
 
 		return is_string( $theme ) ? $theme : '';
+	}
+
+	/**
+	 * Returns the renderer stored for the site, which the settings page shows.
+	 *
+	 * @return string One of Renderers::ALL. Mermaid.js when nothing is stored,
+	 *                and for a value that names no renderer.
+	 */
+	public function get_site_renderer(): string {
+		return Renderers::sanitize( get_option( self::RENDERER, Renderers::MERMAID ) );
+	}
+
+	/**
+	 * Returns the renderer the request draws its diagrams with: the site's, or
+	 * the one the `mermaid_blocks_renderer` filter picks.
+	 *
+	 * @return string One of Renderers::ALL. Mermaid.js for a filter that names
+	 *                no renderer.
+	 */
+	public function get_renderer(): string {
+		/**
+		 * Filters the renderer a request draws its diagrams with, such as Pele
+		 * only on some pages.
+		 *
+		 * @param string $renderer The site's renderer: `mermaid` or `pele`.
+		 */
+		return Renderers::sanitize( apply_filters( 'mermaid_blocks_renderer', $this->get_site_renderer() ) );
 	}
 
 	/**

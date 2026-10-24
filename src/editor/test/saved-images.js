@@ -10,13 +10,25 @@ jest.mock(
 );
 
 // Rendering and drawing have tests of their own.
-jest.mock( '../../utils/render-diagram', () => ( {
-	renderDiagram: jest.fn(),
-} ) );
+jest.mock( '../../renderers/mermaid', () => {
+	const mockDraw = jest.fn();
+
+	return {
+		mockDraw,
+		createMermaidRenderer: ( mermaid, doc ) => ( {
+			name: 'mermaid',
+			document: doc,
+			draw: mockDraw,
+			getStyle: () => null,
+		} ),
+	};
+} );
 jest.mock( '../../utils/export-diagram', () => ( {
 	...jest.requireActual( '../../utils/export-diagram' ),
 	getPngBlob: jest.fn(),
 } ) );
+
+import { createPeleRenderer } from '../../renderers/pele';
 
 // The module remembers that it waited for the editor canvas, so each test
 // loads it, and what it imports, anew.
@@ -26,11 +38,15 @@ let subscribe;
 let watchPost;
 let drawImage;
 let saveImages;
-let renderDiagram;
+let getRenderer;
+let draw;
 let getPngBlob;
 
 const SVG = '<svg viewBox="0 0 300 150"><g></g></svg>';
 const PATH = '/mermaid-blocks/v1/posts/7/images';
+// The editor says which renderer it draws with.
+const QUERY = '?renderer=mermaid';
+const LIST = PATH + QUERY;
 
 // What the editor says about the post, and the listener that watches it.
 let editor;
@@ -87,7 +103,8 @@ beforeEach( () => {
 	jest.resetModules();
 	apiFetch = require( '@wordpress/api-fetch' );
 	( { select, subscribe } = require( '@wordpress/data' ) );
-	( { renderDiagram } = require( '../../utils/render-diagram' ) );
+	draw = require( '../../renderers/mermaid' ).mockDraw;
+	( { getRenderer } = require( '../../renderers' ) );
 	( { getPngBlob } = require( '../../utils/export-diagram' ) );
 	( {
 		default: watchPost,
@@ -108,7 +125,7 @@ beforeEach( () => {
 		return Promise.resolve( request.method ? {} : { missing } );
 	} );
 
-	renderDiagram.mockResolvedValue( { svg: SVG } );
+	draw.mockResolvedValue( { svg: SVG } );
 	getPngBlob.mockImplementation( ( svg, background ) =>
 		Promise.resolve( { png: svg.outerHTML, background } )
 	);
@@ -141,17 +158,25 @@ const withoutCanvas = async ( callback ) => {
 };
 
 describe( 'drawImage', () => {
-	it( 'draws a diagram in its theme, on the background of that theme', async () => {
-		const blob = await withoutCanvas( () =>
-			drawImage( 'graph TD', 'dark' )
-		);
+	// The renderer of an editor without a canvas of its own.
+	const getMermaid = () => getRenderer( window );
 
-		expect( renderDiagram ).toHaveBeenCalledWith(
-			window.mermaid,
-			expect.stringMatching( /^mermaid-blocks-image-\d+$/ ),
+	// Pele's renderer, with a Pele that draws one SVG.
+	const getPele = () =>
+		createPeleRenderer( {
+			render: () => ( {
+				svg: '<svg class="pele" viewBox="0 0 300 150"><g></g></svg>',
+			} ),
+		} );
+
+	it( 'draws a diagram in its theme, on the background of that theme', async () => {
+		const blob = await drawImage( getMermaid(), 'graph TD', 'dark' );
+
+		expect( draw ).toHaveBeenCalledWith(
 			'graph TD',
-			document,
-			'dark'
+			'dark',
+			document.body,
+			expect.stringMatching( /^mermaid-blocks-image-\d+$/ )
 		);
 		expect( blob ).toEqual( { png: SVG, background: '#333' } );
 	} );
@@ -159,118 +184,57 @@ describe( 'drawImage', () => {
 	it.each( [ [ 'auto' ], [ '' ], [ undefined ], [ 'no-such-theme' ] ] )(
 		'draws a diagram whose theme is %p as on a light page',
 		async ( theme ) => {
-			const blob = await withoutCanvas( () =>
-				drawImage( 'graph TD', theme )
-			);
+			const blob = await drawImage( getMermaid(), 'graph TD', theme );
 
-			expect( renderDiagram.mock.calls[ 0 ][ 4 ] ).toBe( 'auto-light' );
+			expect( draw.mock.calls[ 0 ][ 1 ] ).toBe( 'auto-light' );
 			expect( blob.background ).toBe( '#fff' );
 		}
 	);
 
+	it( 'draws a Pele diagram with the colours of its palette, which give the PNG its background', async () => {
+		await drawImage( getPele(), 'graph TD', 'dark' );
+
+		const [ [ svg, background ] ] = getPngBlob.mock.calls;
+
+		expect( background ).toBeUndefined();
+		expect( svg.style.getPropertyValue( '--pele-fg' ) ).toBe( '#e6e6e6' );
+		expect( svg.style.getPropertyValue( '--pele-bg' ) ).toBe( '#1e1e1e' );
+	} );
+
+	it( 'draws a Pele diagram that follows the page as on a light page', async () => {
+		await drawImage( getPele(), 'graph TD', 'auto' );
+
+		const [ [ svg ] ] = getPngBlob.mock.calls;
+
+		expect( svg.style.getPropertyValue( '--pele-fg' ) ).toBe( '#1f1f1f' );
+		expect( svg.style.getPropertyValue( '--pele-bg' ) ).toBe( '#ffffff' );
+	} );
+
 	it( 'gives each render an id of its own', async () => {
-		await withoutCanvas( () => drawImage( 'graph TD', 'auto' ) );
-		await withoutCanvas( () => drawImage( 'graph TD', 'auto' ) );
+		await drawImage( getMermaid(), 'graph TD', 'auto' );
+		await drawImage( getMermaid(), 'graph TD', 'auto' );
 
-		expect( renderDiagram.mock.calls[ 0 ][ 1 ] ).not.toBe(
-			renderDiagram.mock.calls[ 1 ][ 1 ]
+		expect( draw.mock.calls[ 0 ][ 3 ] ).not.toBe(
+			draw.mock.calls[ 1 ][ 3 ]
 		);
 	} );
 
-	it( 'draws with the Mermaid of the editor canvas, once that has loaded', async () => {
-		const frame = document.createElement( 'iframe' );
-		frame.name = 'editor-canvas';
-		document.body.appendChild( frame );
-
-		const drawing = drawImage( 'graph TD', 'forest' );
-
-		await jest.advanceTimersByTimeAsync( 300 );
-		expect( renderDiagram ).not.toHaveBeenCalled();
-
-		frame.contentWindow.mermaid = { initialize: jest.fn() };
-		await jest.advanceTimersByTimeAsync( 200 );
-		await drawing;
-
-		expect( renderDiagram ).toHaveBeenCalledWith(
-			frame.contentWindow.mermaid,
-			expect.any( String ),
-			'graph TD',
-			frame.contentWindow.document,
-			'forest'
-		);
-	} );
-
-	it( 'waits for the document of the canvas, which its scripts run before', async () => {
-		const frame = document.createElement( 'iframe' );
-		frame.name = 'editor-canvas';
-		document.body.appendChild( frame );
-		frame.contentWindow.mermaid = { initialize: jest.fn() };
-
-		let readyState = 'loading';
-		Object.defineProperty( frame.contentWindow.document, 'readyState', {
-			get: () => readyState,
-		} );
-
-		const drawing = drawImage( 'graph TD', 'auto' );
-
-		await jest.advanceTimersByTimeAsync( 300 );
-		expect( renderDiagram ).not.toHaveBeenCalled();
-
-		readyState = 'complete';
-		await jest.advanceTimersByTimeAsync( 200 );
-		await drawing;
-
-		expect( renderDiagram.mock.calls[ 0 ][ 0 ] ).toBe(
-			frame.contentWindow.mermaid
-		);
-	} );
-
-	it( 'tells when a diagram could not be drawn', async () => {
+	it( 'tells when a diagram could not be drawn, and draws nothing', async () => {
 		jest.spyOn( console, 'warn' ).mockImplementation( () => {} );
-		renderDiagram.mockResolvedValue( {
+		draw.mockResolvedValue( {
 			error: { message: 'boom', line: 1 },
 		} );
 
-		await withoutCanvas( () => drawImage( 'graph', 'auto' ) );
+		await expect(
+			drawImage( getMermaid(), 'graph', 'auto' )
+		).resolves.toBeNull();
 
 		// eslint-disable-next-line no-console
 		expect( console.warn ).toHaveBeenCalledWith(
 			expect.stringContaining( 'could not be drawn' ),
 			'boom'
 		);
-		// eslint-disable-next-line no-console
-		console.warn.mockRestore();
-	} );
-
-	it( 'waits for the editor canvas once', async () => {
-		await withoutCanvas( () => drawImage( 'graph TD', 'auto' ) );
-
-		// No timer has to pass for the second image.
-		await expect( drawImage( 'pie', 'auto' ) ).resolves.toEqual( {
-			png: SVG,
-			background: '#fff',
-		} );
-	} );
-
-	it( 'draws nothing for a diagram with an error', async () => {
-		jest.spyOn( console, 'warn' ).mockImplementation( () => {} );
-		renderDiagram.mockResolvedValue( {
-			error: { message: 'boom', line: 1 },
-		} );
-
-		await expect(
-			withoutCanvas( () => drawImage( 'graph', 'auto' ) )
-		).resolves.toBeNull();
 		expect( getPngBlob ).not.toHaveBeenCalled();
-	} );
-
-	it( 'draws nothing without Mermaid', async () => {
-		delete window.mermaid;
-
-		await expect(
-			withoutCanvas( () => drawImage( 'graph TD', 'auto' ) )
-		).resolves.toBeNull();
-		expect( renderDiagram ).not.toHaveBeenCalled();
 	} );
 } );
 
@@ -285,30 +249,33 @@ describe( 'saveImages', () => {
 
 		expect( saved ).toBe( 2 );
 		expect( requests ).toEqual( [
-			{ path: PATH },
+			{ path: LIST },
 			{
-				path: `${ PATH }/${ 'a'.repeat( 32 ) }`,
+				path: `${ PATH }/${ 'a'.repeat( 32 ) }${ QUERY }`,
 				method: 'POST',
 				headers: { 'Content-Type': 'image/png' },
 				body: { png: SVG, background: '#fff' },
 			},
 			{
-				path: `${ PATH }/${ 'b'.repeat( 32 ) }`,
+				path: `${ PATH }/${ 'b'.repeat( 32 ) }${ QUERY }`,
 				method: 'POST',
 				headers: { 'Content-Type': 'image/png' },
 				body: { png: SVG, background: '#fff' },
 			},
 		] );
-		expect( renderDiagram.mock.calls.map( ( call ) => call[ 2 ] ) ).toEqual(
-			[ 'graph TD', 'pie' ]
-		);
+		expect( draw.mock.calls.map( ( call ) => call[ 0 ] ) ).toEqual( [
+			'graph TD',
+			'pie',
+		] );
 	} );
 
 	it( 'draws nothing when no diagram lacks an image', async () => {
-		await expect( saveImages( 7 ) ).resolves.toBe( 0 );
+		await expect( withoutCanvas( () => saveImages( 7 ) ) ).resolves.toBe(
+			0
+		);
 
-		expect( requests ).toEqual( [ { path: PATH } ] );
-		expect( renderDiagram ).not.toHaveBeenCalled();
+		expect( requests ).toEqual( [ { path: LIST } ] );
+		expect( draw ).not.toHaveBeenCalled();
 	} );
 
 	it( 'skips a diagram that cannot be drawn, and sends the others', async () => {
@@ -317,7 +284,7 @@ describe( 'saveImages', () => {
 			{ key: 'a'.repeat( 32 ), code: 'graph', theme: 'auto' },
 			{ key: 'b'.repeat( 32 ), code: 'pie', theme: 'auto' },
 		];
-		renderDiagram.mockResolvedValueOnce( {
+		draw.mockResolvedValueOnce( {
 			error: { message: 'boom', line: 1 },
 		} );
 
@@ -325,15 +292,110 @@ describe( 'saveImages', () => {
 
 		expect( saved ).toBe( 1 );
 		expect( requests.map( ( request ) => request.path ) ).toEqual( [
-			PATH,
-			`${ PATH }/${ 'b'.repeat( 32 ) }`,
+			LIST,
+			`${ PATH }/${ 'b'.repeat( 32 ) }${ QUERY }`,
 		] );
+	} );
+
+	it( 'draws with the Mermaid of the editor canvas, once that has loaded', async () => {
+		missing = [
+			{ key: 'a'.repeat( 32 ), code: 'graph TD', theme: 'forest' },
+		];
+		const frame = document.createElement( 'iframe' );
+		frame.name = 'editor-canvas';
+		document.body.appendChild( frame );
+
+		const saving = saveImages( 7 );
+
+		await jest.advanceTimersByTimeAsync( 300 );
+		expect( requests ).toEqual( [] );
+
+		frame.contentWindow.mermaid = { initialize: jest.fn() };
+		await jest.advanceTimersByTimeAsync( 200 );
+		await saving;
+
+		expect( draw ).toHaveBeenCalledWith(
+			'graph TD',
+			'forest',
+			frame.contentWindow.document.body,
+			expect.any( String )
+		);
+	} );
+
+	it( 'waits for the document of the canvas, which its scripts run before', async () => {
+		missing = [
+			{ key: 'a'.repeat( 32 ), code: 'graph TD', theme: 'auto' },
+		];
+		const frame = document.createElement( 'iframe' );
+		frame.name = 'editor-canvas';
+		document.body.appendChild( frame );
+		frame.contentWindow.mermaid = { initialize: jest.fn() };
+
+		let readyState = 'loading';
+		Object.defineProperty( frame.contentWindow.document, 'readyState', {
+			get: () => readyState,
+		} );
+
+		const saving = saveImages( 7 );
+
+		await jest.advanceTimersByTimeAsync( 300 );
+		expect( draw ).not.toHaveBeenCalled();
+
+		readyState = 'complete';
+		await jest.advanceTimersByTimeAsync( 200 );
+		await saving;
+
+		expect( draw.mock.calls[ 0 ][ 2 ].ownerDocument ).toBe(
+			frame.contentWindow.document
+		);
+	} );
+
+	it( 'waits for the editor canvas once', async () => {
+		await withoutCanvas( () => saveImages( 7 ) );
+		missing = [ { key: 'a'.repeat( 32 ), code: 'pie', theme: 'auto' } ];
+
+		// No timer has to pass for the second run.
+		await expect( saveImages( 7 ) ).resolves.toBe( 1 );
+	} );
+} );
+
+describe( 'saveImages and the renderer', () => {
+	it( 'asks for the images of the renderer of the editor canvas, and sends them with its name', async () => {
+		missing = [ { key: 'a'.repeat( 32 ), code: 'graph', theme: 'auto' } ];
+		const frame = document.createElement( 'iframe' );
+		frame.name = 'editor-canvas';
+		document.body.appendChild( frame );
+		frame.contentWindow.pele = {
+			render: jest.fn( () => ( { svg: SVG } ) ),
+		};
+
+		await saveImages( 7 );
+
+		expect( requests.map( ( request ) => request.path ) ).toEqual( [
+			`${ PATH }?renderer=pele`,
+			`${ PATH }/${ 'a'.repeat( 32 ) }?renderer=pele`,
+		] );
+	} );
+
+	it( 'does nothing where no renderer is loaded', async () => {
+		delete window.mermaid;
+
+		await expect( withoutCanvas( () => saveImages( 7 ) ) ).resolves.toBe(
+			0
+		);
+		expect( requests ).toEqual( [] );
 	} );
 } );
 
 describe( 'watchPost', () => {
 	beforeEach( () => {
 		jest.useRealTimers();
+
+		// The editor canvas has loaded, so a run needn't wait for it.
+		const frame = document.createElement( 'iframe' );
+		frame.name = 'editor-canvas';
+		document.body.appendChild( frame );
+		frame.contentWindow.mermaid = { initialize: jest.fn() };
 		jest.spyOn( console, 'warn' ).mockImplementation( () => {} );
 	} );
 
@@ -356,7 +418,7 @@ describe( 'watchPost', () => {
 		await change();
 		await change();
 
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 	} );
 
 	it( 'checks the post again each time it is saved', async () => {
@@ -367,9 +429,9 @@ describe( 'watchPost', () => {
 		await save();
 
 		expect( requests ).toEqual( [
-			{ path: PATH },
-			{ path: PATH },
-			{ path: PATH },
+			{ path: LIST },
+			{ path: LIST },
+			{ path: LIST },
 		] );
 	} );
 
@@ -380,7 +442,7 @@ describe( 'watchPost', () => {
 		await save( { autosave: true } );
 		await save( { fails: true } );
 
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 	} );
 
 	it( 'checks another post the editor moves to', async () => {
@@ -390,8 +452,8 @@ describe( 'watchPost', () => {
 		await change( { id: 8 } );
 
 		expect( requests.map( ( request ) => request.path ) ).toEqual( [
-			PATH,
-			'/mermaid-blocks/v1/posts/8/images',
+			LIST,
+			`/mermaid-blocks/v1/posts/8/images${ QUERY }`,
 		] );
 	} );
 
@@ -429,12 +491,12 @@ describe( 'watchPost', () => {
 		await change();
 		await save();
 
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 
 		answer( { missing: [] } );
 		await settle();
 
-		expect( requests ).toEqual( [ { path: PATH }, { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST }, { path: LIST } ] );
 	} );
 
 	it( 'keeps watching after a run failed', async () => {
@@ -446,6 +508,6 @@ describe( 'watchPost', () => {
 
 		// eslint-disable-next-line no-console
 		expect( console.warn ).toHaveBeenCalledTimes( 1 );
-		expect( requests ).toEqual( [ { path: PATH } ] );
+		expect( requests ).toEqual( [ { path: LIST } ] );
 	} );
 } );

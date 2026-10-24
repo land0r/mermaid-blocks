@@ -6,6 +6,7 @@ import {
 	AUTO_LIGHT,
 	AUTO_THEME,
 	THEMES,
+	getCodeTheme,
 	getThemeConfig,
 	isDarkTheme,
 	resolveTheme,
@@ -193,5 +194,54 @@ describe( 'the themes', () => {
 			} );
 			expect( THEMES ).toContain( config.flowchart.theme );
 		} );
+	} );
+} );
+
+describe( 'getCodeTheme', () => {
+	it.each( [
+		[
+			'the front matter',
+			'---\nconfig:\n  theme: forest\n---\ngraph',
+			'forest',
+		],
+		[
+			'a quoted front matter theme',
+			'---\nconfig:\n  theme: "dark"\n---\ngraph',
+			'dark',
+		],
+		[ 'a directive', '%%{init: {"theme": "neutral"}}%%\ngraph', 'neutral' ],
+		[
+			'a directive with single quotes',
+			"%%{init: {'theme':'base'}}%%\ngraph",
+			'base',
+		],
+		[
+			'an initialize directive',
+			'%%{initialize: {"theme": "dark"}}%%\ngraph',
+			'dark',
+		],
+		[
+			'a directive, over the front matter',
+			'---\nconfig:\n  theme: forest\n---\n%%{init: {"theme": "dark"}}%%\ngraph',
+			'dark',
+		],
+		[
+			'the last directive',
+			'%%{init: {"theme": "dark"}}%%\n%%{init: {"theme": "forest"}}%%\ngraph',
+			'forest',
+		],
+		[ 'no theme', 'flowchart LR\nA --> B', '' ],
+		[
+			'a front matter title only',
+			'---\ntitle: theme: dark\n---\ngraph',
+			'',
+		],
+		[
+			'theme variables only',
+			'%%{init: {"themeVariables": {"primaryColor": "#fff"}}}%%\ngraph',
+			'',
+		],
+	] )( 'finds the theme in %s', ( name, code, expected ) => {
+		expect( getCodeTheme( code ) ).toBe( expected );
 	} );
 } );
