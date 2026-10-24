@@ -75,11 +75,29 @@ final class PeleOptions {
 	}
 
 	/**
+	 * Adds the options to what a script is told, as `peleOptions`: only with
+	 * Pele, and only when the filter gave some.
+	 *
+	 * @param array $settings What the script is told.
+	 *
+	 * @return array The settings, with the options when there are some.
+	 */
+	public function add_to( array $settings ): array {
+		$options = $this->get_settings();
+
+		if ( $options ) {
+			$settings['peleOptions'] = $options;
+		}
+
+		return $settings;
+	}
+
+	/**
 	 * Returns the options the filter gave, without what Pele can't use.
 	 *
 	 * @return array The options by name; `config` is an object.
 	 */
-	public function get(): array {
+	private function get(): array {
 		/**
 		 * Filters the options Pele draws the diagrams of the site with.
 		 *

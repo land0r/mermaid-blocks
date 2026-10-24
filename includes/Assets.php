@@ -191,16 +191,9 @@ final class Assets implements Hookable {
 			),
 		);
 
-		// Only with Pele, and only when a filter gave some.
-		$pele_options = $this->pele_options->get_settings();
-
-		if ( $pele_options ) {
-			$settings['peleOptions'] = $pele_options;
-		}
-
 		wp_add_inline_script(
 			self::DIAGRAM,
-			'var mermaidBlocksSettings = ' . wp_json_encode( $settings ) . ';',
+			'var mermaidBlocksSettings = ' . wp_json_encode( $this->pele_options->add_to( $settings ) ) . ';',
 			'before'
 		);
 	}

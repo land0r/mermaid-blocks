@@ -139,21 +139,16 @@ final class Editor implements Hookable {
 			return;
 		}
 
-		$settings = array(
-			'themes'       => $this->themes->get_offered(),
-			// An object, even with none.
-			'themeAliases' => (object) $this->themes->get_aliases(),
-			'theme'        => $this->themes->get_site_theme(),
-			'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
-			'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
+		$settings = $this->pele_options->add_to(
+			array(
+				'themes'       => $this->themes->get_offered(),
+				// An object, even with none.
+				'themeAliases' => (object) $this->themes->get_aliases(),
+				'theme'        => $this->themes->get_site_theme(),
+				'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
+				'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
+			)
 		);
-
-		// Only with Pele, and only when a filter gave some.
-		$pele_options = $this->pele_options->get_settings();
-
-		if ( $pele_options ) {
-			$settings['peleOptions'] = $pele_options;
-		}
 
 		// The block's own editor script: the libraries are not.
 		foreach ( array_diff( $block_type->editor_script_handles, Assets::LIBRARIES ) as $handle ) {
