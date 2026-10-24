@@ -5,7 +5,7 @@ const MERMAID_URL =
 const PELE_URL = 'https://example.test/build/pele/lazy.js?ver=1';
 const MATH_URL = 'https://example.test/build/math.js?ver=1';
 
-const mockMermaid = { initialize: jest.fn() };
+const mockMermaid = { initialize: jest.fn(), registerIconPacks: jest.fn() };
 const mockPele = {
 	load: jest.fn(),
 	detectType: jest.fn(),
@@ -151,6 +151,63 @@ describe( 'the math of a Pele diagram', () => {
 			expect( mockTypeset ).toHaveBeenCalledWith( 'x', 16, document );
 		}
 	);
+} );
+
+describe( 'the icon packs of the site', () => {
+	const iconPacks = { fa: 'https://example.test/fa.json' };
+	const draw = ( renderer, code ) =>
+		renderer.draw(
+			code,
+			'auto-light',
+			document.createElement( 'div' ),
+			'x'
+		);
+
+	beforeEach( () => {
+		mockMermaid.registerIconPacks.mockClear();
+		mockPele.render.mockReset();
+		mockPele.render.mockReturnValue( { svg: '<svg></svg>' } );
+		global.fetch = jest.fn();
+	} );
+
+	afterEach( () => {
+		delete global.fetch;
+	} );
+
+	it( 'are registered with Mermaid.js', async () => {
+		const { default: loadRenderer } = getModule();
+
+		await loadRenderer( { mermaidUrl: MERMAID_URL, iconPacks } );
+
+		expect( mockMermaid.registerIconPacks ).toHaveBeenCalledWith( [
+			{ name: 'fa', loader: expect.any( Function ) },
+		] );
+		expect( global.fetch ).not.toHaveBeenCalled();
+	} );
+
+	it( 'are given to Pele as a resolver, with no fetch for a diagram without icons', async () => {
+		const { default: loadRenderer } = getModule();
+		const renderer = await loadRenderer( {
+			renderer: 'pele',
+			peleUrl: PELE_URL,
+			iconPacks,
+		} );
+
+		await draw( renderer, 'flowchart LR\nA --> B' );
+
+		expect( mockPele.render.mock.lastCall[ 1 ].icons ).toEqual(
+			expect.any( Function )
+		);
+		expect( global.fetch ).not.toHaveBeenCalled();
+	} );
+
+	it( 'are not registered on a page that has none', async () => {
+		const { default: loadRenderer } = getModule();
+
+		await loadRenderer( { mermaidUrl: MERMAID_URL } );
+
+		expect( mockMermaid.registerIconPacks ).not.toHaveBeenCalled();
+	} );
 } );
 
 describe( 'getRendererUrl', () => {

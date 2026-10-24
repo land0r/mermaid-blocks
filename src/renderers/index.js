@@ -4,7 +4,7 @@
 import MERMAID_CONFIG from '../utils/mermaid-config';
 import { createMermaidRenderer } from './mermaid';
 import { createPeleRenderer } from './pele';
-import { MATH_URL, PELE_OPTIONS } from '../editor/settings';
+import { ICON_PACKS, MATH_URL, PELE_OPTIONS } from '../editor/settings';
 import loadMath from '../frontend/load-math';
 
 /**
@@ -67,6 +67,7 @@ export function getRenderer( view ) {
 				createPeleRenderer( library, {
 					doc: owner.document,
 					site: PELE_OPTIONS,
+					iconPacks: ICON_PACKS,
 					loadMath: MATH_URL ? () => loadMath( MATH_URL ) : undefined,
 				} )
 			);
@@ -74,7 +75,7 @@ export function getRenderer( view ) {
 			library.initialize( MERMAID_CONFIG );
 			renderers.set(
 				library,
-				createMermaidRenderer( library, owner.document )
+				createMermaidRenderer( library, owner.document, ICON_PACKS )
 			);
 		}
 	}

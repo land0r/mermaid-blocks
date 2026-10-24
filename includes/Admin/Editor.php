@@ -12,6 +12,7 @@ use MermaidBlocks\Files;
 use MermaidBlocks\Hookable;
 use MermaidBlocks\Integrations\Block;
 use MermaidBlocks\Options;
+use MermaidBlocks\IconPacks;
 use MermaidBlocks\PeleOptions;
 use MermaidBlocks\Themes;
 use WP_Block_Type_Registry;
@@ -55,6 +56,13 @@ final class Editor implements Hookable {
 	private PeleOptions $pele_options;
 
 	/**
+	 * The icon packs a site registers.
+	 *
+	 * @var IconPacks
+	 */
+	private IconPacks $icon_packs;
+
+	/**
 	 * The paths and URLs of what `build/` holds.
 	 *
 	 * @var Files
@@ -68,13 +76,15 @@ final class Editor implements Hookable {
 	 * @param Options      $options       The stored settings.
 	 * @param SettingsPage $settings_page The settings page.
 	 * @param PeleOptions  $pele_options  The options a site gives Pele.
+	 * @param IconPacks    $icon_packs    The icon packs a site registers.
 	 * @param Files        $files         The paths and URLs of the build.
 	 */
-	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page, PeleOptions $pele_options, Files $files ) {
+	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page, PeleOptions $pele_options, IconPacks $icon_packs, Files $files ) {
 		$this->themes        = $themes;
 		$this->options       = $options;
 		$this->settings_page = $settings_page;
 		$this->pele_options  = $pele_options;
+		$this->icon_packs    = $icon_packs;
 		$this->files         = $files;
 	}
 
@@ -140,7 +150,8 @@ final class Editor implements Hookable {
 	 * preview of a block without a theme of its own is drawn in, and, to those
 	 * who may change that one, where. It also tells whether to draw the images
 	 * of the diagrams of a post: see Images\ImageSync. With Pele, it also
-	 * tells the options the site gives it.
+	 * tells the options the site gives it. The icon packs the site registers
+	 * are told with either renderer.
 	 */
 	public function add_editor_settings(): void {
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
@@ -162,6 +173,7 @@ final class Editor implements Hookable {
 				'mathUrl'      => add_query_arg( 'ver', $math['version'], $this->files->get_build_url( 'math.js' ) ),
 			)
 		);
+		$settings = $this->icon_packs->add_to( $settings );
 
 		// The block's own editor script: the libraries are not.
 		foreach ( array_diff( $block_type->editor_script_handles, Assets::LIBRARIES ) as $handle ) {

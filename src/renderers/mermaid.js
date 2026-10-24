@@ -1,6 +1,7 @@
 import MERMAID_CONFIG, { mergeConfig } from '../utils/mermaid-config';
 import { AUTO_LIGHT, getThemeConfig } from '../utils/themes';
 import { getParsedText } from '../utils/source-line';
+import { loadPack } from '../frontend/icons';
 import { getMessage, toError } from './error';
 
 /*
@@ -16,6 +17,9 @@ import { getMessage, toError } from './error';
  */
 const configs = new WeakMap();
 const renders = new WeakMap();
+
+// The Mermaid instances that were given the site's icon packs.
+const withPacks = new WeakSet();
 
 // What Mermaid starts out with: see load-mermaid.js and index.js.
 const INITIAL_CONFIG = JSON.stringify( MERMAID_CONFIG );
@@ -226,6 +230,37 @@ function parse( mermaid, code ) {
 }
 
 /**
+ * Registers the site's icon packs with Mermaid, once. Mermaid calls a pack's
+ * loader only for a diagram that uses one of its icons, and shows its own mark
+ * for an icon it can't have.
+ *
+ * @param {Object}                 mermaid The Mermaid API object.
+ * @param {Object<string, string>} packs   The URL of the Iconify JSON of each
+ *                                         pack, by name.
+ */
+function registerIconPacks( mermaid, packs ) {
+	if ( withPacks.has( mermaid ) || ! Object.keys( packs ).length ) {
+		return;
+	}
+
+	withPacks.add( mermaid );
+	mermaid.registerIconPacks(
+		Object.entries( packs ).map( ( [ name, url ] ) => ( {
+			name,
+			loader: async () => {
+				const data = await loadPack( url );
+
+				if ( ! data ) {
+					throw new Error( `The icon pack ${ name } is not loaded.` );
+				}
+
+				return data;
+			},
+		} ) )
+	);
+}
+
+/**
  * Wraps a Mermaid API object in the renderer interface, which Pele has too:
  *
  * - `draw( code, theme, element, id )` resolves to `{ svg }`, or to
@@ -238,13 +273,23 @@ function parse( mermaid, code ) {
  *   properties, so its diagrams change colours in place, without being drawn
  *   again. Mermaid.js's SVG has its colours in it.
  *
- * @param {Object}   mermaid The Mermaid API object.
- * @param {Document} [doc]   The document of the window Mermaid runs in.
+ * @param {Object}                 mermaid     The Mermaid API object.
+ * @param {Document}               [doc]       The document of the window Mermaid
+ *                                             runs in.
+ * @param {Object<string, string>} [iconPacks] The URL of the Iconify JSON of
+ *                                             each icon pack the site
+ *                                             registered, by name.
  *
  * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function}}
  * The renderer.
  */
-export function createMermaidRenderer( mermaid, doc = document ) {
+export function createMermaidRenderer(
+	mermaid,
+	doc = document,
+	iconPacks = {}
+) {
+	registerIconPacks( mermaid, iconPacks );
+
 	return {
 		name: 'mermaid',
 		document: doc,

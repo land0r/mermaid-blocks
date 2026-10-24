@@ -542,3 +542,147 @@ describe( 'math', () => {
 		error.mockRestore();
 	} );
 } );
+
+describe( 'icons', () => {
+	const fa = {
+		prefix: 'fa',
+		width: 512,
+		height: 512,
+		icons: {
+			car: { body: '<path id="car"/>' },
+			user: { body: '<path id="user"/>' },
+		},
+	};
+	const logos = {
+		prefix: 'logos',
+		icons: { aws: { body: '<g id="aws"/>' } },
+	};
+	const label = 'flowchart LR\nA["fa:fa-car Car"] --> B["fa:fa-github Hub"]';
+	const shape = 'flowchart LR\nA@{ icon: "fa:user", label: "User" }';
+	const architecture =
+		'architecture-beta\nservice a(logos:aws)[AWS]\nservice d(database)[DB]\na:R -- L:d';
+	let n = 0;
+	let packs;
+
+	const spy = () => {
+		const module = { ...pele, render: jest.fn( pele.render ) };
+
+		return { module, render: module.render };
+	};
+	const make = ( module = pele, extra = {} ) =>
+		createPeleRenderer( module, {
+			measurer,
+			iconPacks: { fa: `/fa-${ n }.json`, logos: `/logos-${ n }.json` },
+			...extra,
+		} );
+	const drawWith = ( own, code ) =>
+		own.draw( code, 'auto-light', document.body, 'x' );
+
+	beforeEach( () => {
+		n++;
+		packs = { [ `/fa-${ n }.json` ]: fa, [ `/logos-${ n }.json` ]: logos };
+		global.fetch = jest.fn( ( url ) =>
+			Promise.resolve( {
+				ok: true,
+				json: () => Promise.resolve( packs[ url ] ),
+			} )
+		);
+	} );
+
+	afterEach( () => {
+		jest.restoreAllMocks();
+		delete global.fetch;
+	} );
+
+	it( 'draws the icon of a label, with the pack fetched for it', async () => {
+		const { svg } = await drawWith( make(), label );
+
+		expect( svg ).toContain( 'data-icon="fa:fa-car"' );
+		expect( svg ).toContain( '<path id="car"/>' );
+		expect( svg ).toMatch( /<svg[^>]*viewBox="0 0 512 512"/ );
+	} );
+
+	it( 'draws an icon shape and an architecture icon', async () => {
+		expect( ( await drawWith( make(), shape ) ).svg ).toContain(
+			'<path id="user"/>'
+		);
+
+		const { svg } = await drawWith( make(), architecture );
+
+		expect( svg ).toContain( '<g id="aws"/>' );
+		// The built-in symbol is Pele's own.
+		expect( svg ).toContain( 'data-icon="database"' );
+	} );
+
+	it( 'draws again only when a pack had to be loaded', async () => {
+		const { module, render } = spy();
+		const own = make( module );
+
+		await drawWith( own, label );
+		expect( render ).toHaveBeenCalledTimes( 2 );
+
+		await drawWith( own, shape );
+		expect( render ).toHaveBeenCalledTimes( 3 );
+		expect( global.fetch ).toHaveBeenCalledTimes( 1 );
+	} );
+
+	it( 'fetches nothing for a diagram that names no icon of a pack', async () => {
+		const { module, render } = spy();
+
+		await drawWith( make( module ), 'flowchart LR\nA --> B' );
+		await drawWith(
+			make( module ),
+			'architecture-beta\nservice d(database)[DB]'
+		);
+
+		expect( global.fetch ).not.toHaveBeenCalled();
+		expect( render ).toHaveBeenCalledTimes( 2 );
+	} );
+
+	it( 'draws without the icons the packs lack', async () => {
+		const { svg } = await drawWith( make(), label );
+
+		// `github` is not in the pack: its label is drawn, with no icon.
+		expect( svg ).toContain( 'Hub' );
+		expect( svg ).not.toContain( 'data-icon="fa:fa-github"' );
+	} );
+
+	it( 'draws without icons when a pack fails to load', async () => {
+		jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+		global.fetch = jest.fn( () =>
+			Promise.reject( new Error( 'offline' ) )
+		);
+
+		const result = await drawWith( make(), label );
+
+		expect( result.error ).toBeUndefined();
+		expect( result.svg ).toContain( 'Car' );
+		expect( result.svg ).not.toContain( 'data-icon' );
+	} );
+
+	it( 'never puts a name from the diagram into markup', async () => {
+		packs[ `/fa-${ n }.json` ] = {
+			icons: { x: { body: '<path/>' } },
+		};
+
+		const { svg } = await drawWith(
+			make(),
+			'flowchart LR\nA@{ icon: "fa:<script>alert(1)</script>", label: "L" }'
+		);
+
+		expect( svg ).not.toContain( '<script>' );
+	} );
+
+	it( 'passes no resolver without packs, and wins over the site', async () => {
+		const { module, render } = spy();
+		const mine = make( module, { iconPacks: undefined } );
+
+		await drawWith( mine, label );
+		expect( render.mock.calls[ 0 ][ 1 ].icons ).toBeUndefined();
+
+		const site = { icons: () => '<g id="site"/>' };
+		const { svg } = await drawWith( make( module, { site } ), label );
+
+		expect( svg ).not.toContain( 'id="site"' );
+	} );
+} );

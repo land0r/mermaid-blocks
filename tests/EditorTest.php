@@ -183,6 +183,27 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The editor is told the icon packs a filter registers, with either
+	 * renderer and only when there are some.
+	 */
+	public function test_tells_the_editor_the_icon_packs(): void {
+		$filter = static function () {
+			return array( 'logos' => 'https://example.com/logos.json' );
+		};
+
+		$this->assertArrayNotHasKey( 'iconPacks', $this->get_editor_settings() );
+
+		add_filter( 'mermaid_blocks_icon_packs', $filter );
+
+		foreach ( array( 'mermaid', 'pele' ) as $renderer ) {
+			update_option( Options::RENDERER, $renderer );
+			$this->assertSame( array( 'logos' => 'https://example.com/logos.json' ), $this->get_editor_settings()['iconPacks'], $renderer );
+		}
+
+		remove_filter( 'mermaid_blocks_icon_packs', $filter );
+	}
+
+	/**
 	 * The script of the editor gets the settings, not the library of the
 	 * renderer, which is one of the block's editor scripts too.
 	 */

@@ -1,6 +1,7 @@
 import { getPaletteName, getPaletteVariables } from '../utils/pele-palette';
 import { getSurface } from '../utils/surface';
 import getContentWidth from '../utils/content-width';
+import { createIcons } from '../frontend/icons';
 import { getMessage, toError } from './error';
 
 /*
@@ -135,27 +136,33 @@ async function loadType( pele, code ) {
  * turn a wide one vertical on a narrow screen. An element with no width gets
  * the full layout: see withFullLayout() in full-layout.js.
  *
- * @param {Object}   pele               The Pele module: the lazy build's, or the
- *                                      single-file build's.
- * @param {Object}   [options]          Options.
- * @param {Document} [options.doc]      The document of the window Pele runs in.
- * @param {Object}   [options.measurer] Measures text, where the browser's
- *                                      canvas can't: see Pele's `TextMeasurer`.
- * @param {Object}   [options.site]     Pele's render options for the site. The
- *                                      options the plugin sets win over them.
- * @param {Function} [options.loadMath] Returns a promise of the math module
- *                                      (`typeset()` of frontend/math.js). Called
- *                                      once, for the first diagram with a
- *                                      formula: no other loads it.
+ * @param {Object}                 pele                The Pele module: the lazy build's, or the
+ *                                                     single-file build's.
+ * @param {Object}                 [options]           Options.
+ * @param {Document}               [options.doc]       The document of the window Pele runs in.
+ * @param {Object}                 [options.measurer]  Measures text, where the browser's
+ *                                                     canvas can't: see Pele's `TextMeasurer`.
+ * @param {Object}                 [options.site]      Pele's render options for the site. The
+ *                                                     options the plugin sets win over them.
+ * @param {Object<string, string>} [options.iconPacks] The URL of the Iconify
+ *                                                     JSON of each icon pack the site
+ *                                                     registered, by name. A pack is fetched
+ *                                                     for the first diagram that names one of
+ *                                                     its icons.
+ * @param {Function}               [options.loadMath]  Returns a promise of the math module
+ *                                                     (`typeset()` of frontend/math.js). Called
+ *                                                     once, for the first diagram with a
+ *                                                     formula: no other loads it.
  *
  * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function, forgetTextWidths: Function}}
  * The renderer.
  */
 export function createPeleRenderer(
 	pele,
-	{ doc = document, measurer, site, loadMath } = {}
+	{ doc = document, measurer, site, loadMath, iconPacks } = {}
 ) {
 	let mathModule = null;
+	const icons = iconPacks ? createIcons( iconPacks ) : null;
 
 	/**
 	 * Loads the math module, once. A module that fails to load is logged, and
@@ -179,6 +186,43 @@ export function createPeleRenderer(
 		}
 
 		return mathModule;
+	};
+
+	/**
+	 * Renders with the icons of the site's packs. The resolver Pele calls is
+	 * synchronous, so a pack that isn't loaded yet is loaded after a first
+	 * drawing that notes the names asked for, and the diagram is drawn again:
+	 * only then.
+	 *
+	 * @param {string} code    The Mermaid source.
+	 * @param {Object} options Pele's options.
+	 *
+	 * @return {Promise<Object>} Pele's result.
+	 */
+	const renderWithIcons = async ( code, options ) => {
+		if ( ! icons ) {
+			delete options.icons;
+
+			return pele.render( code, options );
+		}
+
+		const asked = new Set();
+
+		options.icons = ( name ) => {
+			asked.add( name );
+
+			return icons.get( name );
+		};
+
+		const result = pele.render( code, options );
+
+		if ( ! icons.hasUnloaded( asked ) ) {
+			return result;
+		}
+
+		await icons.load( asked );
+
+		return pele.render( code, options );
 	};
 
 	return {
@@ -238,7 +282,7 @@ export function createPeleRenderer(
 					delete options.math;
 				}
 
-				const { svg } = pele.render( code, options );
+				const { svg } = await renderWithIcons( code, options );
 
 				return { svg: withId( withFont( svg, font ), id ) };
 			} catch ( error ) {

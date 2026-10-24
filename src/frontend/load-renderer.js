@@ -28,6 +28,8 @@ function loadPele( url ) {
  * @param {string} settings.peleUrl       URL of `build/pele/lazy.js`.
  * @param {string} [settings.mathUrl]     URL of `build/math.js`.
  * @param {Object} [settings.peleOptions] Pele's render options for the site.
+ * @param {Object} [settings.iconPacks]   The URL of the Iconify JSON of each icon
+ *                                        pack the site registered, by name.
  *
  * @return {Promise<Object>} The renderer: see createMermaidRenderer(). Rejects
  * when it could not be loaded.
@@ -41,10 +43,17 @@ export default function loadRenderer( settings ) {
 				? loadPele( peleUrl ).then( ( pele ) =>
 						createPeleRenderer( pele, {
 							site: settings.peleOptions,
+							iconPacks: settings.iconPacks,
 							loadMath: () => loadMath( getMathUrl( settings ) ),
 						} )
 				  )
-				: loadMermaid( mermaidUrl ).then( createMermaidRenderer );
+				: loadMermaid( mermaidUrl ).then( ( mermaid ) =>
+						createMermaidRenderer(
+							mermaid,
+							document,
+							settings.iconPacks
+						)
+				  );
 	}
 
 	return loading;

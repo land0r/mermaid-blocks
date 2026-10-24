@@ -71,16 +71,25 @@ final class Assets implements Hookable {
 	private PeleOptions $pele_options;
 
 	/**
+	 * The icon packs a site registers.
+	 *
+	 * @var IconPacks
+	 */
+	private IconPacks $icon_packs;
+
+	/**
 	 * Sets up the assets.
 	 *
 	 * @param Files       $files        The plugin's files.
 	 * @param Options     $options      The stored settings.
 	 * @param PeleOptions $pele_options The options a site gives Pele.
+	 * @param IconPacks   $icon_packs   The icon packs a site registers.
 	 */
-	public function __construct( Files $files, Options $options, PeleOptions $pele_options ) {
+	public function __construct( Files $files, Options $options, PeleOptions $pele_options, IconPacks $icon_packs ) {
 		$this->files        = $files;
 		$this->options      = $options;
 		$this->pele_options = $pele_options;
+		$this->icon_packs   = $icon_packs;
 	}
 
 	/**
@@ -153,7 +162,7 @@ final class Assets implements Hookable {
 
 	/**
 	 * Tells the front-end script the renderer, where to load it, the controls
-	 * and the math module from, the options of Pele, and the labels of the
+	 * and the math module from, the options of Pele, the icon packs, and the labels of the
 	 * controls. It is told when the scripts of the page are enqueued, on the
 	 * front end and in the admin.
 	 */
@@ -195,7 +204,7 @@ final class Assets implements Hookable {
 
 		wp_add_inline_script(
 			self::DIAGRAM,
-			'var mermaidBlocksSettings = ' . wp_json_encode( $this->pele_options->add_to( $settings ) ) . ';',
+			'var mermaidBlocksSettings = ' . wp_json_encode( $this->icon_packs->add_to( $this->pele_options->add_to( $settings ) ) ) . ';',
 			'before'
 		);
 	}

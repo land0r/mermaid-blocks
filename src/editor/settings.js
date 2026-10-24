@@ -56,3 +56,7 @@ export const PELE_OPTIONS = settings.peleOptions || undefined;
 
 // Where the math module is, `build/math.js`, which draws the formulas of Pele diagrams.
 export const MATH_URL = settings.mathUrl || '';
+
+// The URL of the Iconify JSON of each icon pack the site registered, by name,
+// for either renderer.
+export const ICON_PACKS = settings.iconPacks || undefined;

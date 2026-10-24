@@ -117,6 +117,30 @@ class AssetsTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The script is told the icon packs a filter registers, with either
+	 * renderer and only when there are some.
+	 */
+	public function test_tells_the_script_the_icon_packs(): void {
+		$filter = static function () {
+			return array(
+				'fa'   => 'https://example.com/fa.json',
+				'Bad!' => 'https://example.com/bad.json',
+			);
+		};
+
+		$this->assertArrayNotHasKey( 'iconPacks', $this->get_settings() );
+
+		add_filter( 'mermaid_blocks_icon_packs', $filter );
+
+		foreach ( array( 'mermaid', 'pele' ) as $renderer ) {
+			update_option( Options::RENDERER, $renderer );
+			$this->assertSame( array( 'fa' => 'https://example.com/fa.json' ), $this->get_settings()['iconPacks'], $renderer );
+		}
+
+		remove_filter( 'mermaid_blocks_icon_packs', $filter );
+	}
+
+	/**
 	 * The renderer a filter picks is the one the script is told, even for a
 	 * request the filter looks at once the query ran.
 	 */
