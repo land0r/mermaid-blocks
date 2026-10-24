@@ -8,6 +8,7 @@
 namespace MermaidBlocks\Admin;
 
 use MermaidBlocks\Assets;
+use MermaidBlocks\Files;
 use MermaidBlocks\Hookable;
 use MermaidBlocks\Integrations\Block;
 use MermaidBlocks\Options;
@@ -54,18 +55,27 @@ final class Editor implements Hookable {
 	private PeleOptions $pele_options;
 
 	/**
+	 * The paths and URLs of what `build/` holds.
+	 *
+	 * @var Files
+	 */
+	private Files $files;
+
+	/**
 	 * Sets up what the editor needs.
 	 *
 	 * @param Themes       $themes        The themes a diagram can be drawn in.
 	 * @param Options      $options       The stored settings.
 	 * @param SettingsPage $settings_page The settings page.
 	 * @param PeleOptions  $pele_options  The options a site gives Pele.
+	 * @param Files        $files         The paths and URLs of the build.
 	 */
-	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page, PeleOptions $pele_options ) {
+	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page, PeleOptions $pele_options, Files $files ) {
 		$this->themes        = $themes;
 		$this->options       = $options;
 		$this->settings_page = $settings_page;
 		$this->pele_options  = $pele_options;
+		$this->files         = $files;
 	}
 
 	/**
@@ -139,6 +149,8 @@ final class Editor implements Hookable {
 			return;
 		}
 
+		$math = $this->files->get_build_asset( 'math' );
+
 		$settings = $this->pele_options->add_to(
 			array(
 				'themes'       => $this->themes->get_offered(),
@@ -147,6 +159,7 @@ final class Editor implements Hookable {
 				'theme'        => $this->themes->get_site_theme(),
 				'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
 				'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
+				'mathUrl'      => add_query_arg( 'ver', $math['version'], $this->files->get_build_url( 'math.js' ) ),
 			)
 		);
 

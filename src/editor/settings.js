@@ -53,3 +53,6 @@ export function getShownTheme( theme ) {
 
 // Pele's render options for the site, which the renderer merges under its own.
 export const PELE_OPTIONS = settings.peleOptions || undefined;
+
+// Where the math module is, `build/math.js`, which draws the formulas of Pele diagrams.
+export const MATH_URL = settings.mathUrl || '';

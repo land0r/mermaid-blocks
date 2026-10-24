@@ -73,6 +73,21 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The editor is told where the math module is, for the formulas of Pele
+	 * diagrams, with the version of the file. Whatever the renderer is.
+	 */
+	public function test_tells_the_editor_where_the_math_module_is(): void {
+		$files = mermaid_blocks()->get( Files::class );
+		$asset = $files->get_build_asset( 'math' );
+
+		$this->assertNotEmpty( $asset['version'] );
+		$this->assertSame(
+			$files->get_build_url( 'math.js' ) . '?ver=' . $asset['version'],
+			$this->get_editor_settings()['mathUrl']
+		);
+	}
+
+	/**
 	 * The editor is told the themes, the site's theme, and where it is set.
 	 */
 	public function test_tells_the_editor_the_themes(): void {

@@ -436,3 +436,109 @@ describe( 'the Pele renderer', () => {
 		} );
 	} );
 } );
+
+describe( 'math', () => {
+	const formula = 'flowchart LR\nA["$$x^2 + y^2 = z^2$$"] --> B';
+	const plain = 'flowchart LR\nA --> B';
+	const mathModule = jest.requireActual( '../../frontend/math' );
+	const drawWith = ( own, code, element = document.body ) =>
+		own.draw( code, 'auto-light', element, 'x' );
+
+	// jsdom lays nothing out, and Pele ignores a formula with no size.
+	beforeEach( () => {
+		jest.spyOn(
+			window.Element.prototype,
+			'getBoundingClientRect'
+		).mockReturnValue( { width: 60, height: 20 } );
+	} );
+
+	afterEach( () => {
+		jest.restoreAllMocks();
+	} );
+
+	it( 'is typeset by the module, loaded once, for code with $$', async () => {
+		const loadMath = jest.fn( () => Promise.resolve( mathModule ) );
+		const own = createPeleRenderer( pele, { measurer, loadMath } );
+
+		const first = await drawWith( own, formula );
+		await drawWith( own, formula );
+
+		expect( first.svg ).toContain( '<math' );
+		expect( loadMath ).toHaveBeenCalledTimes( 1 );
+	} );
+
+	it( 'is never loaded for code without $$', async () => {
+		const loadMath = jest.fn( () => Promise.resolve( mathModule ) );
+		const own = createPeleRenderer( pele, { measurer, loadMath } );
+
+		const { svg } = await drawWith( own, plain );
+
+		expect( svg ).not.toContain( '<math' );
+		expect( loadMath ).not.toHaveBeenCalled();
+	} );
+
+	it( 'shows the source of a formula Temml can not parse', async () => {
+		const own = createPeleRenderer( pele, {
+			measurer,
+			loadMath: () => Promise.resolve( mathModule ),
+		} );
+
+		const { svg, error } = await drawWith(
+			own,
+			'flowchart LR\nA["$$\\frac{a$$"] --> B'
+		);
+
+		expect( error ).toBeUndefined();
+		expect( svg ).not.toContain( '<math' );
+		expect( svg ).toContain( 'frac' );
+	} );
+
+	it( 'is measured in the document of the diagram', async () => {
+		const other = document.implementation.createHTMLDocument( '' );
+		const element = other.createElement( 'div' );
+		const typeset = jest.fn( () => null );
+		const own = createPeleRenderer( pele, {
+			measurer,
+			loadMath: () => Promise.resolve( { typeset } ),
+		} );
+
+		other.body.appendChild( element );
+		await drawWith( own, formula, element );
+
+		expect( typeset ).toHaveBeenCalledWith(
+			'x^2 + y^2 = z^2',
+			expect.any( Number ),
+			other
+		);
+	} );
+
+	it( 'wins over a resolver in the options of the site', async () => {
+		const site = { math: jest.fn() };
+		const own = createPeleRenderer( pele, {
+			measurer,
+			site,
+			loadMath: () => Promise.resolve( mathModule ),
+		} );
+
+		const { svg } = await drawWith( own, formula );
+
+		expect( svg ).toContain( '<math' );
+		expect( site.math ).not.toHaveBeenCalled();
+	} );
+
+	it( 'is left out, and the error logged, when the module fails to load', async () => {
+		const error = jest.spyOn( console, 'error' ).mockImplementation();
+		const own = createPeleRenderer( pele, {
+			measurer,
+			loadMath: () => Promise.reject( new Error( 'offline' ) ),
+		} );
+
+		const result = await drawWith( own, formula );
+
+		expect( result.error ).toBeUndefined();
+		expect( result.svg ).not.toContain( '<math' );
+		expect( error ).toHaveBeenCalledTimes( 1 );
+
+		error.mockRestore();
+	} );
+} );

@@ -1,4 +1,5 @@
 import loadMermaid from './load-mermaid';
+import loadMath, { getMathUrl } from './load-math';
 import { createMermaidRenderer } from '../renderers/mermaid';
 import { createPeleRenderer } from '../renderers/pele';
 
@@ -25,6 +26,7 @@ function loadPele( url ) {
  * @param {string} settings.renderer      `pele`, or `mermaid`.
  * @param {string} settings.mermaidUrl    URL of `build/mermaid/mermaid.esm.min.js`.
  * @param {string} settings.peleUrl       URL of `build/pele/lazy.js`.
+ * @param {string} [settings.mathUrl]     URL of `build/math.js`.
  * @param {Object} [settings.peleOptions] Pele's render options for the site.
  *
  * @return {Promise<Object>} The renderer: see createMermaidRenderer(). Rejects
@@ -39,6 +41,7 @@ export default function loadRenderer( settings ) {
 				? loadPele( peleUrl ).then( ( pele ) =>
 						createPeleRenderer( pele, {
 							site: settings.peleOptions,
+							loadMath: () => loadMath( getMathUrl( settings ) ),
 						} )
 				  )
 				: loadMermaid( mermaidUrl ).then( createMermaidRenderer );

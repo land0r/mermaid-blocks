@@ -152,10 +152,10 @@ final class Assets implements Hookable {
 	}
 
 	/**
-	 * Tells the front-end script the renderer, where to load it and the
-	 * controls from, the options of Pele, and the labels of the controls. It
-	 * is told when the scripts of the page are enqueued, on the front end and
-	 * in the admin.
+	 * Tells the front-end script the renderer, where to load it, the controls
+	 * and the math module from, the options of Pele, and the labels of the
+	 * controls. It is told when the scripts of the page are enqueued, on the
+	 * front end and in the admin.
 	 */
 	public function add_settings(): void {
 		// Once: the script is enqueued by one action or the other, on most requests by both.
@@ -168,6 +168,7 @@ final class Assets implements Hookable {
 		$mermaid  = $this->files->get_build_asset( 'mermaid' );
 		$pele     = $this->files->get_build_asset( 'pele' );
 		$controls = $this->files->get_build_asset( 'controls' );
+		$math     = $this->files->get_build_asset( 'math' );
 
 		// The script has no dependencies, so its few labels are translated here.
 		$settings = array(
@@ -175,6 +176,7 @@ final class Assets implements Hookable {
 			'mermaidUrl'  => add_query_arg( 'ver', $mermaid['version'], $this->files->get_build_url( 'mermaid/mermaid.esm.min.js' ) ),
 			'peleUrl'     => add_query_arg( 'ver', $pele['version'], $this->files->get_build_url( 'pele/lazy.js' ) ),
 			'controlsUrl' => add_query_arg( 'ver', $controls['version'], $this->files->get_build_url( 'controls.js' ) ),
+			'mathUrl'     => add_query_arg( 'ver', $math['version'], $this->files->get_build_url( 'math.js' ) ),
 			'i18n'        => array(
 				'controls'       => __( 'Diagram controls', 'mermaid-blocks' ),
 				'zoomIn'         => __( 'Zoom in', 'mermaid-blocks' ),

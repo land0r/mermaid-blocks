@@ -179,6 +179,23 @@ class AssetsTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The math module is a module of its own, which Pele diagrams import by its
+	 * URL, with the version of that file. It is told whatever the renderer is:
+	 * as Pele's URL is.
+	 */
+	public function test_says_where_the_math_module_is(): void {
+		$asset = $this->files->get_build_asset( 'math' );
+
+		$this->assertNotEmpty( $asset['version'] );
+		$this->assertSame( 'module', $asset['type'] );
+		$this->assertFileExists( $this->files->get_build_path( 'math.js' ) );
+		$this->assertSame(
+			$this->files->get_build_url( 'math.js' ) . '?ver=' . $asset['version'],
+			$this->get_settings()['mathUrl']
+		);
+	}
+
+	/**
 	 * The script gets the labels of the controls, which it can't translate.
 	 */
 	public function test_passes_the_labels_of_the_controls(): void {

@@ -143,14 +143,44 @@ async function loadType( pele, code ) {
  *                                      canvas can't: see Pele's `TextMeasurer`.
  * @param {Object}   [options.site]     Pele's render options for the site. The
  *                                      options the plugin sets win over them.
+ * @param {Function} [options.loadMath] Returns a promise of the math module
+ *                                      (`typeset()` of frontend/math.js). Called
+ *                                      once, for the first diagram with a
+ *                                      formula: no other loads it.
  *
  * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function, forgetTextWidths: Function}}
  * The renderer.
  */
 export function createPeleRenderer(
 	pele,
-	{ doc = document, measurer, site } = {}
+	{ doc = document, measurer, site, loadMath } = {}
 ) {
+	let math = null;
+
+	/**
+	 * Loads the math module, once. A module that fails to load is logged, and
+	 * diagrams are drawn without math: a label shows the TeX it was written in.
+	 *
+	 * @return {Promise<?Object>} The module, or null.
+	 */
+	const getMath = () => {
+		if ( ! math ) {
+			math = Promise.resolve()
+				.then( loadMath )
+				.catch( ( error ) => {
+					// eslint-disable-next-line no-console
+					console.error(
+						'Mermaid Blocks: failed to load the math module.',
+						error
+					);
+
+					return null;
+				} );
+		}
+
+		return math;
+	};
+
 	return {
 		name: 'pele',
 		document: doc,
@@ -194,6 +224,18 @@ export function createPeleRenderer(
 
 				if ( measurer ) {
 					options.measurer = measurer;
+				}
+
+				// Temml, for a diagram that has a formula. The formula is measured
+				// in the document of the diagram, which in the editor is the canvas.
+				const typesetter =
+					loadMath && code.includes( '$$' ) ? await getMath() : null;
+
+				if ( typesetter ) {
+					options.math = ( tex, size ) =>
+						typesetter.typeset( tex, size, element.ownerDocument );
+				} else {
+					delete options.math;
 				}
 
 				const { svg } = pele.render( code, options );
