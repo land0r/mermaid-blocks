@@ -62,7 +62,7 @@ A developer can choose the renderer for a request, such as Pele only on some pag
 A developer can set what Pele may do with the `mermaid_blocks_pele_options` filter. It applies only when the renderer is Pele. People who write diagrams can't set these options: the site decides what a diagram may do, such as showing links and images.
 
 - `links`, `images`: true or false, to allow links and images in diagrams.
-- `linkSchemes`, `imageSchemes`: lists of the URL schemes they may use, such as `https`.
+- `linkSchemes`, `imageSchemes`: lists of the URL schemes they may use, such as `https`. A list with anything but strings in it is ignored.
 - `linkRel`: the `rel` of links.
 - `fontSize`, `padding`, `directionBreakpoint`: positive numbers. `directionBreakpoint` is the width in pixels below which a wide diagram may turn vertical.
 - `autoDirection`: true or false, to turn that off.

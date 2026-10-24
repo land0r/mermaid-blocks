@@ -5,7 +5,7 @@ import MERMAID_CONFIG from '../utils/mermaid-config';
 import { createMermaidRenderer } from './mermaid';
 import { createPeleRenderer } from './pele';
 import { ICON_PACKS, MATH_URL, PELE_OPTIONS } from '../editor/settings';
-import loadMath from '../frontend/load-math';
+import loadMath from '../utils/load-math';
 
 /**
  * The renderers made for each loaded library, so a window always gets the

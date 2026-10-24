@@ -1,7 +1,7 @@
 import { getPaletteName, getPaletteVariables } from '../utils/pele-palette';
 import { getSurface } from '../utils/surface';
 import getContentWidth from '../utils/content-width';
-import { createIcons } from '../frontend/icons';
+import { createIcons } from '../utils/icons';
 import { getMessage, toError } from './error';
 
 /*

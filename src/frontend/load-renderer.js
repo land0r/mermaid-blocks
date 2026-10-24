@@ -1,5 +1,5 @@
 import loadMermaid from './load-mermaid';
-import loadMath, { getMathUrl } from './load-math';
+import loadMath, { getMathUrl } from '../utils/load-math';
 import { createMermaidRenderer } from '../renderers/mermaid';
 import { createPeleRenderer } from '../renderers/pele';
 

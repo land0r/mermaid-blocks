@@ -170,7 +170,7 @@ const WORDPRESS_MODULES = [
 // The client-side abilities are a script module: the Abilities API is one.
 // So are the controls of diagrams, which the front end imports by URL when a
 // diagram asks for one (see src/frontend/load-controls.js), and the math
-// module, which a Pele diagram with a formula imports (src/frontend/load-math.js).
+// module, which a Pele diagram with a formula imports (src/utils/load-math.js).
 const withModules = ( config ) => ( {
 	...config,
 	entry: () => ( {

@@ -1,7 +1,7 @@
 import MERMAID_CONFIG, { mergeConfig } from '../utils/mermaid-config';
 import { AUTO_LIGHT, getThemeConfig } from '../utils/themes';
 import { getParsedText } from '../utils/source-line';
-import { loadPack } from '../frontend/icons';
+import { loadPack } from '../utils/icons';
 import { getMessage, toError } from './error';
 
 /*
