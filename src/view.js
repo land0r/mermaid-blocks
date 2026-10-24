@@ -145,6 +145,13 @@ function redrawForFonts() {
  * @return {Promise<void>} Resolves when the diagram has been processed.
  */
 function renderNow( diagram ) {
+	// From the first render on: a font that arrives while the renderer loads
+	// or the diagram draws has been measured in the fallback.
+	if ( ! watchingFonts && settings.renderer === 'pele' ) {
+		watchingFonts = true;
+		watchFonts( redrawForFonts );
+	}
+
 	return loadRenderer( settings )
 		.then( ( renderer ) =>
 			renderDiagrams( renderer, diagram ).then( () =>
@@ -163,11 +170,6 @@ function renderNow( diagram ) {
 			if ( ! watching ) {
 				watching = true;
 				watchSurface( redrawOutdated );
-			}
-
-			if ( ! watchingFonts && settings.renderer === 'pele' ) {
-				watchingFonts = true;
-				watchFonts( redrawForFonts );
 			}
 		} );
 }
