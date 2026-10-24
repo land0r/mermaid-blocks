@@ -32,7 +32,10 @@ class FakeResizeObserver {
 
 // Gives an element the width the test sets, as jsdom lays nothing out.
 const sized = ( element ) =>
-	Object.defineProperty( element, 'clientWidth', { get: () => width } );
+	Object.defineProperty( element, 'clientWidth', {
+		get: () => width,
+		configurable: true,
+	} );
 
 const getViewBox = () =>
 	canvas
@@ -163,12 +166,25 @@ describe( 'redrawOnResize', () => {
 		expect( draw ).not.toHaveBeenCalled();
 	} );
 
-	it( 'watches a canvas once', async () => {
+	it( 'lays the diagram out for its own width, when the canvas keeps another', async () => {
+		await setup( renderer );
+
+		// A theme that pads the diagram: the canvas inside stays as it was.
+		Object.defineProperty( canvas, 'clientWidth', { value: 1280 } );
+
+		await resize( 375 );
+
+		const [ , , narrowWidth, narrowHeight ] = getViewBox();
+
+		expect( narrowHeight ).toBeGreaterThan( narrowWidth );
+	} );
+
+	it( 'watches a diagram once', async () => {
 		await setup( renderer );
 		redrawOnResize( renderer, diagram );
 
 		expect( observers ).toHaveLength( 1 );
-		expect( observers[ 0 ].observe ).toHaveBeenCalledWith( canvas );
+		expect( observers[ 0 ].observe ).toHaveBeenCalledWith( diagram );
 	} );
 
 	it( 'never watches a Mermaid.js diagram', async () => {

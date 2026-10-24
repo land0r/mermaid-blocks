@@ -155,7 +155,7 @@ export function createPeleRenderer(
 	pele,
 	{ doc = document, measurer, site, loadMath } = {}
 ) {
-	let math = null;
+	let mathModule = null;
 
 	/**
 	 * Loads the math module, once. A module that fails to load is logged, and
@@ -164,8 +164,8 @@ export function createPeleRenderer(
 	 * @return {Promise<?Object>} The module, or null.
 	 */
 	const getMath = () => {
-		if ( ! math ) {
-			math = Promise.resolve()
+		if ( ! mathModule ) {
+			mathModule = Promise.resolve()
 				.then( loadMath )
 				.catch( ( error ) => {
 					// eslint-disable-next-line no-console
@@ -178,7 +178,7 @@ export function createPeleRenderer(
 				} );
 		}
 
-		return math;
+		return mathModule;
 	};
 
 	return {

@@ -17,6 +17,7 @@ import { select, subscribe } from '@wordpress/data';
 import { getRenderer, hasRenderer } from '../renderers';
 import { AUTO_LIGHT, THEMES } from '../utils/themes';
 import { getPngBlob, getThemeBackground } from '../utils/export-diagram';
+import { inHiddenElement } from '../utils/full-layout';
 
 // How long to wait for the editor canvas and its Mermaid when the editor
 // opens, and how often to look for them.
@@ -103,29 +104,15 @@ export async function drawImage( renderer, code, theme ) {
 
 	counter += 1;
 
-	/*
-	 * Drawn for a hidden element: it has no width, so Pele lays the diagram out
-	 * in full, whatever the width of the editor, and it inherits the fonts of
-	 * the canvas.
-	 */
-	const probe = renderer.document.createElement( 'div' );
-
-	probe.hidden = true;
-	probe.style.display = 'none';
-	renderer.document.body.appendChild( probe );
-
-	let result;
-
-	try {
-		result = await renderer.draw(
+	// In full, whatever the width of the editor, in the fonts of the canvas.
+	const result = await inHiddenElement( renderer.document.body, ( probe ) =>
+		renderer.draw(
 			code,
 			drawnTheme,
 			probe,
 			`mermaid-blocks-image-${ counter }`
-		);
-	} finally {
-		probe.remove();
-	}
+		)
+	);
 
 	if ( result.error ) {
 		// eslint-disable-next-line no-console

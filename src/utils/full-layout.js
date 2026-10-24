@@ -9,15 +9,40 @@
 import { getAccessibleText, setAccessibleText } from './accessible-text';
 
 /**
+ * Hands a hidden element in `parent` to `callback`, and removes it once that
+ * is done. A diagram drawn for it gets the full layout: it has no width, so
+ * the renderer gives Pele no `maxWidth`, and it inherits the fonts and the
+ * `--pele-*` variables of `parent`.
+ *
+ * @param {HTMLElement} parent   Where the diagram's styles come from.
+ * @param {Function}    callback Called with the hidden element. Returns what
+ *                               the caller wants back, or a promise of it.
+ *
+ * @return {Promise<*>} What `callback` returned.
+ */
+export async function inHiddenElement( parent, callback ) {
+	const element = parent.ownerDocument.createElement( 'div' );
+
+	element.hidden = true;
+	element.style.display = 'none';
+	parent.appendChild( element );
+
+	try {
+		return await callback( element );
+	} finally {
+		element.remove();
+	}
+}
+
+/**
  * Draws a diagram in its full layout, and hands it on for as long as `use`
  * takes. Where the renderer is not Pele's, the SVG on the page is handed on:
  * Mermaid.js does not lay out for a width.
  *
  * The drawing is made for a hidden element inside the one that holds the SVG
- * on the page. It has no width, so the renderer gives Pele no `maxWidth`, and
- * it inherits the fonts and the `--pele-*` variables of the diagram, which
- * `getSvgMarkup()` writes into the file. It is removed afterwards. If the
- * drawing fails, the SVG on the page is used.
+ * on the page (see inHiddenElement()), so it has the diagram's fonts and
+ * variables, which `getSvgMarkup()` writes into the file. If the drawing
+ * fails, the SVG on the page is used.
  *
  * @param {?Object}       renderer The renderer the diagram is drawn with: see
  *                                 createPeleRenderer().
@@ -36,13 +61,7 @@ export async function withFullLayout( renderer, svg, code, theme, use ) {
 		return use( svg );
 	}
 
-	const probe = svg.ownerDocument.createElement( 'div' );
-
-	probe.hidden = true;
-	probe.style.display = 'none';
-	svg.parentElement.appendChild( probe );
-
-	try {
+	return inHiddenElement( svg.parentElement, async ( probe ) => {
 		const result = await renderer.draw(
 			code,
 			theme,
@@ -61,10 +80,8 @@ export async function withFullLayout( renderer, svg, code, theme, use ) {
 			setAccessibleText( full, getAccessibleText( svg ) );
 		}
 
-		return await use( full || svg );
-	} finally {
-		probe.remove();
-	}
+		return use( full || svg );
+	} );
 }
 
 /**
