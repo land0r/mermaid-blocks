@@ -100,10 +100,29 @@ class SavedImagesTest extends WP_UnitTestCase {
 
 		update_option( Options::RENDERER, 'pele' );
 		$this->assertSame( $pele, $this->images->get_key( self::CODE ) );
-		$this->assertSame( 'mermaid', $this->images->get_other_renderer() );
+	}
+
+	/**
+	 * The image a diagram shows is the one of the request's renderer, or else
+	 * the other renderer's.
+	 */
+	public function test_finds_the_key_of_the_image_a_diagram_shows(): void {
+		$mermaid = $this->images->get_key( self::CODE, '', 'mermaid' );
+		$pele    = $this->images->get_key( self::CODE, '', 'pele' );
+		$image   = array( 'file' => 'f.png' );
+		$both    = array_fill_keys( array( $mermaid, $pele ), $image );
+
+		update_option( Options::RENDERER, 'pele' );
+
+		$this->assertSame( $pele, $this->images->find_key( $both, self::CODE ) );
+		$this->assertSame( $mermaid, $this->images->find_key( array( $mermaid => $image ), self::CODE ) );
+		$this->assertNull( $this->images->find_key( array( $mermaid => $image ), self::CODE, 'forest' ) );
+		$this->assertNull( $this->images->find_key( array(), self::CODE ) );
 
 		update_option( Options::RENDERER, 'mermaid' );
-		$this->assertSame( 'pele', $this->images->get_other_renderer() );
+
+		$this->assertSame( $mermaid, $this->images->find_key( $both, self::CODE ) );
+		$this->assertSame( $pele, $this->images->find_key( array( $pele => $image ), self::CODE ) );
 	}
 
 	/**

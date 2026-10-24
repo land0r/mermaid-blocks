@@ -30,8 +30,9 @@ import { getRenderer } from '../renderers';
 import { THEMES, resolveTheme } from '../utils/themes';
 import { withAccessibleText } from '../utils/accessible-text';
 import watchSurface from '../utils/watch-surface';
-import { getPaletteVariables } from '../utils/pele-palette';
-import { getSurface } from '../utils/surface';
+
+// No drawing: the preview is empty, or shows an error.
+const EMPTY = { svg: '', style: null };
 
 /**
  * Mermaid Diagram Component
@@ -82,10 +83,9 @@ export default function MermaidDiagram( {
 	// Incrementing counter so every render call gets a unique Mermaid id.
 	const renderCounter = useRef( 0 );
 
-	const [ svg, setSvg ] = useState( '' );
-
-	// The colours of a Pele diagram: CSS variables on the preview.
-	const [ palette, setPalette ] = useState( null );
+	// The SVG, and the style its renderer gives the element that holds it,
+	// such as the colours of a Pele diagram.
+	const [ drawing, setDrawing ] = useState( EMPTY );
 	const [ error, setError ] = useState( null );
 
 	// What the diagram is drawn in, known once the preview is in the canvas.
@@ -115,20 +115,16 @@ export default function MermaidDiagram( {
 
 		// Empty or whitespace-only code clears the preview and any error.
 		if ( ! code || ! code.trim() ) {
-			setSvg( '' );
-			setPalette( null );
+			setDrawing( EMPTY );
 			setError( null );
 			return;
 		}
 
-		const renderer = getRenderer(
-			containerRef.current &&
-				containerRef.current.ownerDocument.defaultView
-		);
+		const container = containerRef.current;
+		const renderer = getRenderer( container.ownerDocument.defaultView );
 
 		if ( ! renderer ) {
-			setSvg( '' );
-			setPalette( null );
+			setDrawing( EMPTY );
 			setError( {
 				message: __(
 					'The diagram renderer is not loaded.',
@@ -144,12 +140,7 @@ export default function MermaidDiagram( {
 		const renderId = `mermaid-diagram-${ instanceId }-${ renderCounter.current }`;
 
 		renderer
-			.draw(
-				code,
-				drawnTheme,
-				containerRef.current || renderer.document.body,
-				renderId
-			)
+			.draw( code, drawnTheme, container, renderId )
 			.then( ( result ) => {
 				// A newer render started, or the component unmounted.
 				if ( cancelled ) {
@@ -157,19 +148,13 @@ export default function MermaidDiagram( {
 				}
 
 				if ( result.error ) {
-					setSvg( '' );
-					setPalette( null );
+					setDrawing( EMPTY );
 					setError( result.error );
 				} else {
-					setSvg( result.svg );
-					setPalette(
-						result.palette
-							? getPaletteVariables(
-									result.palette,
-									getSurface( containerRef.current )
-							  )
-							: null
-					);
+					setDrawing( {
+						svg: result.svg,
+						style: renderer.getStyle( code, drawnTheme, container ),
+					} );
 					setError( null );
 				}
 			} );
@@ -180,6 +165,7 @@ export default function MermaidDiagram( {
 	}, [ code, drawnTheme, instanceId ] );
 
 	// As on the front end, where the script writes both into the SVG.
+	const { svg, style } = drawing;
 	const markup = useMemo(
 		() => ( svg ? withAccessibleText( svg, { title, description } ) : '' ),
 		[ svg, title, description ]
@@ -221,7 +207,7 @@ export default function MermaidDiagram( {
 				// Mermaid's own sanitised SVG output.
 				<div
 					className="mermaid-container__diagram"
-					style={ palette || undefined }
+					style={ style || undefined }
 					dangerouslySetInnerHTML={ { __html: markup } }
 				/>
 			) }

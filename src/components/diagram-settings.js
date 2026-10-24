@@ -14,7 +14,7 @@ import {
 } from '@wordpress/components';
 
 import {
-	RENDERER,
+	RENDERER_HELP,
 	SETTINGS_URL,
 	SITE_THEME,
 	THEME_LABELS,
@@ -75,12 +75,7 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 								'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.',
 								'mermaid-blocks'
 							) }
-							{ RENDERER === 'pele' &&
-								' ' +
-									__(
-										'With Pele, a theme counts as light or dark.',
-										'mermaid-blocks'
-									) }
+							{ RENDERER_HELP && ' ' + RENDERER_HELP }
 							{ SETTINGS_URL && (
 								<>
 									{ ' ' }

@@ -2,7 +2,7 @@
 import * as pele from 'pele/lazy';
 
 import { createPeleRenderer } from '../../renderers/pele';
-import { DARK, LIGHT, PALETTES, applyPalette } from '../pele-palette';
+import { DARK, LIGHT, PALETTES, getPaletteVariables } from '../pele-palette';
 import {
 	canCopyImage,
 	copyDiagram,
@@ -438,6 +438,18 @@ describe( 'a Pele diagram', () => {
 	} );
 
 	/**
+	 * Puts CSS variables on an element, as the front end puts a palette on
+	 * the canvas of a diagram.
+	 *
+	 * @param {Element}                element   The element.
+	 * @param {Object<string, string>} variables The value of each variable.
+	 */
+	const setVariables = ( element, variables ) =>
+		Object.entries( variables ).forEach( ( [ name, value ] ) =>
+			element.style.setProperty( name, value )
+		);
+
+	/**
 	 * Draws a diagram with Pele into a canvas on the page, with a palette, as
 	 * the front end does.
 	 *
@@ -457,7 +469,7 @@ describe( 'a Pele diagram', () => {
 		const { svg } = await renderer.draw( code, 'auto-light', canvas, 'p1' );
 
 		canvas.innerHTML = svg;
-		applyPalette( canvas, palette, null );
+		setVariables( canvas, getPaletteVariables( palette, null ) );
 
 		return canvas.querySelector( 'svg' );
 	}
@@ -506,16 +518,21 @@ describe( 'a Pele diagram', () => {
 		expect( markup ).toContain( '#f3f3f3' );
 	} );
 
-	it( 'takes the values it is given for a diagram that is not on a page', async () => {
+	it( 'takes the values on its own style, for a diagram that is not on a page', async () => {
 		const svg = await drawPele( LIGHT );
 		const template = document.createElement( 'template' );
 		template.innerHTML = svg.outerHTML;
 		const detached = template.content.querySelector( 'svg' );
+		setVariables( detached, PALETTES[ DARK ] );
 
-		const markup = getSvgMarkup( detached, 1, PALETTES[ DARK ] );
+		const markup = getSvgMarkup( detached );
 
 		expect( markup ).not.toMatch( /var\(/ );
+		expect( markup ).not.toContain( '--pele' );
 		expect( markup ).toContain( PALETTES[ DARK ][ '--pele-fg' ] );
+		expect( getPngBackground( detached ) ).toBe(
+			PALETTES[ DARK ][ '--pele-bg' ]
+		);
 	} );
 
 	it( 'leaves the diagram on the page untouched', async () => {
@@ -549,10 +566,13 @@ describe( 'a Pele diagram', () => {
 
 	it( 'gets the colour of the surface it was drawn on as the PNG background', async () => {
 		const svg = await drawPele( DARK );
-		applyPalette( svg.parentElement, DARK, {
-			isDark: true,
-			color: 'rgb(17, 24, 39)',
-		} );
+		setVariables(
+			svg.parentElement,
+			getPaletteVariables( DARK, {
+				isDark: true,
+				color: 'rgb(17, 24, 39)',
+			} )
+		);
 
 		expect( getPngBackground( svg ) ).toBe( 'rgb(17, 24, 39)' );
 	} );

@@ -6,6 +6,7 @@ import renderDraw, {
 import * as pele from 'pele/lazy';
 import { createMermaidRenderer } from '../../renderers/mermaid';
 import { createPeleRenderer } from '../../renderers/pele';
+import { DARK, LIGHT, PALETTES } from '../../utils/pele-palette';
 
 // The tests drive Mermaid.js through the renderer interface.
 const renderDiagrams = ( mermaid, ...rest ) =>
@@ -46,6 +47,14 @@ const getDiagram = () => document.querySelector( '.mermaid-blocks-diagram' );
 
 const getCanvas = ( diagram ) =>
 	diagram.querySelector( '.mermaid-blocks-diagram__canvas' );
+
+// The palette of a Pele diagram, by the colour its canvas gives the text.
+const getPalette = ( canvas ) =>
+	[ LIGHT, DARK ].find(
+		( name ) =>
+			PALETTES[ name ][ '--pele-fg' ] ===
+			canvas.style.getPropertyValue( '--pele-fg' )
+	);
 
 // Puts a diagram on a dark surface.
 function darken( diagram ) {
@@ -475,7 +484,7 @@ describe( 'renderDiagrams with Pele', () => {
 
 		const canvas = getCanvas( getDiagram() );
 
-		expect( canvas.dataset.mermaidPalette ).toBe( 'dark' );
+		expect( getPalette( canvas ) ).toBe( 'dark' );
 		expect( canvas.style.getPropertyValue( '--pele-fg' ) ).toBe(
 			'#e6e6e6'
 		);
@@ -492,7 +501,7 @@ describe( 'renderDiagrams with Pele', () => {
 
 		const canvas = getCanvas( getDiagram() );
 
-		expect( canvas.dataset.mermaidPalette ).toBe( 'light' );
+		expect( getPalette( canvas ) ).toBe( 'light' );
 		expect( canvas.style.getPropertyValue( '--pele-bg' ) ).toBe(
 			'#ffffff'
 		);
@@ -503,9 +512,7 @@ describe( 'renderDiagrams with Pele', () => {
 
 		await renderDraw( renderer );
 
-		expect( getCanvas( getDiagram() ).dataset.mermaidPalette ).toBe(
-			'dark'
-		);
+		expect( getPalette( getCanvas( getDiagram() ) ) ).toBe( 'dark' );
 	} );
 
 	it( 'gives the other palette in place when the page turns dark', async () => {
@@ -520,7 +527,7 @@ describe( 'renderDiagrams with Pele', () => {
 		toolbar.className = 'mermaid-blocks-diagram__toolbar';
 		diagram.appendChild( toolbar );
 
-		expect( canvas.dataset.mermaidPalette ).toBe( 'light' );
+		expect( getPalette( canvas ) ).toBe( 'light' );
 		expect( isOutdated( diagram ) ).toBe( false );
 
 		darken( diagram );
@@ -535,7 +542,7 @@ describe( 'renderDiagrams with Pele', () => {
 		expect(
 			diagram.querySelector( '.mermaid-blocks-diagram__toolbar' )
 		).toBe( toolbar );
-		expect( canvas.dataset.mermaidPalette ).toBe( 'dark' );
+		expect( getPalette( canvas ) ).toBe( 'dark' );
 		expect( canvas.dataset.mermaidTheme ).toBe( 'auto-dark' );
 		expect( isOutdated( diagram ) ).toBe( false );
 	} );
@@ -548,6 +555,6 @@ describe( 'renderDiagrams with Pele', () => {
 		darken( diagram );
 		await redrawWith( renderer, diagram );
 
-		expect( getCanvas( diagram ).dataset.mermaidPalette ).toBe( 'light' );
+		expect( getPalette( getCanvas( diagram ) ) ).toBe( 'light' );
 	} );
 } );

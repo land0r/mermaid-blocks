@@ -11,7 +11,6 @@ use MermaidBlocks\Assets;
 use MermaidBlocks\Hookable;
 use MermaidBlocks\Integrations\Block;
 use MermaidBlocks\Options;
-use MermaidBlocks\Renderers;
 use MermaidBlocks\Themes;
 use WP_Block_Type_Registry;
 
@@ -76,7 +75,7 @@ final class Editor implements Hookable {
 	 * @return string The handle of Mermaid.js's or of Pele's single-file build.
 	 */
 	private function get_renderer_handle(): string {
-		return Renderers::PELE === $this->options->get_renderer() ? Assets::PELE : Assets::MERMAID;
+		return Assets::LIBRARIES[ $this->options->get_renderer() ];
 	}
 
 	/**
@@ -93,9 +92,9 @@ final class Editor implements Hookable {
 			return;
 		}
 
-		$handles = array_diff( $block_type->editor_script_handles, array( Assets::MERMAID, Assets::PELE ) );
+		$handles = array_diff( $block_type->editor_script_handles, Assets::LIBRARIES );
 
-		$block_type->editor_script_handles = array_merge( array( $this->get_renderer_handle() ), array_values( $handles ) );
+		$block_type->editor_script_handles = array_merge( array( $this->get_renderer_handle() ), $handles );
 	}
 
 	/**
@@ -116,10 +115,11 @@ final class Editor implements Hookable {
 	}
 
 	/**
-	 * Tells the editor the themes a diagram can have, the site's theme, which
-	 * the preview of a block without a theme of its own is drawn in, and, to
-	 * those who may change that one, where. It also tells whether to draw the
-	 * images of the diagrams of a post: see Images\ImageSync.
+	 * Tells the editor the themes a diagram can have, what they are with the
+	 * site's renderer, the site's theme, which the preview of a block without a
+	 * theme of its own is drawn in, and, to those who may change that one,
+	 * where. It also tells whether to draw the images of the diagrams of a
+	 * post: see Images\ImageSync.
 	 */
 	public function add_editor_settings(): void {
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
@@ -129,15 +129,15 @@ final class Editor implements Hookable {
 		}
 
 		$settings = array(
-			'renderer'    => $this->options->get_renderer(),
-			'themes'      => $this->themes->get_all(),
-			'theme'       => $this->themes->get_site_theme(),
-			'settingsUrl' => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
-			'saveImages'  => $this->options->is_on( Options::SAVE_IMAGES ),
+			'themes'       => $this->themes->get_all(),
+			'rendererHelp' => $this->themes->get_renderer_help(),
+			'theme'        => $this->themes->get_site_theme(),
+			'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
+			'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
 		);
 
 		// The block's own editor script: the libraries are not.
-		foreach ( array_diff( $block_type->editor_script_handles, array( Assets::MERMAID, Assets::PELE ) ) as $handle ) {
+		foreach ( array_diff( $block_type->editor_script_handles, Assets::LIBRARIES ) as $handle ) {
 			wp_add_inline_script(
 				$handle,
 				'var mermaidBlocksEditorSettings = ' . wp_json_encode( $settings ) . ';',

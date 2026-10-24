@@ -10,10 +10,39 @@ const path = require( 'path' );
 const CopyWebpackPlugin = require( 'copy-webpack-plugin' );
 const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
 
-const mermaidDir = path.dirname( require.resolve( 'mermaid/package.json' ) );
-const mermaidVersion = JSON.parse(
-	fs.readFileSync( path.join( mermaidDir, 'package.json' ), 'utf8' )
-).version;
+/**
+ * Returns where an npm package is installed, and its version.
+ *
+ * @param {string} name The package's name.
+ *
+ * @return {{dir: string, version: string}} Its directory and its version.
+ */
+const getPackage = ( name ) => {
+	const dir = path.dirname( require.resolve( `${ name }/package.json` ) );
+	const { version } = JSON.parse(
+		fs.readFileSync( path.join( dir, 'package.json' ), 'utf8' )
+	);
+
+	return { dir, version };
+};
+
+/**
+ * Returns the copy that emits the asset file of a library, so PHP never
+ * hardcodes its version.
+ *
+ * @param {string} name The name of the file, before `.asset.php`.
+ * @param {Object} pkg  The library's package: see getPackage().
+ *
+ * @return {Object} A pattern of the copy plugin.
+ */
+const versionAsset = ( name, pkg ) => ( {
+	from: path.join( pkg.dir, 'package.json' ),
+	to: `${ name }.asset.php`,
+	transform: () => `<?php return array( 'version' => '${ pkg.version }' );\n`,
+} );
+
+const mermaid = getPackage( 'mermaid' );
+const pele = getPackage( 'pele' );
 
 /**
  * Rewrites the imports between the files of Mermaid's ES module build from
@@ -41,11 +70,6 @@ const toJsImports = ( content, absoluteFrom ) => {
 	return code;
 };
 
-const peleDir = path.dirname( require.resolve( 'pele/package.json' ) );
-const peleVersion = JSON.parse(
-	fs.readFileSync( path.join( peleDir, 'package.json' ), 'utf8' )
-).version;
-
 /**
  * Checks that the files of Pele's ES module build import each other by
  * relative `.js` paths, which the copy keeps: any other import would break
@@ -60,9 +84,7 @@ const checkPeleImports = ( content, absoluteFrom ) => {
 	const code = content.toString();
 	const imports = [
 		// `import "x"`, `import a from "x"`, `import { a } from "x"`, `export * from "x"`.
-		...code.matchAll(
-			/\b(?:import|export)\b[^"'`;(]*?(?:\bfrom\b)?\s*(["'])([^"']+)\1/g
-		),
+		...code.matchAll( /\b(?:import|export)\b[^"'`;(]*?(["'])([^"']+)\1/g ),
 		// `import("x")`.
 		...code.matchAll( /\bimport\(\s*(["'])([^"']+)\1\s*\)/g ),
 	].map( ( match ) => match[ 2 ] );
@@ -81,14 +103,14 @@ const checkPeleImports = ( content, absoluteFrom ) => {
 const mermaidCopyPlugin = new CopyWebpackPlugin( {
 	patterns: [
 		{
-			from: path.join( mermaidDir, 'dist', 'mermaid.min.js' ),
+			from: path.join( mermaid.dir, 'dist', 'mermaid.min.js' ),
 			to: 'mermaid.min.js',
 			// Already minified upstream; keep Terser from re-processing it.
 			info: { minimized: true },
 		},
 		{
 			// The entry and the chunks it imports, keeping their relative paths.
-			context: path.join( mermaidDir, 'dist' ),
+			context: path.join( mermaid.dir, 'dist' ),
 			from: '{mermaid.esm.min.mjs,chunks/mermaid.esm.min/*.mjs}',
 			to: 'mermaid/[path][name].js',
 			transform: toJsImports,
@@ -97,7 +119,7 @@ const mermaidCopyPlugin = new CopyWebpackPlugin( {
 		{
 			// Pele's lazy build, for the front end: the entry, and the code of
 			// each diagram type, which it imports on first use.
-			context: path.join( peleDir, 'dist', 'esm' ),
+			context: path.join( pele.dir, 'dist', 'esm' ),
 			from: '**/*.js',
 			to: 'pele/[path][name].js',
 			transform: checkPeleImports,
@@ -105,23 +127,12 @@ const mermaidCopyPlugin = new CopyWebpackPlugin( {
 		},
 		{
 			// Pele's single-file build, for the editor.
-			from: path.join( peleDir, 'dist', 'pele.global.js' ),
+			from: path.join( pele.dir, 'dist', 'pele.global.js' ),
 			to: 'pele.global.js',
 			info: { minimized: true },
 		},
-		{
-			from: path.join( peleDir, 'package.json' ),
-			to: 'pele.asset.php',
-			transform: () =>
-				`<?php return array( 'version' => '${ peleVersion }' );\n`,
-		},
-		{
-			// Emit an asset file so PHP never hardcodes the Mermaid version.
-			from: path.join( mermaidDir, 'package.json' ),
-			to: 'mermaid.asset.php',
-			transform: () =>
-				`<?php return array( 'version' => '${ mermaidVersion }' );\n`,
-		},
+		versionAsset( 'pele', pele ),
+		versionAsset( 'mermaid', mermaid ),
 	],
 } );
 

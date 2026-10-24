@@ -151,11 +151,13 @@ class SettingsPageTest extends WP_UnitTestCase {
 	 * Only a known renderer is kept.
 	 */
 	public function test_keeps_only_a_known_renderer(): void {
-		$this->assertSame( 'pele', $this->settings->sanitize_renderer( 'pele' ) );
-		$this->assertSame( 'mermaid', $this->settings->sanitize_renderer( 'mermaid' ) );
-		$this->assertSame( 'mermaid', $this->settings->sanitize_renderer( 'other' ) );
-		$this->assertSame( 'mermaid', $this->settings->sanitize_renderer( array( 'pele' ) ) );
-		$this->assertSame( 'mermaid', $this->settings->sanitize_renderer( null ) );
+		$this->settings->register();
+
+		$this->assertSame( 'pele', sanitize_option( Options::RENDERER, 'pele' ) );
+		$this->assertSame( 'mermaid', sanitize_option( Options::RENDERER, 'mermaid' ) );
+		$this->assertSame( 'mermaid', sanitize_option( Options::RENDERER, 'other' ) );
+		$this->assertSame( 'mermaid', sanitize_option( Options::RENDERER, array( 'pele' ) ) );
+		$this->assertSame( 'mermaid', sanitize_option( Options::RENDERER, null ) );
 	}
 
 	/**

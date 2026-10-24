@@ -101,6 +101,24 @@ class OptionsTest extends WP_UnitTestCase {
 		update_option( Options::RENDERER, $stored );
 
 		$this->assertSame( $renderer, $this->options->get_renderer() );
+		$this->assertSame( $renderer, $this->options->get_site_renderer() );
+	}
+
+	/**
+	 * The site's renderer is the stored one, whatever a filter picks for the
+	 * request: the settings page shows it.
+	 */
+	public function test_the_site_renderer_is_not_filtered(): void {
+		update_option( Options::RENDERER, 'mermaid' );
+		add_filter(
+			'mermaid_blocks_renderer',
+			static function () {
+				return 'pele';
+			}
+		);
+
+		$this->assertSame( 'mermaid', $this->options->get_site_renderer() );
+		$this->assertSame( 'pele', $this->options->get_renderer() );
 	}
 
 	/**

@@ -17,7 +17,6 @@ import { select, subscribe } from '@wordpress/data';
 import { getRenderer, hasRenderer } from '../renderers';
 import { AUTO_LIGHT, THEMES } from '../utils/themes';
 import { getPngBlob, getThemeBackground } from '../utils/export-diagram';
-import { getPaletteVariables } from '../utils/pele-palette';
 
 // How long to wait for the editor canvas and its Mermaid when the editor
 // opens, and how often to look for them.
@@ -91,28 +90,23 @@ async function getCanvasRenderer() {
  * page is drawn as on a light page, and every image has the background its
  * theme is made for, or, with Pele, its palette's.
  *
- * @param {string} code  The Mermaid source.
- * @param {string} theme The theme of the diagram, as the server names it: one
- *                       of THEMES, or the automatic theme.
+ * @param {Object} renderer The renderer to draw with: see getCanvasRenderer().
+ * @param {string} code     The Mermaid source.
+ * @param {string} theme    The theme of the diagram, as the server names it:
+ *                          one of THEMES, or the automatic theme.
  *
  * @return {Promise<Blob|null>} The PNG, or null for a diagram that can't be
  * drawn, such as one with a syntax error.
  */
-export async function drawImage( code, theme ) {
-	const owner = await getCanvasRenderer();
-
-	if ( ! owner ) {
-		return null;
-	}
-
+export async function drawImage( renderer, code, theme ) {
 	const drawnTheme = THEMES.includes( theme ) ? theme : AUTO_LIGHT;
 
 	counter += 1;
 
-	const result = await owner.draw(
+	const result = await renderer.draw(
 		code,
 		drawnTheme,
-		owner.document.body,
+		renderer.document.body,
 		`mermaid-blocks-image-${ counter }`
 	);
 
@@ -135,12 +129,16 @@ export async function drawImage( code, theme ) {
 		return null;
 	}
 
-	// A Pele diagram has no colours of its own: the file gets those of its
-	// palette, in the look of a light page, and the background to match.
-	if ( result.palette ) {
-		const variables = getPaletteVariables( result.palette, null );
+	// A Pele diagram has no colours of its own: the SVG gets those of its
+	// palette, which the file is made from, on the palette's background.
+	const style = renderer.getStyle( code, drawnTheme, null );
 
-		return getPngBlob( svg, variables[ '--pele-bg' ], variables );
+	if ( style ) {
+		Object.entries( style ).forEach( ( [ property, value ] ) =>
+			svg.style.setProperty( property, value )
+		);
+
+		return getPngBlob( svg );
 	}
 
 	return getPngBlob( svg, getThemeBackground( drawnTheme ) );
@@ -169,7 +167,7 @@ export async function saveImages( postId ) {
 	let saved = 0;
 
 	for ( const { key, code, theme } of missing ) {
-		const body = await drawImage( code, theme );
+		const body = await drawImage( renderer, code, theme );
 
 		if ( ! body ) {
 			continue;

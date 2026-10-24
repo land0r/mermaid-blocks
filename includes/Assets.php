@@ -37,6 +37,14 @@ final class Assets implements Hookable {
 	const PELE = 'pele-js';
 
 	/**
+	 * The handle of the library of each renderer.
+	 */
+	const LIBRARIES = array(
+		Renderers::MERMAID => self::MERMAID,
+		Renderers::PELE    => self::PELE,
+	);
+
+	/**
 	 * The handle of the script, and of the style, that render diagrams.
 	 */
 	const DIAGRAM = 'mermaid-blocks-diagram';

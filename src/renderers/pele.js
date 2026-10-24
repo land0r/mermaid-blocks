@@ -1,5 +1,6 @@
-import { toSourceLine } from '../utils/source-line';
-import { getPaletteName } from '../utils/pele-palette';
+import { getPaletteName, getPaletteVariables } from '../utils/pele-palette';
+import { getSurface } from '../utils/surface';
+import { getMessage, toError } from './error';
 
 /*
  * Pele as a renderer: see createMermaidRenderer() in mermaid.js for the
@@ -29,21 +30,11 @@ const PARSE_PREFIX =
  * the 1-based line of `code`, front matter and directives counted.
  */
 function normaliseError( error, code ) {
-	const message =
-		( error && error.message ) ||
-		( typeof error === 'string' ? error : '' ) ||
-		String( error );
-	const line = error && error.line;
-
-	return {
-		error: {
-			message: message.replace( PARSE_PREFIX, '' ),
-			line:
-				Number.isInteger( line ) && line > 0
-					? toSourceLine( code, line )
-					: null,
-		},
-	};
+	return toError(
+		code,
+		getMessage( error ).replace( PARSE_PREFIX, '' ),
+		error && error.line
+	);
 }
 
 /**
@@ -116,9 +107,8 @@ async function loadType( pele, code ) {
  * @param {Object}   [options.measurer] Measures text, where the browser's
  *                                      canvas can't: see Pele's `TextMeasurer`.
  *
- * @return {{name: string, document: Document, draw: Function, parse: Function, getPalette: Function}}
- * The renderer. `draw()` also resolves to the `palette` the SVG is drawn in,
- * which the caller puts on the element that holds it.
+ * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function}}
+ * The renderer.
  */
 export function createPeleRenderer( pele, { doc = document, measurer } = {} ) {
 	return {
@@ -149,25 +139,30 @@ export function createPeleRenderer( pele, { doc = document, measurer } = {} ) {
 
 				const { svg } = pele.render( code, options );
 
-				return {
-					svg: withId( withFont( svg, font ), id ),
-					palette: getPaletteName( theme, code ),
-				};
+				return { svg: withId( withFont( svg, font ), id ) };
 			} catch ( error ) {
 				return normaliseError( error, code );
 			}
 		},
 
 		/**
-		 * Tells the palette a diagram is drawn in. Pele's colours are CSS
-		 * variables, so a diagram changes palette without being drawn again.
+		 * Returns the palette of a diagram, as the CSS variables Pele's SVG
+		 * reads, for the element that holds it: a diagram changes palette
+		 * without being drawn again.
 		 *
-		 * @param {string} code  The Mermaid source.
-		 * @param {string} theme What the diagram is drawn in.
+		 * @param {string}       code    The Mermaid source.
+		 * @param {string}       theme   What the diagram is drawn in.
+		 * @param {?HTMLElement} element The element the diagram is shown in,
+		 *                               whose surface the label boxes take, or
+		 *                               null for one that isn't on a page.
 		 *
-		 * @return {string} `light` or `dark`.
+		 * @return {Object<string, string>} The value of each variable.
 		 */
-		getPalette: ( code, theme ) => getPaletteName( theme, code ),
+		getStyle: ( code, theme, element ) =>
+			getPaletteVariables(
+				getPaletteName( theme, code ),
+				element ? getSurface( element ) : null
+			),
 
 		async parse( code ) {
 			try {

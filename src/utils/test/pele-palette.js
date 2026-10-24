@@ -2,8 +2,8 @@ import {
 	DARK,
 	LIGHT,
 	PALETTES,
-	applyPalette,
 	getPaletteName,
+	getPaletteVariables,
 } from '../pele-palette';
 import { AUTO_DARK, AUTO_LIGHT, THEMES, getCodeTheme } from '../themes';
 
@@ -166,68 +166,43 @@ describe( 'the palettes', () => {
 	} );
 } );
 
-describe( 'applyPalette', () => {
-	const canvas = () => document.createElement( 'div' );
-
-	it( 'puts the variables of the palette on the element', () => {
-		const element = canvas();
-
-		applyPalette( element, DARK, null );
-
-		expect( element.style.getPropertyValue( '--pele-fg' ) ).toBe(
-			PALETTES[ DARK ][ '--pele-fg' ]
+describe( 'getPaletteVariables', () => {
+	it( 'gives the variables of the palette', () => {
+		expect( getPaletteVariables( DARK, null ) ).toEqual( PALETTES[ DARK ] );
+		expect( getPaletteVariables( LIGHT, null ) ).toEqual(
+			PALETTES[ LIGHT ]
 		);
-		expect( element.style.getPropertyValue( '--pele-bg' ) ).toBe(
-			PALETTES[ DARK ][ '--pele-bg' ]
-		);
-		expect( element.dataset.mermaidPalette ).toBe( DARK );
 	} );
 
 	it( 'gives the label boxes the colour of the surface when it is known', () => {
-		const element = canvas();
-
-		applyPalette( element, DARK, {
-			isDark: true,
-			color: 'rgb(17, 24, 39)',
-		} );
-
-		expect( element.style.getPropertyValue( '--pele-bg' ) ).toBe(
-			'rgb(17, 24, 39)'
-		);
+		expect(
+			getPaletteVariables( DARK, {
+				isDark: true,
+				color: 'rgb(17, 24, 39)',
+			} )[ '--pele-bg' ]
+		).toBe( 'rgb(17, 24, 39)' );
 	} );
 
 	it( "keeps the palette's own background where no surface can be read", () => {
-		const element = canvas();
-
-		applyPalette( element, LIGHT, { isDark: false, color: null } );
-
-		expect( element.style.getPropertyValue( '--pele-bg' ) ).toBe(
-			PALETTES[ LIGHT ][ '--pele-bg' ]
-		);
+		expect(
+			getPaletteVariables( LIGHT, { isDark: false, color: null } )[
+				'--pele-bg'
+			]
+		).toBe( PALETTES[ LIGHT ][ '--pele-bg' ] );
 	} );
 
 	it( 'does not put a light surface behind the labels of a dark diagram', () => {
-		const element = canvas();
-
-		applyPalette( element, DARK, {
-			isDark: false,
-			color: 'rgb(250, 250, 250)',
-		} );
-
-		expect( element.style.getPropertyValue( '--pele-bg' ) ).toBe(
-			PALETTES[ DARK ][ '--pele-bg' ]
-		);
+		expect(
+			getPaletteVariables( DARK, {
+				isDark: false,
+				color: 'rgb(250, 250, 250)',
+			} )[ '--pele-bg' ]
+		).toBe( PALETTES[ DARK ][ '--pele-bg' ] );
 	} );
 
-	it( 'swaps one palette for the other', () => {
-		const element = canvas();
+	it( 'leaves the palette as it is', () => {
+		getPaletteVariables( DARK, { isDark: true, color: 'rgb(1, 2, 3)' } );
 
-		applyPalette( element, DARK, null );
-		applyPalette( element, LIGHT, null );
-
-		expect( element.style.getPropertyValue( '--pele-fg' ) ).toBe(
-			PALETTES[ LIGHT ][ '--pele-fg' ]
-		);
-		expect( element.dataset.mermaidPalette ).toBe( LIGHT );
+		expect( PALETTES[ DARK ][ '--pele-bg' ] ).toBe( '#1e1e1e' );
 	} );
 } );

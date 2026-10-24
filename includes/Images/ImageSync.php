@@ -92,24 +92,43 @@ final class ImageSync implements Hookable {
 	public function get_diagrams( WP_Post $post, string $renderer = '' ): array {
 		$diagrams = array();
 
-		foreach ( $this->diagrams->get_all( $post ) as $block ) {
-			$code  = isset( $block['attrs']['code'] ) && is_string( $block['attrs']['code'] ) ? $block['attrs']['code'] : '';
-			$theme = isset( $block['attrs']['theme'] ) && is_string( $block['attrs']['theme'] ) ? $block['attrs']['theme'] : '';
-
-			if ( '' === trim( $code ) ) {
-				continue;
-			}
-
-			$key = $this->images->get_key( $code, $theme, $renderer );
+		foreach ( $this->get_codes( $post ) as $diagram ) {
+			$key = $this->images->get_key( $diagram['code'], $diagram['theme'], $renderer );
 
 			$diagrams[ $key ] = array(
 				'key'   => $key,
-				'code'  => $code,
-				'theme' => $this->themes->resolve( $theme ),
+				'code'  => $diagram['code'],
+				'theme' => $this->themes->resolve( $diagram['theme'] ),
 			);
 		}
 
 		return $diagrams;
+	}
+
+	/**
+	 * Returns the code and the theme of the diagrams of a post that have code.
+	 *
+	 * @param WP_Post $post The post.
+	 *
+	 * @return array[] For each diagram, its `code` and its `theme`, as its
+	 *                 block has them: an empty string for none.
+	 */
+	private function get_codes( WP_Post $post ): array {
+		$codes = array();
+
+		foreach ( $this->diagrams->get_all( $post ) as $block ) {
+			$code  = isset( $block['attrs']['code'] ) && is_string( $block['attrs']['code'] ) ? $block['attrs']['code'] : '';
+			$theme = isset( $block['attrs']['theme'] ) && is_string( $block['attrs']['theme'] ) ? $block['attrs']['theme'] : '';
+
+			if ( '' !== trim( $code ) ) {
+				$codes[] = array(
+					'code'  => $code,
+					'theme' => $theme,
+				);
+			}
+		}
+
+		return $codes;
 	}
 
 	/**
@@ -167,16 +186,14 @@ final class ImageSync implements Hookable {
 			return;
 		}
 
-		// The images to keep: those of the diagrams as the site's renderer draws them.
-		$keep = $this->get_diagrams( $post );
+		// The images to keep: the one each diagram shows, the site's renderer's or the other's, which stands in.
+		$keep = array();
 
-		// And, for a diagram that has none yet, the other renderer's, which stands in.
-		foreach ( $this->diagrams->get_all( $post ) as $block ) {
-			$code  = isset( $block['attrs']['code'] ) && is_string( $block['attrs']['code'] ) ? $block['attrs']['code'] : '';
-			$theme = isset( $block['attrs']['theme'] ) && is_string( $block['attrs']['theme'] ) ? $block['attrs']['theme'] : '';
+		foreach ( $this->get_codes( $post ) as $diagram ) {
+			$key = $this->images->find_key( $images, $diagram['code'], $diagram['theme'] );
 
-			if ( '' !== trim( $code ) && ! isset( $images[ $this->images->get_key( $code, $theme ) ] ) ) {
-				$keep[ $this->images->get_key( $code, $theme, $this->images->get_other_renderer() ) ] = true;
+			if ( null !== $key ) {
+				$keep[ $key ] = true;
 			}
 		}
 

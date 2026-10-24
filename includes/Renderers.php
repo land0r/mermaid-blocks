@@ -42,4 +42,16 @@ final class Renderers {
 	public static function exists( $name ): bool {
 		return is_string( $name ) && in_array( $name, self::ALL, true );
 	}
+
+	/**
+	 * Returns the renderer a value names, or Mermaid.js, the default, for a
+	 * value that names none.
+	 *
+	 * @param mixed $name The value.
+	 *
+	 * @return string One of Renderers::ALL.
+	 */
+	public static function sanitize( $name ): string {
+		return self::exists( $name ) ? $name : self::MERMAID;
+	}
 }

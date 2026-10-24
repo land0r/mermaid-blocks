@@ -81,8 +81,9 @@ function isPele( svg ) {
 /**
  * Reads the value a CSS variable has for a diagram: as computed on it, which
  * includes the palette on its canvas and what a stylesheet of the site sets.
+ * A diagram that isn't on a page has its values on its own style.
  *
- * @param {SVGSVGElement} svg  The rendered diagram, on the page.
+ * @param {SVGSVGElement} svg  The rendered diagram.
  * @param {string}        name The name of the variable.
  *
  * @return {string} The value, or an empty string when it has none.
@@ -166,24 +167,19 @@ function replaceVariables( value, lookup ) {
  * it, in place of the CSS variables it asks the page for: a file has no page
  * to take them from.
  *
- * @param {SVGSVGElement} copy     The copy of the diagram.
- * @param {Function}      getValue Given the name of a `--pele-*` variable,
- *                                 returns its value, or a falsy value.
+ * @param {SVGSVGElement} svg  The diagram, which has the values.
+ * @param {SVGSVGElement} copy The copy of the diagram.
  */
-function writePeleVariables( copy, getValue ) {
-	// What the diagram defines for itself, such as `--_fg: var(--pele-fg, …)`.
-	const own = {};
-
-	( copy.getAttribute( 'style' ) || '' ).split( ';' ).forEach( ( rule ) => {
-		const [ name, ...value ] = rule.split( ':' );
-
-		if ( name.trim().startsWith( '--_' ) ) {
-			own[ name.trim() ] = value.join( ':' ).trim();
+function writePeleVariables( svg, copy ) {
+	// A diagram has a few variables, which its elements refer to many times.
+	const values = new Map();
+	const lookup = ( name ) => {
+		if ( ! values.has( name ) ) {
+			values.set( name, readVariable( svg, name ) );
 		}
-	} );
 
-	const lookup = ( name ) =>
-		name.startsWith( '--_' ) ? own[ name ] : getValue( name );
+		return values.get( name );
+	};
 
 	[ copy, ...copy.querySelectorAll( '*' ) ].forEach( ( element ) => {
 		Array.from( element.attributes ).forEach( ( { name, value } ) => {
@@ -219,29 +215,20 @@ function writePeleVariables( copy, getValue ) {
  * opens at that size anywhere.
  *
  * A Pele diagram takes its colours and its font from CSS variables of the
- * page, so the file gets the values the diagram has on the page, and no
- * variable is left in it.
+ * page, so the file gets the values the diagram has on the page, or on its own
+ * style for one that isn't on a page, and no variable is left in it.
  *
- * @param {SVGSVGElement}         svg         The rendered diagram. It is left
- *                                            untouched.
- * @param {number}                [scale]     How much to enlarge the diagram.
- * @param {Object<string,string>} [variables] The values of the Pele variables,
- *                                            for a diagram that isn't on a
- *                                            page. Default: those it has on
- *                                            the page.
+ * @param {SVGSVGElement} svg     The rendered diagram. It is left untouched.
+ * @param {number}        [scale] How much to enlarge the diagram.
  *
  * @return {string} The SVG document.
  */
-export function getSvgMarkup( svg, scale = 1, variables ) {
+export function getSvgMarkup( svg, scale = 1 ) {
 	const { width, height } = getDiagramSize( svg );
 	const copy = svg.cloneNode( true );
 
 	if ( isPele( svg ) ) {
-		writePeleVariables(
-			copy,
-			( name ) =>
-				( variables && variables[ name ] ) || readVariable( svg, name )
-		);
+		writePeleVariables( svg, copy );
 	}
 
 	if ( ! copy.getAttribute( 'viewBox' ) ) {
@@ -334,28 +321,19 @@ export function getThemeBackground( theme ) {
  * The SVG is loaded from a `data:` URL. From a `blob:` URL, Chromium refuses
  * to read back a canvas that an SVG with HTML labels was drawn on.
  *
- * @param {SVGSVGElement}         svg          The rendered diagram.
- * @param {string}                [background] The background, a CSS colour.
- *                                             Default: the one for the
- *                                             surface the diagram sits on in
- *                                             the page.
- * @param {Object<string,string>} [variables]  The values of the Pele
- *                                             variables: see getSvgMarkup().
+ * @param {SVGSVGElement} svg          The rendered diagram.
+ * @param {string}        [background] The background, a CSS colour. Default:
+ *                                     the one for the surface the diagram
+ *                                     sits on in the page.
  *
  * @return {Promise<Blob>} The PNG. Rejects when the browser can't draw it.
  */
-export async function getPngBlob(
-	svg,
-	background = getPngBackground( svg ),
-	variables
-) {
+export async function getPngBlob( svg, background = getPngBackground( svg ) ) {
 	const size = getDiagramSize( svg );
 	const { width, height } = getPngSize( size );
 	const image = await loadImage(
 		'data:image/svg+xml;charset=utf-8,' +
-			encodeURIComponent(
-				getSvgMarkup( svg, width / size.width, variables )
-			)
+			encodeURIComponent( getSvgMarkup( svg, width / size.width ) )
 	);
 
 	const canvas = document.createElement( 'canvas' );

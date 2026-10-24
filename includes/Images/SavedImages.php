@@ -138,13 +138,33 @@ final class SavedImages implements Hookable {
 	}
 
 	/**
-	 * Returns the other renderer: the one whose image stands in for the one of
-	 * the request until it is drawn.
+	 * Returns the key of the image a diagram shows: the one of the request's
+	 * renderer, or else the other renderer's, which stands in until the post
+	 * is drawn again with this one.
 	 *
-	 * @return string The name of the renderer.
+	 * @param array[] $images The images of the post: see get_all().
+	 * @param string  $code   The Mermaid source.
+	 * @param string  $theme  Optional. The theme chosen for the diagram.
+	 *
+	 * @return string|null The key, or null when the diagram has no image.
 	 */
-	public function get_other_renderer(): string {
-		return Renderers::PELE === $this->get_renderer() ? Renderers::MERMAID : Renderers::PELE;
+	public function find_key( array $images, string $code, string $theme = '' ): ?string {
+		if ( ! $images ) {
+			return null;
+		}
+
+		$renderer = $this->options->get_renderer();
+		$other    = Renderers::PELE === $renderer ? Renderers::MERMAID : Renderers::PELE;
+
+		foreach ( array( $renderer, $other ) as $name ) {
+			$key = $this->get_key( $code, $theme, $name );
+
+			if ( isset( $images[ $key ] ) ) {
+				return $key;
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -197,7 +217,7 @@ final class SavedImages implements Hookable {
 				'height'   => max( 1, (int) $image['height'] ),
 				'theme'    => isset( $image['theme'] ) && is_string( $image['theme'] ) ? $image['theme'] : '',
 				// Images saved before there was a choice are Mermaid.js's.
-				'renderer' => isset( $image['renderer'] ) && Renderers::exists( $image['renderer'] ) ? $image['renderer'] : Renderers::MERMAID,
+				'renderer' => Renderers::sanitize( $image['renderer'] ?? '' ),
 			);
 		}
 
@@ -229,13 +249,9 @@ final class SavedImages implements Hookable {
 		}
 
 		$images = $this->get_all( (int) $post_id );
-		$key    = $this->get_key( $code, $theme );
+		$key    = $this->find_key( $images, $code, $theme );
 
-		if ( ! isset( $images[ $key ] ) ) {
-			$key = $this->get_key( $code, $theme, $this->get_other_renderer() );
-		}
-
-		if ( ! isset( $images[ $key ] ) || ! $this->is_on() ) {
+		if ( null === $key || ! $this->is_on() ) {
 			return null;
 		}
 

@@ -86,14 +86,15 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The editor is told the renderer.
+	 * The editor is told what a theme is with the site's renderer: the
+	 * sidebar says it with Pele, and nothing with Mermaid.js.
 	 */
-	public function test_tells_the_editor_the_renderer(): void {
+	public function test_tells_the_editor_what_themes_are_with_the_renderer(): void {
 		update_option( Options::RENDERER, 'mermaid' );
-		$this->assertSame( 'mermaid', $this->get_editor_settings()['renderer'] );
+		$this->assertSame( '', $this->get_editor_settings()['rendererHelp'] );
 
 		update_option( Options::RENDERER, 'pele' );
-		$this->assertSame( 'pele', $this->get_editor_settings()['renderer'] );
+		$this->assertSame( 'With Pele, a theme counts as light or dark.', $this->get_editor_settings()['rendererHelp'] );
 	}
 
 	/**

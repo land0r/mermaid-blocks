@@ -115,7 +115,7 @@ final class SettingsPage implements Hookable {
 			Options::RENDERER,
 			array(
 				'type'              => 'string',
-				'sanitize_callback' => array( $this, 'sanitize_renderer' ),
+				'sanitize_callback' => array( Renderers::class, 'sanitize' ),
 				'default'           => Renderers::MERMAID,
 			)
 		);
@@ -271,17 +271,6 @@ final class SettingsPage implements Hookable {
 	}
 
 	/**
-	 * Sanitizes the renderer setting.
-	 *
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string One of Renderers::ALL.
-	 */
-	public function sanitize_renderer( $value ): string {
-		return Renderers::exists( $value ) ? $value : Renderers::MERMAID;
-	}
-
-	/**
 	 * Outputs the field of the renderer setting: a radio button for each.
 	 */
 	public function render_renderer_field(): void {
@@ -289,8 +278,7 @@ final class SettingsPage implements Hookable {
 			Renderers::MERMAID => __( 'Mermaid.js', 'mermaid-blocks' ),
 			Renderers::PELE    => __( 'Pele', 'mermaid-blocks' ),
 		);
-		$stored = get_option( Options::RENDERER, Renderers::MERMAID );
-		$stored = Renderers::exists( $stored ) ? $stored : Renderers::MERMAID;
+		$stored = $this->options->get_site_renderer();
 		?>
 		<fieldset aria-describedby="mermaid_blocks_renderer_description">
 			<legend class="screen-reader-text"><span><?php esc_html_e( 'Renderer', 'mermaid-blocks' ); ?></span></legend>

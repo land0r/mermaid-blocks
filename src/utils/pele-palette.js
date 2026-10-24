@@ -3,9 +3,9 @@
  *
  * Pele's SVG has no colours of its own: it draws with `--pele-*` CSS
  * variables, with a light fallback for each. A palette is a set of values for
- * them, put on the element that holds the SVG, so a diagram changes colours
- * without being drawn again. Pele has no named themes: a theme counts as dark
- * or as light (see getPaletteName()).
+ * them, put on the element that holds the SVG (see getStyle() of the Pele
+ * renderer), so a diagram changes colours without being drawn again. Pele has
+ * no named themes: a theme counts as dark or as light (see getPaletteName()).
  */
 import { getCodeTheme, isDarkTheme } from './themes';
 
@@ -100,21 +100,4 @@ export function getPaletteVariables( name, surface ) {
 	}
 
 	return variables;
-}
-
-/**
- * Puts a palette on the element that holds a Pele SVG.
- *
- * @param {HTMLElement}                             element The canvas.
- * @param {string}                                  name    LIGHT or DARK.
- * @param {{isDark: boolean, color: (string|null)}} surface What the diagram
- *                                                          sits on: see
- *                                                          getSurface().
- */
-export function applyPalette( element, name, surface ) {
-	Object.entries( getPaletteVariables( name, surface ) ).forEach(
-		( [ property, value ] ) => element.style.setProperty( property, value )
-	);
-
-	element.dataset.mermaidPalette = name;
 }

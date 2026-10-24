@@ -1,7 +1,5 @@
 import { resolveTheme } from '../utils/themes';
 import { setAccessibleText } from '../utils/accessible-text';
-import { applyPalette } from '../utils/pele-palette';
-import { getSurface } from '../utils/surface';
 
 const DIAGRAM_SELECTOR = '.mermaid-blocks-diagram';
 const SOURCE_SELECTOR = '.mermaid-blocks-diagram__source';
@@ -47,6 +45,29 @@ export function isOutdated( diagram ) {
 }
 
 /**
+ * Gives the element that holds a diagram's SVG the style its renderer asks
+ * for: see getStyle() of the renderers.
+ *
+ * @param {Object}      renderer The renderer the diagram is drawn with.
+ * @param {HTMLElement} diagram  The diagram element.
+ * @param {HTMLElement} canvas   The element that holds the SVG.
+ * @param {string}      theme    What the diagram is drawn in.
+ *
+ * @return {boolean} Whether the renderer asks for one: a diagram that has one
+ * changes colours with it, and is never drawn again for that.
+ */
+function setStyle( renderer, diagram, canvas, theme ) {
+	const source = diagram.querySelector( SOURCE_SELECTOR );
+	const style = renderer.getStyle( source.textContent, theme, diagram );
+
+	Object.entries( style || {} ).forEach( ( [ property, value ] ) =>
+		canvas.style.setProperty( property, value )
+	);
+
+	return !! style;
+}
+
+/**
  * Draws a diagram: in the theme its `data-mermaid-theme` attribute asks for,
  * with the accessible title and description of its `data-mermaid-title` and
  * `data-mermaid-description` attributes.
@@ -86,10 +107,7 @@ async function createCanvas( renderer, diagram, source ) {
 	canvas.className = 'mermaid-blocks-diagram__canvas';
 	canvas.dataset.mermaidTheme = theme;
 	canvas.innerHTML = result.svg;
-
-	if ( result.palette ) {
-		applyPalette( canvas, result.palette, getSurface( diagram ) );
-	}
+	setStyle( renderer, diagram, canvas, theme );
 
 	const svg = canvas.querySelector( 'svg' );
 
@@ -105,31 +123,6 @@ async function createCanvas( renderer, diagram, source ) {
 	}
 
 	return canvas;
-}
-
-/**
- * Gives a drawn Pele diagram the palette it gets now, in place: its colours
- * are CSS variables, so nothing is drawn again and its controls stay.
- *
- * @param {Object}      renderer The Pele renderer.
- * @param {HTMLElement} diagram  The diagram element.
- * @param {HTMLElement} source   The element holding its source.
- */
-function restyleCanvas( renderer, diagram, source ) {
-	const canvas = diagram.querySelector( CANVAS_SELECTOR );
-
-	if ( ! canvas ) {
-		return;
-	}
-
-	const theme = resolveTheme( diagram.dataset.mermaidTheme, diagram );
-
-	canvas.dataset.mermaidTheme = theme;
-	applyPalette(
-		canvas,
-		renderer.getPalette( source.textContent, theme ),
-		getSurface( diagram )
-	);
 }
 
 /**
@@ -173,9 +166,9 @@ export default async function renderDiagrams( renderer, root = document ) {
 
 /**
  * Draws a rendered diagram again, in the theme it gets now. Its controls go
- * with the old drawing: add them again afterwards. A Pele diagram isn't drawn
- * again: it gets the other palette in place, keeps its controls, and this
- * resolves to false.
+ * with the old drawing: add them again afterwards. A diagram whose renderer
+ * gives it a style, as Pele does, isn't drawn again: it gets the style of the
+ * theme in place, keeps its controls, and this resolves to false.
  *
  * The diagram stays as it is until the new drawing is ready, and when that
  * fails.
@@ -187,17 +180,21 @@ export default async function renderDiagrams( renderer, root = document ) {
  */
 export async function redrawDiagram( renderer, diagram ) {
 	const source = diagram.querySelector( SOURCE_SELECTOR );
+	const previous = diagram.querySelector( CANVAS_SELECTOR );
 
 	if (
 		! source ||
+		! previous ||
 		! diagram.classList.contains( 'is-rendered' ) ||
 		diagram.dataset.mermaidProcessing
 	) {
 		return false;
 	}
 
-	if ( typeof renderer.getPalette === 'function' ) {
-		restyleCanvas( renderer, diagram, source );
+	const theme = resolveTheme( diagram.dataset.mermaidTheme, diagram );
+
+	if ( setStyle( renderer, diagram, previous, theme ) ) {
+		previous.dataset.mermaidTheme = theme;
 
 		return false;
 	}
@@ -205,9 +202,8 @@ export async function redrawDiagram( renderer, diagram ) {
 	diagram.dataset.mermaidProcessing = '1';
 
 	const canvas = await createCanvas( renderer, diagram, source );
-	const previous = diagram.querySelector( CANVAS_SELECTOR );
 
-	if ( canvas && previous ) {
+	if ( canvas ) {
 		const toolbar = diagram.querySelector( TOOLBAR_SELECTOR );
 
 		if ( toolbar ) {
@@ -220,5 +216,5 @@ export async function redrawDiagram( renderer, diagram ) {
 
 	delete diagram.dataset.mermaidProcessing;
 
-	return !! canvas && !! previous;
+	return !! canvas;
 }

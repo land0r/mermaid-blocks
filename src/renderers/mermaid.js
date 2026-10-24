@@ -1,6 +1,7 @@
 import MERMAID_CONFIG, { mergeConfig } from '../utils/mermaid-config';
 import { AUTO_LIGHT, getThemeConfig } from '../utils/themes';
-import { getParsedText, toSourceLine } from '../utils/source-line';
+import { getParsedText } from '../utils/source-line';
+import { getMessage, toError } from './error';
 
 /*
  * Mermaid.js as a renderer: see createMermaidRenderer() for the interface.
@@ -110,12 +111,7 @@ function getErrorMessage( error ) {
 		return listed.map( ( { message } ) => message ).join( '\n' );
 	}
 
-	const message =
-		( error && error.message ) ||
-		( typeof error === 'string' ? error : '' ) ||
-		String( error );
-
-	return message.replace( /^Parse error on line \d+:\n/, '' );
+	return getMessage( error ).replace( /^Parse error on line \d+:\n/, '' );
 }
 
 /**
@@ -164,14 +160,7 @@ async function renderInTheme( mermaid, renderId, code, doc, theme ) {
 	} catch ( error ) {
 		removeLeftovers( renderId, doc );
 
-		const line = getErrorLine( error );
-
-		return {
-			error: {
-				message: getErrorMessage( error ),
-				line: line === null ? null : toSourceLine( code, line ),
-			},
-		};
+		return toError( code, getErrorMessage( error ), getErrorLine( error ) );
 	}
 }
 
@@ -222,14 +211,11 @@ function parse( mermaid, code ) {
 				const { diagramType } = await mermaid.parse( code );
 				return { type: diagramType };
 			} catch ( error ) {
-				const line = getErrorLine( error );
-
-				return {
-					error: {
-						message: getErrorMessage( error ),
-						line: line === null ? null : toSourceLine( code, line ),
-					},
-				};
+				return toError(
+					code,
+					getErrorMessage( error ),
+					getErrorLine( error )
+				);
 			}
 		}
 	);
@@ -246,11 +232,16 @@ function parse( mermaid, code ) {
  *   `{ error: { message, line } }` with the 1-based line of the code. It never
  *   rejects, and leaves nothing behind in the document.
  * - `parse( code )` resolves to `{ type }`, or to the same error.
+ * - `getStyle( code, theme, element )` returns the CSS properties to put on
+ *   the element that holds the SVG, for a diagram shown in `element` (null
+ *   for one that isn't on a page), or null. Pele's colours are such
+ *   properties, so its diagrams change colours in place, without being drawn
+ *   again. Mermaid.js's SVG has its colours in it.
  *
  * @param {Object}   mermaid The Mermaid API object.
  * @param {Document} [doc]   The document of the window Mermaid runs in.
  *
- * @return {{name: string, document: Document, draw: Function, parse: Function}}
+ * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function}}
  * The renderer.
  */
 export function createMermaidRenderer( mermaid, doc = document ) {
@@ -261,5 +252,6 @@ export function createMermaidRenderer( mermaid, doc = document ) {
 		draw: ( code, theme, element, id ) =>
 			draw( mermaid, doc, code, theme || AUTO_LIGHT, id ),
 		parse: ( code ) => parse( mermaid, code ),
+		getStyle: () => null,
 	};
 }

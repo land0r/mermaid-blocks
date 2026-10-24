@@ -59,28 +59,30 @@ final class Options {
 	}
 
 	/**
-	 * Returns the renderer the request draws its diagrams with: the site's, or
-	 * the one the `mermaid_blocks_renderer` filter picks.
+	 * Returns the renderer stored for the site, which the settings page shows.
 	 *
 	 * @return string One of Renderers::ALL. Mermaid.js when nothing is stored,
 	 *                and for a value that names no renderer.
 	 */
+	public function get_site_renderer(): string {
+		return Renderers::sanitize( get_option( self::RENDERER, Renderers::MERMAID ) );
+	}
+
+	/**
+	 * Returns the renderer the request draws its diagrams with: the site's, or
+	 * the one the `mermaid_blocks_renderer` filter picks.
+	 *
+	 * @return string One of Renderers::ALL. Mermaid.js for a filter that names
+	 *                no renderer.
+	 */
 	public function get_renderer(): string {
-		$renderer = get_option( self::RENDERER, Renderers::MERMAID );
-
-		if ( ! Renderers::exists( $renderer ) ) {
-			$renderer = Renderers::MERMAID;
-		}
-
 		/**
 		 * Filters the renderer a request draws its diagrams with, such as Pele
 		 * only on some pages.
 		 *
 		 * @param string $renderer The site's renderer: `mermaid` or `pele`.
 		 */
-		$renderer = apply_filters( 'mermaid_blocks_renderer', $renderer );
-
-		return Renderers::exists( $renderer ) ? $renderer : Renderers::MERMAID;
+		return Renderers::sanitize( apply_filters( 'mermaid_blocks_renderer', $this->get_site_renderer() ) );
 	}
 
 	/**

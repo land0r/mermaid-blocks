@@ -184,10 +184,11 @@ final class DiagramWidget extends Widget_Base {
 		$themes = mermaid_blocks()->themes();
 		$labels = $themes->get_all();
 
-		$help = esc_html__( 'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.', 'mermaid-blocks' );
+		$help          = esc_html__( 'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.', 'mermaid-blocks' );
+		$renderer_help = $themes->get_renderer_help();
 
-		if ( '' !== $themes->get_renderer_help() ) {
-			$help .= ' ' . esc_html( $themes->get_renderer_help() );
+		if ( '' !== $renderer_help ) {
+			$help .= ' ' . esc_html( $renderer_help );
 		}
 
 		// Only the editor shows it: the front end loads the controls too, and needs nothing of the admin.
