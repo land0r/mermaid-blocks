@@ -325,7 +325,13 @@ export function createPeleRenderer(
 			try {
 				await loadType( pele, code );
 
-				return { type: pele.parse( code ).mermaidType };
+				// The limits and the default configuration of the site, as draw() has them.
+				const { limit, maxEdges, config } = site || {};
+
+				return {
+					type: pele.parse( code, { limit, maxEdges, config } )
+						.mermaidType,
+				};
 			} catch ( error ) {
 				return normaliseError( error, code );
 			}

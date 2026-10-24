@@ -427,6 +427,23 @@ describe( 'the Pele renderer', () => {
 			}
 		);
 
+		it( 'refuses what the limits of the site refuse, as draw() does', async () => {
+			const code = 'flowchart LR\nA --> B\nB --> C\nC --> D';
+			const limited = createPeleRenderer( pele, {
+				measurer,
+				site: { maxEdges: 2 },
+			} );
+
+			await expect( renderer.parse( code ) ).resolves.toEqual( {
+				type: 'flowchart-v2',
+			} );
+			expect( ( await limited.parse( code ) ).error ).toBeDefined();
+			expect(
+				( await limited.draw( code, 'auto-light', document.body, 'x' ) )
+					.error
+			).toBeDefined();
+		} );
+
 		it( 'gives an error and its line', async () => {
 			const result = await renderer.parse(
 				'flowchart LR\nA --> B\nbad ]]'
