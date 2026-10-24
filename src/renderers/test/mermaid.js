@@ -4,7 +4,7 @@ import { AUTO_DARK, AUTO_LIGHT } from '../../utils/themes';
 
 // Draws through the renderer interface, in the document of the window.
 const renderDiagram = ( mermaid, id, code, doc = document, theme ) =>
-	createMermaidRenderer( mermaid, doc ).draw( code, theme, doc.body, id );
+	createMermaidRenderer( mermaid, { doc } ).draw( code, theme, doc.body, id );
 const parseDiagram = ( mermaid, code ) =>
 	createMermaidRenderer( mermaid ).parse( code );
 
@@ -476,9 +476,8 @@ describe( 'icon packs', () => {
 	it( 'registers each pack with a loader, and fetches nothing yet', () => {
 		const mermaid = fakeMermaid();
 
-		createMermaidRenderer( mermaid, document, {
-			fa: url,
-			logos: '/l.json',
+		createMermaidRenderer( mermaid, {
+			iconPacks: { fa: url, logos: '/l.json' },
 		} );
 
 		expect( mermaid.registerIconPacks ).toHaveBeenCalledTimes( 1 );
@@ -492,7 +491,7 @@ describe( 'icon packs', () => {
 	it( 'loads the Iconify JSON of a pack through the loader, once', async () => {
 		const mermaid = fakeMermaid();
 
-		createMermaidRenderer( mermaid, document, { fa: url } );
+		createMermaidRenderer( mermaid, { iconPacks: { fa: url } } );
 		const [ [ [ { loader } ] ] ] = mermaid.registerIconPacks.mock.calls;
 
 		await expect( loader() ).resolves.toEqual( pack );
@@ -508,7 +507,7 @@ describe( 'icon packs', () => {
 		);
 		const mermaid = fakeMermaid();
 
-		createMermaidRenderer( mermaid, document, { fa: url } );
+		createMermaidRenderer( mermaid, { iconPacks: { fa: url } } );
 
 		await expect(
 			mermaid.registerIconPacks.mock.calls[ 0 ][ 0 ][ 0 ].loader()
@@ -518,8 +517,8 @@ describe( 'icon packs', () => {
 	it( 'registers the packs once per Mermaid, however many renderers', () => {
 		const mermaid = fakeMermaid();
 
-		createMermaidRenderer( mermaid, document, { fa: url } );
-		createMermaidRenderer( mermaid, document, { fa: url } );
+		createMermaidRenderer( mermaid, { iconPacks: { fa: url } } );
+		createMermaidRenderer( mermaid, { iconPacks: { fa: url } } );
 
 		expect( mermaid.registerIconPacks ).toHaveBeenCalledTimes( 1 );
 	} );
@@ -528,7 +527,7 @@ describe( 'icon packs', () => {
 		const mermaid = fakeMermaid();
 
 		createMermaidRenderer( mermaid );
-		createMermaidRenderer( mermaid, document, {} );
+		createMermaidRenderer( mermaid, { iconPacks: {} } );
 
 		expect( mermaid.registerIconPacks ).not.toHaveBeenCalled();
 	} );

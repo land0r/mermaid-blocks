@@ -15,7 +15,7 @@ jest.mock( '../../renderers/mermaid', () => {
 
 	return {
 		mockDraw,
-		createMermaidRenderer: ( mermaid, doc ) => ( {
+		createMermaidRenderer: ( mermaid, { doc } ) => ( {
 			name: 'mermaid',
 			document: doc,
 			draw: mockDraw,

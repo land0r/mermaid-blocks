@@ -75,7 +75,10 @@ export function getRenderer( view ) {
 			library.initialize( MERMAID_CONFIG );
 			renderers.set(
 				library,
-				createMermaidRenderer( library, owner.document, ICON_PACKS )
+				createMermaidRenderer( library, {
+					doc: owner.document,
+					iconPacks: ICON_PACKS,
+				} )
 			);
 		}
 	}

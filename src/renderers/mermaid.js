@@ -273,20 +273,21 @@ function registerIconPacks( mermaid, packs ) {
  *   properties, so its diagrams change colours in place, without being drawn
  *   again. Mermaid.js's SVG has its colours in it.
  *
- * @param {Object}                 mermaid     The Mermaid API object.
- * @param {Document}               [doc]       The document of the window Mermaid
- *                                             runs in.
- * @param {Object<string, string>} [iconPacks] The URL of the Iconify JSON of
- *                                             each icon pack the site
- *                                             registered, by name.
+ * @param {Object}                 mermaid             The Mermaid API object.
+ * @param {Object}                 [options]           Options, as Pele's
+ *                                                     renderer takes them.
+ * @param {Document}               [options.doc]       The document of the window
+ *                                                     Mermaid runs in.
+ * @param {Object<string, string>} [options.iconPacks] The URL of the Iconify
+ *                                                     JSON of each icon pack the
+ *                                                     site registered, by name.
  *
  * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function}}
  * The renderer.
  */
 export function createMermaidRenderer(
 	mermaid,
-	doc = document,
-	iconPacks = {}
+	{ doc = document, iconPacks = {} } = {}
 ) {
 	registerIconPacks( mermaid, iconPacks );
 

@@ -11,7 +11,8 @@
 // icon `car` of the pack `fa`.
 const FONT_AWESOME = /^(fa[bklrs]?):fa-(.+)$/;
 
-const NAME = /^([a-z0-9-]+):([^:]+)$/;
+// Any other name: `fa:user` is the icon `user` of the pack `fa`.
+const PACK_ICON = /^([a-z0-9-]+):([^:]+)$/;
 
 /**
  * Tells which pack and which icon a name written in a diagram means.
@@ -23,7 +24,7 @@ const NAME = /^([a-z0-9-]+):([^:]+)$/;
  * @return {?{pack: string, icon: string}} The pack and the icon, or null.
  */
 export function parseIconName( name ) {
-	const match = FONT_AWESOME.exec( name ) || NAME.exec( name );
+	const match = FONT_AWESOME.exec( name ) || PACK_ICON.exec( name );
 
 	return match ? { pack: match[ 1 ], icon: match[ 2 ] } : null;
 }

@@ -162,9 +162,9 @@ final class Assets implements Hookable {
 
 	/**
 	 * Tells the front-end script the renderer, where to load it, the controls
-	 * and the math module from, the options of Pele, the icon packs, and the labels of the
-	 * controls. It is told when the scripts of the page are enqueued, on the
-	 * front end and in the admin.
+	 * and the math module from, the options of Pele, the icon packs, and the
+	 * labels of the controls. It is told when the scripts of the page are
+	 * enqueued, on the front end and in the admin.
 	 */
 	public function add_settings(): void {
 		// Once: the script is enqueued by one action or the other, on most requests by both.

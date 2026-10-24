@@ -48,11 +48,9 @@ export default function loadRenderer( settings ) {
 						} )
 				  )
 				: loadMermaid( mermaidUrl ).then( ( mermaid ) =>
-						createMermaidRenderer(
-							mermaid,
-							document,
-							settings.iconPacks
-						)
+						createMermaidRenderer( mermaid, {
+							iconPacks: settings.iconPacks,
+						} )
 				  );
 	}
 

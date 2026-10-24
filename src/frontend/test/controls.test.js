@@ -171,6 +171,24 @@ describe( 'addControls', () => {
 			expect( renderer.enableZoom ).toHaveBeenCalledTimes( 1 );
 		} );
 
+		it( 'is zoomed again on a canvas that took the place of its own', () => {
+			const diagram = setup( 'zoom' );
+			const renderer = peleRenderer();
+
+			addControls( diagram, undefined, renderer );
+
+			const previous = diagram.querySelector(
+				'.mermaid-blocks-diagram__canvas'
+			);
+			const canvas = previous.cloneNode( true );
+
+			previous.replaceWith( canvas );
+			addControls( diagram, undefined, renderer );
+
+			expect( renderer.enableZoom ).toHaveBeenCalledTimes( 2 );
+			expect( renderer.enableZoom.mock.calls[ 1 ][ 0 ] ).toBe( canvas );
+		} );
+
 		it( 'refreshes its zoom when it was drawn again', () => {
 			const diagram = setup( 'zoom' );
 			const refresh = jest.fn();

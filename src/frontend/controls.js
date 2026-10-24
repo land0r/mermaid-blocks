@@ -18,8 +18,8 @@ const TOOLBAR_CLASS = 'mermaid-blocks-diagram__toolbar';
 const BUTTON_CLASS = 'mermaid-blocks-diagram__button';
 const STATUS_CLASS = 'mermaid-blocks-diagram__status';
 
-// The diagrams that have Pele's zoom: it is enabled once, however often the
-// diagram gets its controls.
+// Pele's zoom of each canvas: it is enabled once for a canvas, however often
+// the diagram gets its controls, and again for a canvas that took its place.
 const peleZooms = new WeakMap();
 
 // How long a message, such as a failed download or "Copied", stays.
@@ -198,6 +198,7 @@ function createZoomButtons( doc, diagram, canvas, svg, text ) {
  */
 function enablePeleZoom( diagram, canvas, renderer, text ) {
 	const zoom = renderer.enableZoom( canvas, {
+		// Even a diagram that fits its column: the reader asked for the zoom.
 		always: true,
 		labels: {
 			zoomIn: text.zoomIn,
@@ -207,7 +208,7 @@ function enablePeleZoom( diagram, canvas, renderer, text ) {
 	} );
 
 	diagram.addEventListener( REDRAWN_EVENT, () => zoom.refresh() );
-	peleZooms.set( diagram, zoom );
+	peleZooms.set( canvas, zoom );
 
 	return zoom;
 }
@@ -377,14 +378,14 @@ export default function addControls( diagram, labels, renderer ) {
 	const status = createStatus( doc );
 	let zoom = null;
 
+	// Pele's renderer is the one with a zoom of its own.
 	if (
 		controls.includes( 'zoom' ) &&
 		renderer &&
-		renderer.name === 'pele' &&
 		typeof renderer.enableZoom === 'function'
 	) {
 		zoom =
-			peleZooms.get( diagram ) ||
+			peleZooms.get( canvas ) ||
 			enablePeleZoom( diagram, canvas, renderer, text );
 	} else if ( controls.includes( 'zoom' ) && svg.hasAttribute( 'viewBox' ) ) {
 		// Zooming scales the drawing through its `viewBox`.
