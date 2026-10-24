@@ -8,7 +8,8 @@ const watched = new WeakSet();
 
 /**
  * Draws a rendered Pele diagram again when its width changes: a resized
- * window, a rotated phone, fullscreen in and out. Pele lays a diagram out for
+ * window, a rotated phone, fullscreen in and out. It stops watching a diagram
+ * that left the page. Pele lays a diagram out for
  * the width of the diagram element it is drawn for (see `draw()` of the Pele
  * renderer), so that is the width watched, not the canvas's: a theme may pad
  * the one and not the other.
@@ -32,12 +33,21 @@ export default function redrawOnResize( renderer, diagram ) {
 
 	watched.add( diagram );
 
-	watchWidth( diagram, () =>
-		redrawInPlace( renderer, diagram ).catch( ( error ) => {
+	const stop = watchWidth( diagram, () => {
+		// A diagram that left the page, as when Elementor renders its widget
+		// again, is not watched any more.
+		if ( ! diagram.isConnected ) {
+			stop();
+			watched.delete( diagram );
+
+			return false;
+		}
+
+		return redrawInPlace( renderer, diagram ).catch( ( error ) => {
 			// eslint-disable-next-line no-console
 			console.error( 'Mermaid Blocks: failed to render diagram.', error );
 
 			return false;
-		} )
-	);
+		} );
+	} );
 }

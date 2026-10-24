@@ -187,6 +187,19 @@ describe( 'redrawOnResize', () => {
 		expect( observers[ 0 ].observe ).toHaveBeenCalledWith( diagram );
 	} );
 
+	it( 'stops watching a diagram that left the page, as when Elementor renders its widget again', async () => {
+		const draw = jest.spyOn( renderer, 'draw' );
+
+		await setup( renderer );
+		draw.mockClear();
+		diagram.remove();
+
+		await resize( 0 );
+
+		expect( draw ).not.toHaveBeenCalled();
+		expect( observers[ 0 ].disconnect ).toHaveBeenCalled();
+	} );
+
 	it( 'never watches a Mermaid.js diagram', async () => {
 		const mermaid = {
 			render: async () => ( { svg: '<svg viewBox="0 0 10 10"></svg>' } ),
