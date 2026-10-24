@@ -4,6 +4,7 @@
 import MERMAID_CONFIG from '../utils/mermaid-config';
 import { createMermaidRenderer } from './mermaid';
 import { createPeleRenderer } from './pele';
+import { PELE_OPTIONS } from '../editor/settings';
 
 /**
  * The renderers made for each loaded library, so a window always gets the
@@ -62,7 +63,10 @@ export function getRenderer( view ) {
 		if ( owner.pele ) {
 			renderers.set(
 				library,
-				createPeleRenderer( library, { doc: owner.document } )
+				createPeleRenderer( library, {
+					doc: owner.document,
+					site: PELE_OPTIONS,
+				} )
 			);
 		} else {
 			library.initialize( MERMAID_CONFIG );

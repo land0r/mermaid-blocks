@@ -28,6 +28,7 @@ use MermaidBlocks\Integrations\Elementor\DiagramWidget;
 use MermaidBlocks\Integrations\Elementor\Registrar as ElementorRegistrar;
 use MermaidBlocks\Integrations\Shortcode;
 use MermaidBlocks\Options;
+use MermaidBlocks\PeleOptions;
 use MermaidBlocks\Plugin;
 use MermaidBlocks\Posts\EditablePosts;
 use MermaidBlocks\Posts\PostDiagrams;
@@ -162,7 +163,7 @@ class PluginTest extends WP_UnitTestCase {
 		$plugin->init();
 
 		$container = $this->get_container( $plugin );
-		$created   = array( Files::class, Assets::class, Block::class, Shortcode::class, CodeBlocks::class, SavedImages::class, Diagram::class, DiagramTypes::class, Themes::class, Options::class );
+		$created   = array( Files::class, Assets::class, Block::class, Shortcode::class, CodeBlocks::class, SavedImages::class, Diagram::class, DiagramTypes::class, Themes::class, Options::class, PeleOptions::class );
 		$waiting   = array( SettingsPage::class, Editor::class, ImageSync::class, ImagesController::class, Registrar::class, ClientAbilities::class, PostDiagrams::class, EditablePosts::class, Schemas::class, ListDiagrams::class, ElementorRegistrar::class );
 
 		foreach ( $created as $class ) {

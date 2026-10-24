@@ -21,10 +21,11 @@ function loadPele( url ) {
  * when the settings name it, and Mermaid.js for anything else, such as a page
  * cached before there was a choice. A page loads one renderer, never both.
  *
- * @param {Object} settings            What the page is told: see `Assets`.
- * @param {string} settings.renderer   `pele`, or `mermaid`.
- * @param {string} settings.mermaidUrl URL of `build/mermaid/mermaid.esm.min.js`.
- * @param {string} settings.peleUrl    URL of `build/pele/lazy.js`.
+ * @param {Object} settings               What the page is told: see `Assets`.
+ * @param {string} settings.renderer      `pele`, or `mermaid`.
+ * @param {string} settings.mermaidUrl    URL of `build/mermaid/mermaid.esm.min.js`.
+ * @param {string} settings.peleUrl       URL of `build/pele/lazy.js`.
+ * @param {Object} [settings.peleOptions] Pele's render options for the site.
  *
  * @return {Promise<Object>} The renderer: see createMermaidRenderer(). Rejects
  * when it could not be loaded.
@@ -35,7 +36,11 @@ export default function loadRenderer( settings ) {
 	if ( ! loading ) {
 		loading =
 			renderer === 'pele'
-				? loadPele( peleUrl ).then( createPeleRenderer )
+				? loadPele( peleUrl ).then( ( pele ) =>
+						createPeleRenderer( pele, {
+							site: settings.peleOptions,
+						} )
+				  )
 				: loadMermaid( mermaidUrl ).then( createMermaidRenderer );
 	}
 

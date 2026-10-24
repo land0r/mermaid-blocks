@@ -39,6 +39,92 @@ function getStarterCodes() {
 	return codes;
 }
 
+describe( 'the options of the site', () => {
+	const spy = () => {
+		const module = { ...pele, render: jest.fn( pele.render ) };
+
+		return { module, render: module.render };
+	};
+	const code = 'flowchart LR\nA --> B';
+
+	it( 'reach render()', async () => {
+		const { module, render } = spy();
+		const site = { links: true, padding: 12, linkRel: 'nofollow' };
+
+		await createPeleRenderer( module, { measurer, site } ).draw(
+			code,
+			'auto-light',
+			document.body,
+			'x'
+		);
+
+		expect( render ).toHaveBeenCalledWith(
+			code,
+			expect.objectContaining( site )
+		);
+	} );
+
+	it( 'lose to the options the plugin sets', async () => {
+		const { module, render } = spy();
+		const site = {
+			idPrefix: 'site',
+			responsive: false,
+			fontFamily: 'Site Font',
+			fontFamilyMono: 'Site Mono',
+			measurer: { width: () => 1 },
+			padding: 3,
+		};
+
+		const element = document.createElement( 'div' );
+		element.style.fontFamily = 'Georgia, serif';
+		document.body.appendChild( element );
+
+		await createPeleRenderer( module, { measurer, site } ).draw(
+			code,
+			'auto-light',
+			element,
+			'mine'
+		);
+		element.remove();
+
+		const options = render.mock.calls[ 0 ][ 1 ];
+
+		expect( options ).toMatchObject( {
+			idPrefix: 'mine',
+			responsive: true,
+			fontFamilyMono: 'monospace',
+			measurer,
+			padding: 3,
+		} );
+		expect( options.fontFamily ).toBe( 'Georgia, serif' );
+	} );
+
+	it( 'may change what the plugin only defaults', async () => {
+		const { module, render } = spy();
+
+		await createPeleRenderer( module, {
+			measurer,
+			site: { autoDirection: true },
+		} ).draw( code, 'auto-light', document.body, 'x' );
+
+		expect( render.mock.calls[ 0 ][ 1 ].autoDirection ).toBe( true );
+	} );
+
+	it( 'leave the defaults when there are none', async () => {
+		const { module, render } = spy();
+
+		await createPeleRenderer( module, { measurer } ).draw(
+			code,
+			'auto-light',
+			document.body,
+			'x'
+		);
+
+		expect( render.mock.calls[ 0 ][ 1 ].autoDirection ).toBe( false );
+		expect( render.mock.calls[ 0 ][ 1 ] ).not.toHaveProperty( 'links' );
+	} );
+} );
+
 describe( 'the Pele renderer', () => {
 	describe( 'draw', () => {
 		const starters = getStarterCodes();
@@ -153,6 +239,33 @@ describe( 'the Pele renderer', () => {
 			);
 			// Nothing of the SVG ended up in the attribute.
 			expect( root.getAttribute( 'style' ) ).not.toContain( '<' );
+		} );
+
+		it( 'draws in the fonts of the element variables when set', async () => {
+			const element = document.createElement( 'div' );
+			element.style.fontFamily = 'Georgia, serif';
+			element.style.setProperty( '--pele-font', ' Inter, sans-serif ' );
+			element.style.setProperty( '--pele-font-mono', 'Fira Code' );
+			document.body.appendChild( element );
+
+			const { svg } = await draw( 'flowchart LR\nA --> B', 'f', element );
+			element.remove();
+
+			expect( svg ).toContain( '--pele-font:Inter, sans-serif;' );
+			expect( svg ).not.toContain( 'Georgia' );
+			expect( svg ).toContain( 'var(--pele-font-mono,Fira Code)' );
+		} );
+
+		it( 'falls back to the computed font and to monospace', async () => {
+			const element = document.createElement( 'div' );
+			element.style.fontFamily = 'Georgia, serif';
+			document.body.appendChild( element );
+
+			const { svg } = await draw( 'flowchart LR\nA --> B', 'f', element );
+			element.remove();
+
+			expect( svg ).toContain( '--pele-font:Georgia, serif;' );
+			expect( svg ).toContain( 'var(--pele-font-mono,monospace)' );
 		} );
 
 		it( 'draws a diagram it has no code for as a failed diagram', async () => {

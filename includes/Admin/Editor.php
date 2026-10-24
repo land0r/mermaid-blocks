@@ -11,6 +11,7 @@ use MermaidBlocks\Assets;
 use MermaidBlocks\Hookable;
 use MermaidBlocks\Integrations\Block;
 use MermaidBlocks\Options;
+use MermaidBlocks\PeleOptions;
 use MermaidBlocks\Themes;
 use WP_Block_Type_Registry;
 
@@ -46,16 +47,25 @@ final class Editor implements Hookable {
 	private SettingsPage $settings_page;
 
 	/**
+	 * The options a site gives Pele.
+	 *
+	 * @var PeleOptions
+	 */
+	private PeleOptions $pele_options;
+
+	/**
 	 * Sets up what the editor needs.
 	 *
 	 * @param Themes       $themes        The themes a diagram can be drawn in.
 	 * @param Options      $options       The stored settings.
 	 * @param SettingsPage $settings_page The settings page.
+	 * @param PeleOptions  $pele_options  The options a site gives Pele.
 	 */
-	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page ) {
+	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page, PeleOptions $pele_options ) {
 		$this->themes        = $themes;
 		$this->options       = $options;
 		$this->settings_page = $settings_page;
+		$this->pele_options  = $pele_options;
 	}
 
 	/**
@@ -119,7 +129,8 @@ final class Editor implements Hookable {
 	 * each one that isn't offered is shown as, the site's theme, which the
 	 * preview of a block without a theme of its own is drawn in, and, to those
 	 * who may change that one, where. It also tells whether to draw the images
-	 * of the diagrams of a post: see Images\ImageSync.
+	 * of the diagrams of a post: see Images\ImageSync. With Pele, it also
+	 * tells the options the site gives it.
 	 */
 	public function add_editor_settings(): void {
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
@@ -136,6 +147,13 @@ final class Editor implements Hookable {
 			'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
 			'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
 		);
+
+		// Only with Pele, and only when a filter gave some.
+		$pele_options = $this->pele_options->get_settings();
+
+		if ( $pele_options ) {
+			$settings['peleOptions'] = $pele_options;
+		}
 
 		// The block's own editor script: the libraries are not.
 		foreach ( array_diff( $block_type->editor_script_handles, Assets::LIBRARIES ) as $handle ) {

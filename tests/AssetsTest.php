@@ -93,6 +93,30 @@ class AssetsTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The script is told the options a filter gives Pele, with Pele and only
+	 * when there are some.
+	 */
+	public function test_tells_the_script_the_options_of_pele(): void {
+		$filter = static function () {
+			return array(
+				'links'   => true,
+				'unknown' => 1,
+			);
+		};
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertArrayNotHasKey( 'peleOptions', $this->get_settings() );
+
+		add_filter( 'mermaid_blocks_pele_options', $filter );
+		$this->assertSame( array( 'links' => true ), $this->get_settings()['peleOptions'] );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertArrayNotHasKey( 'peleOptions', $this->get_settings() );
+
+		remove_filter( 'mermaid_blocks_pele_options', $filter );
+	}
+
+	/**
 	 * The renderer a filter picks is the one the script is told, even for a
 	 * request the filter looks at once the query ran.
 	 */

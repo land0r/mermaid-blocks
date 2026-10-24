@@ -218,3 +218,103 @@ export async function redrawDiagram( renderer, diagram ) {
 
 	return !! canvas;
 }
+
+/**
+ * Draws a rendered diagram again in place, when its renderer gives diagrams a
+ * style, as Pele does: only the SVG changes. The canvas keeps its palette, and
+ * the diagram its controls and zoom. A web font that loaded, or a canvas that
+ * changed its width, are the reasons.
+ *
+ * The diagram stays as it is when the new drawing fails, and while a drawing
+ * or a redraw is going on.
+ *
+ * @param {Object}      renderer Draws the diagram.
+ * @param {HTMLElement} diagram  The diagram element.
+ *
+ * @return {Promise<boolean>} Whether the diagram was drawn again: not when it
+ * isn't rendered, is being processed, or the renderer has no style for it.
+ */
+export async function redrawInPlace( renderer, diagram ) {
+	const source = diagram.querySelector( SOURCE_SELECTOR );
+	const canvas = diagram.querySelector( CANVAS_SELECTOR );
+	const svg = canvas && canvas.querySelector( 'svg' );
+
+	if (
+		! source ||
+		! svg ||
+		! diagram.classList.contains( 'is-rendered' ) ||
+		diagram.dataset.mermaidProcessing
+	) {
+		return false;
+	}
+
+	const theme = resolveTheme( diagram.dataset.mermaidTheme, diagram );
+
+	if ( ! renderer.getStyle( source.textContent, theme, diagram ) ) {
+		return false;
+	}
+
+	diagram.dataset.mermaidProcessing = '1';
+
+	let redrawn = false;
+
+	try {
+		// The id stays, and so do the ids of the accessible title and description.
+		const result = await renderer.draw(
+			source.textContent,
+			canvas.dataset.mermaidTheme,
+			diagram,
+			svg.id
+		);
+
+		if ( ! result.error ) {
+			replaceSvg( svg, result.svg, diagram );
+			setAccessibleText( svg, {
+				title: diagram.dataset.mermaidTitle,
+				description: diagram.dataset.mermaidDescription,
+			} );
+			redrawn = true;
+		}
+	} finally {
+		delete diagram.dataset.mermaidProcessing;
+	}
+
+	return redrawn;
+}
+
+/**
+ * Puts a new drawing in the place of an SVG element, in the same element, so
+ * what refers to it, such as the zoom, still does.
+ *
+ * @param {SVGSVGElement} svg     The element on the page.
+ * @param {string}        markup  The new drawing.
+ * @param {HTMLElement}   diagram The diagram element, which says whether it
+ *                                is zoomed.
+ */
+function replaceSvg( svg, markup, diagram ) {
+	const template = svg.ownerDocument.createElement( 'template' );
+	template.innerHTML = markup;
+
+	const next = template.content.querySelector( 'svg' );
+
+	if ( ! next ) {
+		return;
+	}
+
+	// The zoom sets the width of the SVG itself: the new drawing keeps it.
+	const { width, maxWidth } = svg.style;
+	const zoomed = diagram.classList.contains( 'is-zoomed' );
+
+	Array.from( svg.attributes ).forEach( ( { name } ) =>
+		svg.removeAttribute( name )
+	);
+	Array.from( next.attributes ).forEach( ( { name, value } ) =>
+		svg.setAttribute( name, value )
+	);
+	svg.replaceChildren( ...Array.from( next.childNodes ) );
+
+	if ( zoomed ) {
+		svg.style.width = width;
+		svg.style.maxWidth = maxWidth;
+	}
+}

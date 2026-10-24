@@ -19,10 +19,12 @@ import renderDiagrams, {
 	findDiagrams,
 	isOutdated,
 	redrawDiagram,
+	redrawInPlace,
 } from './frontend/render-diagrams';
 import loadRenderer, { getRendererUrl } from './frontend/load-renderer';
 import loadControls from './frontend/load-controls';
 import watchSurface from './utils/watch-surface';
+import watchFonts from './utils/watch-fonts';
 
 // Start a viewport's height ahead, so a diagram is usually rendered by the
 // time it scrolls into view.
@@ -34,6 +36,9 @@ const { mermaidUrl, controlsUrl, i18n } = settings;
 
 // Whether the page is watched for turning dark or light.
 let watching = false;
+
+// Whether the page is watched for web fonts that finish loading.
+let watchingFonts = false;
 
 /**
  * Returns the URL of the controls: `build/controls.js`.
@@ -102,6 +107,31 @@ function redrawOutdated() {
 }
 
 /**
+ * Draws the Pele diagrams again, in place, once web fonts have loaded: the
+ * labels were measured in the font before. Mermaid.js diagrams are left alone.
+ */
+function redrawForFonts() {
+	loadRenderer( settings )
+		.then( ( renderer ) => {
+			if ( typeof renderer.forgetTextWidths !== 'function' ) {
+				return;
+			}
+
+			renderer.forgetTextWidths();
+
+			return Promise.all(
+				findDiagrams( document ).map( ( diagram ) =>
+					redrawInPlace( renderer, diagram )
+				)
+			);
+		} )
+		.catch( ( error ) => {
+			// eslint-disable-next-line no-console
+			console.error( 'Mermaid Blocks: failed to render diagram.', error );
+		} );
+}
+
+/**
  * Loads the renderer if needed, renders one diagram and adds its controls.
  *
  * @param {HTMLElement} diagram The diagram element.
@@ -123,6 +153,11 @@ function renderNow( diagram ) {
 			if ( ! watching ) {
 				watching = true;
 				watchSurface( redrawOutdated );
+			}
+
+			if ( ! watchingFonts && settings.renderer === 'pele' ) {
+				watchingFonts = true;
+				watchFonts( redrawForFonts );
 			}
 		} );
 }

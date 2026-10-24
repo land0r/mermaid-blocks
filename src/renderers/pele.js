@@ -75,6 +75,31 @@ function withFont( svg, font ) {
 }
 
 /**
+ * Reads the fonts a diagram is drawn in, as Pele's `mount()` does: the
+ * variables `--pele-font` and `--pele-font-mono` where a theme sets them on
+ * the element, else the element's own font and a monospace one.
+ *
+ * @param {?Window}     view    The window the element is in.
+ * @param {HTMLElement} element The element the diagram is shown in.
+ *
+ * @return {{font: string, mono: string}} The font family of the labels (empty
+ * when the element has none) and the monospace one.
+ */
+function getFonts( view, element ) {
+	const style = view ? view.getComputedStyle( element ) : null;
+
+	return {
+		font:
+			( style && style.getPropertyValue( '--pele-font' ).trim() ) ||
+			( style && style.fontFamily ) ||
+			'',
+		mono:
+			( style && style.getPropertyValue( '--pele-font-mono' ).trim() ) ||
+			'monospace',
+	};
+}
+
+/**
  * Loads the code of the diagram type of some code, in Pele's lazy build. The
  * single-file build has every type and no `load()`.
  *
@@ -100,33 +125,51 @@ async function loadType( pele, code ) {
 /**
  * Wraps the Pele module in the renderer interface.
  *
+ * This is the one place Pele's options are put together: the site's, which
+ * the server tells the page (see `PeleOptions`), under the plugin's own.
+ *
  * @param {Object}   pele               The Pele module: the lazy build's, or the
  *                                      single-file build's.
  * @param {Object}   [options]          Options.
  * @param {Document} [options.doc]      The document of the window Pele runs in.
  * @param {Object}   [options.measurer] Measures text, where the browser's
  *                                      canvas can't: see Pele's `TextMeasurer`.
+ * @param {Object}   [options.site]     Pele's render options for the site. The
+ *                                      options the plugin sets win over them.
  *
- * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function}}
+ * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function, forgetTextWidths: Function}}
  * The renderer.
  */
-export function createPeleRenderer( pele, { doc = document, measurer } = {} ) {
+export function createPeleRenderer(
+	pele,
+	{ doc = document, measurer, site } = {}
+) {
 	return {
 		name: 'pele',
 		document: doc,
+
+		/**
+		 * Makes Pele measure text again, as it must when a web font has
+		 * loaded: what it measured was measured in the font before it.
+		 */
+		forgetTextWidths() {
+			if ( typeof pele.forgetTextWidths === 'function' ) {
+				pele.forgetTextWidths();
+			}
+		},
 
 		async draw( code, theme, element, id ) {
 			try {
 				await loadType( pele, code );
 
 				const view = element.ownerDocument.defaultView;
-				const font = view
-					? view.getComputedStyle( element ).fontFamily
-					: '';
+				const { font, mono } = getFonts( view, element );
 				const options = {
+					autoDirection: false,
+					...site,
 					idPrefix: id,
 					responsive: true,
-					autoDirection: false,
+					fontFamilyMono: mono,
 				};
 
 				if ( font ) {

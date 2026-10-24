@@ -144,6 +144,30 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The editor is told the options a filter gives Pele, with Pele and only
+	 * when there are some.
+	 */
+	public function test_tells_the_editor_the_options_of_pele(): void {
+		$filter = static function () {
+			return array(
+				'padding' => 12,
+				'unknown' => 1,
+			);
+		};
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertArrayNotHasKey( 'peleOptions', $this->get_editor_settings() );
+
+		add_filter( 'mermaid_blocks_pele_options', $filter );
+		$this->assertSame( array( 'padding' => 12 ), $this->get_editor_settings()['peleOptions'] );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertArrayNotHasKey( 'peleOptions', $this->get_editor_settings() );
+
+		remove_filter( 'mermaid_blocks_pele_options', $filter );
+	}
+
+	/**
 	 * The script of the editor gets the settings, not the library of the
 	 * renderer, which is one of the block's editor scripts too.
 	 */

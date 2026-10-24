@@ -30,6 +30,7 @@ import { getRenderer } from '../renderers';
 import { THEMES, resolveTheme } from '../utils/themes';
 import { withAccessibleText } from '../utils/accessible-text';
 import watchSurface from '../utils/watch-surface';
+import watchFonts from '../utils/watch-fonts';
 
 // No drawing: the preview is empty, or shows an error.
 const EMPTY = { svg: '', style: null };
@@ -108,6 +109,23 @@ export default function MermaidDiagram( {
 		} );
 	}, [ theme ] );
 
+	// Counts the times web fonts finished loading: Pele draws again then.
+	const [ fontsLoaded, setFontsLoaded ] = useState( 0 );
+
+	useEffect( () => {
+		const { ownerDocument } = containerRef.current;
+
+		return watchFonts( () => {
+			const renderer = getRenderer( ownerDocument.defaultView );
+
+			// Mermaid.js measures nothing in advance.
+			if ( renderer && typeof renderer.forgetTextWidths === 'function' ) {
+				renderer.forgetTextWidths();
+				setFontsLoaded( ( count ) => count + 1 );
+			}
+		}, ownerDocument );
+	}, [] );
+
 	useEffect( () => {
 		if ( ! drawnTheme ) {
 			return;
@@ -162,7 +180,7 @@ export default function MermaidDiagram( {
 		return () => {
 			cancelled = true;
 		};
-	}, [ code, drawnTheme, instanceId ] );
+	}, [ code, drawnTheme, instanceId, fontsLoaded ] );
 
 	// As on the front end, where the script writes both into the SVG.
 	const { svg, style } = drawing;

@@ -64,14 +64,23 @@ final class Assets implements Hookable {
 	private Options $options;
 
 	/**
+	 * The options a site gives Pele.
+	 *
+	 * @var PeleOptions
+	 */
+	private PeleOptions $pele_options;
+
+	/**
 	 * Sets up the assets.
 	 *
-	 * @param Files   $files   The plugin's files.
-	 * @param Options $options The stored settings.
+	 * @param Files       $files        The plugin's files.
+	 * @param Options     $options      The stored settings.
+	 * @param PeleOptions $pele_options The options a site gives Pele.
 	 */
-	public function __construct( Files $files, Options $options ) {
-		$this->files   = $files;
-		$this->options = $options;
+	public function __construct( Files $files, Options $options, PeleOptions $pele_options ) {
+		$this->files        = $files;
+		$this->options      = $options;
+		$this->pele_options = $pele_options;
 	}
 
 	/**
@@ -144,8 +153,9 @@ final class Assets implements Hookable {
 
 	/**
 	 * Tells the front-end script the renderer, where to load it and the
-	 * controls from, and the labels of the controls. It is told when the
-	 * scripts of the page are enqueued, on the front end and in the admin.
+	 * controls from, the options of Pele, and the labels of the controls. It
+	 * is told when the scripts of the page are enqueued, on the front end and
+	 * in the admin.
 	 */
 	public function add_settings(): void {
 		// Once: the script is enqueued by one action or the other, on most requests by both.
@@ -180,6 +190,14 @@ final class Assets implements Hookable {
 				'exitFullscreen' => __( 'Exit fullscreen', 'mermaid-blocks' ),
 			),
 		);
+
+		// Only with Pele, and only when a filter gave some.
+		$pele_options = $this->pele_options->get_settings();
+
+		if ( $pele_options ) {
+			$settings['peleOptions'] = $pele_options;
+		}
+
 		wp_add_inline_script(
 			self::DIAGRAM,
 			'var mermaidBlocksSettings = ' . wp_json_encode( $settings ) . ';',

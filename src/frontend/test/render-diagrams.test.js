@@ -1,6 +1,7 @@
 import renderDraw, {
 	isOutdated,
 	redrawDiagram as redrawWith,
+	redrawInPlace,
 } from '../render-diagrams';
 // eslint-disable-next-line import/no-unresolved
 import * as pele from 'pele/lazy';
@@ -556,5 +557,117 @@ describe( 'renderDiagrams with Pele', () => {
 		await redrawWith( renderer, diagram );
 
 		expect( getPalette( getCanvas( diagram ) ) ).toBe( 'light' );
+	} );
+} );
+
+describe( 'redrawInPlace', () => {
+	const measurer = { width: ( text, size ) => text.length * size * 0.55 };
+	const peleRenderer = createPeleRenderer( pele, { measurer } );
+
+	it( 'draws a Pele diagram again in its canvas, keeping the palette, the controls and the element', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+		diagram.dataset.mermaidTitle = 'A title';
+
+		await renderDraw( peleRenderer );
+
+		const canvas = getCanvas( diagram );
+		const svg = canvas.querySelector( 'svg' );
+		const id = svg.id;
+		const toolbar = document.createElement( 'div' );
+		toolbar.className = 'mermaid-blocks-diagram__toolbar';
+		diagram.appendChild( toolbar );
+		const palette = canvas.style.getPropertyValue( '--pele-fg' );
+
+		// Something the first drawing did not have.
+		diagram.querySelector( 'pre' ).textContent =
+			'flowchart LR\nA --> B --> C';
+
+		await expect( redrawInPlace( peleRenderer, diagram ) ).resolves.toBe(
+			true
+		);
+
+		expect( getCanvas( diagram ) ).toBe( canvas );
+		expect( canvas.querySelector( 'svg' ) ).toBe( svg );
+		expect( svg.id ).toBe( id );
+		expect( svg.textContent ).toContain( 'C' );
+		expect(
+			diagram.querySelector( '.mermaid-blocks-diagram__toolbar' )
+		).toBe( toolbar );
+		expect( canvas.style.getPropertyValue( '--pele-fg' ) ).toBe( palette );
+		expect( svg.querySelector( 'title' ).textContent ).toBe( 'A title' );
+		expect( svg.getAttribute( 'aria-labelledby' ) ).toBe(
+			svg.querySelector( 'title' ).id
+		);
+		expect( diagram.dataset.mermaidProcessing ).toBeUndefined();
+	} );
+
+	it( 'keeps the width a zoomed diagram has', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+
+		await renderDraw( peleRenderer );
+
+		const svg = getCanvas( diagram ).querySelector( 'svg' );
+		diagram.classList.add( 'is-zoomed' );
+		svg.style.width = '900px';
+		svg.style.maxWidth = 'none';
+
+		await redrawInPlace( peleRenderer, diagram );
+
+		expect( svg.style.width ).toBe( '900px' );
+		expect( svg.style.maxWidth ).toBe( 'none' );
+	} );
+
+	it( 'leaves a Mermaid.js diagram alone', async () => {
+		setup();
+		const diagram = getDiagram();
+		const mermaid = themed();
+		const renderer = createMermaidRenderer( mermaid );
+
+		await renderDraw( renderer, diagram );
+		mermaid.render.mockClear();
+
+		await expect( redrawInPlace( renderer, diagram ) ).resolves.toBe(
+			false
+		);
+		expect( mermaid.render ).not.toHaveBeenCalled();
+	} );
+
+	it( 'skips a diagram that is not rendered or is being processed', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+		const draw = jest.spyOn( peleRenderer, 'draw' );
+
+		await expect( redrawInPlace( peleRenderer, diagram ) ).resolves.toBe(
+			false
+		);
+
+		await renderDraw( peleRenderer );
+		draw.mockClear();
+		diagram.dataset.mermaidProcessing = '1';
+
+		await expect( redrawInPlace( peleRenderer, diagram ) ).resolves.toBe(
+			false
+		);
+		expect( draw ).not.toHaveBeenCalled();
+
+		draw.mockRestore();
+	} );
+
+	it( 'leaves the diagram as it is when the new drawing fails', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+
+		await renderDraw( peleRenderer );
+
+		const html = getCanvas( diagram ).innerHTML;
+		diagram.querySelector( 'pre' ).textContent = 'nonsense';
+
+		await expect( redrawInPlace( peleRenderer, diagram ) ).resolves.toBe(
+			false
+		);
+		expect( getCanvas( diagram ).innerHTML ).toBe( html );
+		expect( diagram.dataset.mermaidProcessing ).toBeUndefined();
 	} );
 } );
