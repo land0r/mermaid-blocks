@@ -32,7 +32,7 @@ final class IconPacks {
 		 *
 		 * A pack is the URL of an Iconify JSON file, by the name diagrams use
 		 * before the colon. A name has lower-case letters, digits and hyphens;
-		 * anything else is dropped, and so is a value that is no URL. The file
+		 * anything else is dropped, and so is a value that is no http or https URL. The file
 		 * is fetched by the browser, only on a page with a diagram that uses
 		 * one of its icons, and its icons are put into the diagram as they
 		 * are: register packs you trust.
@@ -90,7 +90,7 @@ final class IconPacks {
 				continue;
 			}
 
-			$url = esc_url_raw( $url );
+			$url = esc_url_raw( $url, array( 'http', 'https' ) );
 
 			if ( '' !== $url ) {
 				$packs[ $name ] = $url;
