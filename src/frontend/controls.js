@@ -10,12 +10,17 @@ import createZoom from './zoom';
 import createFullscreen from './fullscreen';
 import { downloadDiagram } from '../utils/export-diagram';
 import { createFullLayout } from '../utils/full-layout';
+import { REDRAWN_EVENT } from '../utils/redrawn-event';
 
 const CANVAS_SELECTOR = '.mermaid-blocks-diagram__canvas';
 const SOURCE_SELECTOR = '.mermaid-blocks-diagram__source';
 const TOOLBAR_CLASS = 'mermaid-blocks-diagram__toolbar';
 const BUTTON_CLASS = 'mermaid-blocks-diagram__button';
 const STATUS_CLASS = 'mermaid-blocks-diagram__status';
+
+// The diagrams that have Pele's zoom: it is enabled once, however often the
+// diagram gets its controls.
+const peleZooms = new WeakMap();
 
 // How long a message, such as a failed download or "Copied", stays.
 const STATUS_DURATION = 5000;
@@ -176,6 +181,35 @@ function createZoomButtons( doc, diagram, canvas, svg, text ) {
 		zoom,
 		buttons: [ buttons.zoomOut, buttons.zoomIn, buttons.reset ],
 	};
+}
+
+/**
+ * Makes a Pele diagram zoomable with Pele's own zoom: pinch, Ctrl or Cmd and
+ * the wheel, drag, double-click, `+` `-` `0` and the arrow keys, and Pele's
+ * buttons, which it puts in the canvas. The wheel alone is left to the page.
+ * The zoom is refreshed when the diagram is drawn again in place.
+ *
+ * @param {HTMLElement} diagram  The diagram element.
+ * @param {HTMLElement} canvas   The element around the SVG.
+ * @param {Object}      renderer The Pele renderer.
+ * @param {Object}      text     The labels.
+ *
+ * @return {Object} Pele's zoom.
+ */
+function enablePeleZoom( diagram, canvas, renderer, text ) {
+	const zoom = renderer.enableZoom( canvas, {
+		always: true,
+		labels: {
+			zoomIn: text.zoomIn,
+			zoomOut: text.zoomOut,
+			reset: text.resetZoom,
+		},
+	} );
+
+	diagram.addEventListener( REDRAWN_EVENT, () => zoom.refresh() );
+	peleZooms.set( diagram, zoom );
+
+	return zoom;
 }
 
 /**
@@ -343,8 +377,17 @@ export default function addControls( diagram, labels, renderer ) {
 	const status = createStatus( doc );
 	let zoom = null;
 
-	// Zooming scales the drawing through its `viewBox`.
-	if ( controls.includes( 'zoom' ) && svg.hasAttribute( 'viewBox' ) ) {
+	if (
+		controls.includes( 'zoom' ) &&
+		renderer &&
+		renderer.name === 'pele' &&
+		typeof renderer.enableZoom === 'function'
+	) {
+		zoom =
+			peleZooms.get( diagram ) ||
+			enablePeleZoom( diagram, canvas, renderer, text );
+	} else if ( controls.includes( 'zoom' ) && svg.hasAttribute( 'viewBox' ) ) {
+		// Zooming scales the drawing through its `viewBox`.
 		const zoomControls = createZoomButtons(
 			doc,
 			diagram,

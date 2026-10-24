@@ -7,6 +7,7 @@ import renderDraw, {
 import * as pele from 'pele/lazy';
 import { createMermaidRenderer } from '../../renderers/mermaid';
 import { createPeleRenderer } from '../../renderers/pele';
+import { REDRAWN_EVENT } from '../../utils/redrawn-event';
 import { DARK, LIGHT, PALETTES } from '../../utils/pele-palette';
 
 // The tests drive Mermaid.js through the renderer interface.
@@ -600,6 +601,31 @@ describe( 'redrawInPlace', () => {
 			svg.querySelector( 'title' ).id
 		);
 		expect( diagram.dataset.mermaidProcessing ).toBeUndefined();
+	} );
+
+	it( 'tells the diagram that it was drawn again', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+		const listener = jest.fn();
+
+		await renderDraw( peleRenderer );
+		diagram.addEventListener( REDRAWN_EVENT, listener );
+		await redrawInPlace( peleRenderer, diagram );
+
+		expect( listener ).toHaveBeenCalledTimes( 1 );
+	} );
+
+	it( 'tells nobody when the diagram was not drawn again', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+		const listener = jest.fn();
+
+		await renderDraw( peleRenderer );
+		diagram.querySelector( 'pre' ).textContent = 'flowchart LR\nA -->';
+		diagram.addEventListener( REDRAWN_EVENT, listener );
+		await redrawInPlace( peleRenderer, diagram );
+
+		expect( listener ).not.toHaveBeenCalled();
 	} );
 
 	it( 'keeps the width a zoomed diagram has', async () => {

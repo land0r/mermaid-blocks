@@ -154,7 +154,7 @@ async function loadType( pele, code ) {
  *                                                     once, for the first diagram with a
  *                                                     formula: no other loads it.
  *
- * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function, forgetTextWidths: Function}}
+ * @return {{name: string, document: Document, draw: Function, parse: Function, getStyle: Function, forgetTextWidths: Function, enableZoom: Function}}
  * The renderer.
  */
 export function createPeleRenderer(
@@ -238,6 +238,18 @@ export function createPeleRenderer(
 				pele.forgetTextWidths();
 			}
 		},
+
+		/**
+		 * Makes an element zoomable with Pele's zoom, which works on the SVG
+		 * that is the first child of the element. The controls are in a bundle
+		 * that imports no Pele, so they get it from here.
+		 *
+		 * @param {HTMLElement} element The element that holds the SVG.
+		 * @param {Object}      options Pele's zoom options.
+		 *
+		 * @return {Object} Pele's zoom: `reset()`, `refresh()`, `destroy()`.
+		 */
+		enableZoom: ( element, options ) => pele.enableZoom( element, options ),
 
 		async draw( code, theme, element, id ) {
 			try {

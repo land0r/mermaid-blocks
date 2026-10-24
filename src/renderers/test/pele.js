@@ -686,3 +686,25 @@ describe( 'icons', () => {
 		expect( svg ).not.toContain( 'id="site"' );
 	} );
 } );
+
+describe( 'enableZoom()', () => {
+	it( "enables Pele's zoom on an element, with the labels", async () => {
+		const element = document.createElement( 'div' );
+		document.body.append( element );
+		element.innerHTML = ( await draw( 'flowchart LR\nA --> B' ) ).svg;
+
+		const zoom = renderer.enableZoom( element, {
+			always: true,
+			labels: { zoomIn: 'In', zoomOut: 'Out', reset: 'Back' },
+		} );
+
+		expect(
+			Array.from( element.querySelectorAll( 'button' ) ).map(
+				( button ) => button.getAttribute( 'aria-label' )
+			)
+		).toEqual( [ 'In', 'Out', 'Back' ] );
+		expect( typeof zoom.refresh ).toBe( 'function' );
+
+		zoom.destroy();
+	} );
+} );

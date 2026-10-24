@@ -1,5 +1,6 @@
 import { resolveTheme } from '../utils/themes';
 import { setAccessibleText } from '../utils/accessible-text';
+import { REDRAWN_EVENT } from '../utils/redrawn-event';
 
 const DIAGRAM_SELECTOR = '.mermaid-blocks-diagram';
 const SOURCE_SELECTOR = '.mermaid-blocks-diagram__source';
@@ -274,6 +275,10 @@ export async function redrawInPlace( renderer, diagram ) {
 				description: diagram.dataset.mermaidDescription,
 			} );
 			redrawn = true;
+
+			// The controls are in a bundle of their own: the zoom of Pele reads
+			// the new drawing again when it hears of it.
+			diagram.dispatchEvent( new CustomEvent( REDRAWN_EVENT ) );
 		}
 	} finally {
 		delete diagram.dataset.mermaidProcessing;
