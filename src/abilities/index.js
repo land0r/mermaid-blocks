@@ -1,8 +1,8 @@
 /**
  * Registers the abilities that run in the browser, in the block editor:
  * `mermaid-blocks/validate-diagram`, which parses a diagram with the editor's
- * copy of Mermaid. The server can't parse Mermaid, so its abilities only
- * detect a diagram's type.
+ * renderer, Mermaid.js or Pele. The server can't parse Mermaid, so its
+ * abilities only detect a diagram's type.
  *
  * A script module, as the client-side Abilities API is. It has no access to
  * translations: its texts come translated from

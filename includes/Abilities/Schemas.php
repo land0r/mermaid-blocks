@@ -7,7 +7,9 @@
 
 namespace MermaidBlocks\Abilities;
 
+use MermaidBlocks\Options;
 use MermaidBlocks\Posts\PostDiagrams;
+use MermaidBlocks\Renderers;
 use MermaidBlocks\Themes;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,6 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * The parts of a schema that more than one ability has: what addresses a
  * diagram in the input, its code and attributes, and a diagram in the output.
+ *
+ * With Pele, the code and the theme say what Pele draws of them, so a client
+ * doesn't pick a look the site won't show.
  */
 final class Schemas {
 
@@ -28,12 +33,31 @@ final class Schemas {
 	private Themes $themes;
 
 	/**
+	 * The stored settings, which hold the site's renderer.
+	 *
+	 * @var Options
+	 */
+	private Options $options;
+
+	/**
 	 * Sets up the schemas.
 	 *
-	 * @param Themes $themes The themes a diagram can be drawn in.
+	 * @param Themes  $themes  The themes a diagram can be drawn in.
+	 * @param Options $options The stored settings, which hold the site's
+	 *                         renderer.
 	 */
-	public function __construct( Themes $themes ) {
-		$this->themes = $themes;
+	public function __construct( Themes $themes, Options $options ) {
+		$this->themes  = $themes;
+		$this->options = $options;
+	}
+
+	/**
+	 * Tells whether the request's renderer is Pele.
+	 *
+	 * @return bool True for Pele.
+	 */
+	private function is_pele(): bool {
+		return Renderers::PELE === $this->options->get_renderer();
 	}
 
 	/**
@@ -81,10 +105,16 @@ final class Schemas {
 	 * @return array The schema.
 	 */
 	public function get_code(): array {
+		$description = __( 'The Mermaid source of the diagram. It is not validated: use the mermaid-blocks/validate-diagram ability in the block editor for that.', 'mermaid-blocks' );
+
+		if ( $this->is_pele() ) {
+			$description .= ' ' . __( 'The site draws diagrams with Pele, which ignores colours set in the code, such as themeVariables, and draws a theme set in it as light or dark.', 'mermaid-blocks' );
+		}
+
 		return array(
 			'type'        => 'string',
 			'minLength'   => 1,
-			'description' => __( 'The Mermaid source of the diagram. It is not validated: use the mermaid-blocks/validate-diagram ability in the block editor for that.', 'mermaid-blocks' ),
+			'description' => $description,
 		);
 	}
 
@@ -162,10 +192,17 @@ final class Schemas {
 	 *                 one, by name.
 	 */
 	private function get_attribute_details(): array {
+		$theme = __( 'The theme of the diagram. Without one, the theme set for the site.', 'mermaid-blocks' );
+
+		// Every theme is still taken: a diagram that has another one, from before the site switched to Pele, keeps it.
+		if ( $this->is_pele() ) {
+			$theme .= ' ' . __( 'The site draws diagrams with Pele, which draws every theme as light or dark: use auto, which follows the page, default for light, or dark.', 'mermaid-blocks' );
+		}
+
 		return array(
 			'theme'      => array(
 				'enum'        => array_merge( array( '' ), array_keys( $this->themes->get_all() ) ),
-				'description' => __( 'The theme of the diagram. Without one, the theme set for the site.', 'mermaid-blocks' ),
+				'description' => $theme,
 			),
 			'caption'    => array(
 				'description' => __( 'A caption shown under the diagram. It may hold the HTML allowed in posts.', 'mermaid-blocks' ),

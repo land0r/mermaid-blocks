@@ -51,9 +51,9 @@ describe( 'validateDiagram', () => {
 		} );
 	} );
 
-	it( 'throws when Mermaid is not loaded', async () => {
+	it( 'throws when no renderer is loaded', async () => {
 		await expect( validateDiagram( { code: 'graph' } ) ).rejects.toThrow(
-			'Mermaid is not loaded'
+			'Neither Mermaid.js nor Pele is loaded on this page.'
 		);
 	} );
 

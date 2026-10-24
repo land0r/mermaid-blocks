@@ -96,7 +96,7 @@ final class ClientAbilities implements Hookable {
 				'abilities' => array(
 					'validateDiagram' => array(
 						'label'       => __( 'Validate a diagram', 'mermaid-blocks' ),
-						'description' => __( 'Parses Mermaid source with the Mermaid library of the editor, and tells whether it is a valid diagram: its type, or the error and the line it is on. Changes nothing.', 'mermaid-blocks' ),
+						'description' => __( 'Parses Mermaid source with the renderer of the editor, Mermaid.js or Pele as the site is set, and tells whether the site can draw it: its type, or the error and the line it is on. Changes nothing.', 'mermaid-blocks' ),
 					),
 				),
 			)
