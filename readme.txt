@@ -41,7 +41,7 @@ Pele draws the same Mermaid code, every diagram type of the Mermaid version the 
 
 Pele draws in a plain look of its own, so a diagram looks different from the same diagram in Mermaid.js:
 
-- **Themes count as light or dark.** Automatic follows the page, and turns dark with it without drawing the diagram again. Dark, Neo Dark, Redux Dark and Redux Dark Color are dark, and every other theme is light. A theme written in the code, in its front matter or in an `%%{init}%%` directive, counts the same way.
+- **Themes count as light or dark.** The theme settings offer Automatic, Light and Dark. Automatic follows the page, and turns dark with it without drawing the diagram again. A diagram that had another theme keeps it: Dark, Neo Dark, Redux Dark and Redux Dark Color are dark, and every other theme is light. A theme written in the code, in its front matter or in an `%%{init}%%` directive, counts the same way.
 - **Colours set in the code are ignored**, such as `themeVariables`.
 - **Math between `$$` is shown as text**, and `click` with a JavaScript callback is dropped, as Mermaid.js does at its strict security level. Links (`click A "https://…"`) work.
 - A diagram's direction stays the same on every screen width.
@@ -140,7 +140,7 @@ Three things are loaded only for a diagram that uses them: formulas (80 KB compr
 If page weight and speed matter more to you than the look of Mermaid.js's themes, yes: choose it under Settings → Mermaid Blocks, look at your diagrams, and switch back if you prefer the old look. Pele draws every diagram type the plugin offers, but in a plainer look of its own, with a light and a dark palette in place of Mermaid's themes. The section "Pele, a lighter renderer" above says what is different.
 
 = Why does my theme look the same in Pele? =
-Pele has no named themes. A theme counts as light or dark: Automatic follows the page, Dark, Neo Dark, Redux Dark and Redux Dark Color are dark, and Forest, Neutral, Base and the others are light. The same goes for a theme written in the diagram's code.
+Pele has no named themes, so with Pele the theme settings offer Automatic, Light and Dark. A diagram that had another theme before keeps it, and shows it as Dark if it is Dark, Neo Dark, Redux Dark or Redux Dark Color, and as Light otherwise; switch back to Mermaid.js and it looks as it did. A theme written in the diagram's code counts the same way.
 
 = Can I use the ELK layout? =
 Yes, for one diagram at a time. Start its code with these lines:

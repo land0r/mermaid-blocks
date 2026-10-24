@@ -308,21 +308,24 @@ final class SettingsPage implements Hookable {
 	}
 
 	/**
-	 * Outputs the field of the theme setting.
+	 * Outputs the field of the theme setting: the themes offered with the
+	 * site's renderer.
+	 *
+	 * A site's theme that isn't offered is shown as the one it is drawn as,
+	 * whose option then submits the site's theme: saving the page as it is
+	 * keeps it.
 	 */
 	public function render_theme_field(): void {
 		$current = $this->themes->get_site_theme();
+		$shown   = $this->themes->get_shown( $current );
 		?>
 		<select id="<?php echo esc_attr( Options::THEME ); ?>" name="<?php echo esc_attr( Options::THEME ); ?>" aria-describedby="mermaid_blocks_theme_description">
-			<?php foreach ( $this->themes->get_all() as $name => $label ) : ?>
-				<option value="<?php echo esc_attr( $name ); ?>" <?php selected( $current, $name ); ?>><?php echo esc_html( $label ); ?></option>
+			<?php foreach ( $this->themes->get_offered() as $name => $label ) : ?>
+				<option value="<?php echo esc_attr( $shown === $name ? $current : $name ); ?>" <?php selected( $shown, $name ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
 		<p class="description" id="mermaid_blocks_theme_description">
-			<?php
-			esc_html_e( 'Automatic turns dark on dark backgrounds. Each diagram block can use its own theme.', 'mermaid-blocks' );
-			echo ' ', esc_html( $this->themes->get_renderer_help() );
-			?>
+			<?php esc_html_e( 'Automatic turns dark on dark backgrounds. Each diagram block can use its own theme.', 'mermaid-blocks' ); ?>
 		</p>
 		<?php
 	}

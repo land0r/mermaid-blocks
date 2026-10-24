@@ -13,7 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * The themes of the bundled Mermaid, and one that follows the page. It also
- * tells which of them a diagram is drawn in: its own, or else the site's.
+ * tells which of them are offered with the request's renderer, and which of
+ * them a diagram is drawn in: its own, or else the site's.
  */
 final class Themes {
 
@@ -23,6 +24,13 @@ final class Themes {
 	 * sits on a dark background.
 	 */
 	const AUTO = 'auto';
+
+	/**
+	 * The dark themes. Pele draws them in its dark palette, and every other
+	 * theme in its light one. isDarkTheme() in src/utils/themes.js tells the
+	 * same: a unit test compares the two.
+	 */
+	const DARK = array( 'dark', 'neo-dark', 'redux-dark', 'redux-dark-color' );
 
 	/**
 	 * The stored settings, which hold the site's theme.
@@ -38,21 +46,6 @@ final class Themes {
 	 */
 	public function __construct( Options $options ) {
 		$this->options = $options;
-	}
-
-	/**
-	 * Returns the sentence that tells what themes are with the renderer of the
-	 * request: Pele has none of its own, so a theme counts as light or dark.
-	 *
-	 * @return string The sentence, or an empty string for Mermaid.js, which
-	 *                draws each theme.
-	 */
-	public function get_renderer_help(): string {
-		if ( Renderers::PELE !== $this->options->get_renderer() ) {
-			return '';
-		}
-
-		return __( 'With Pele, a theme counts as light or dark.', 'mermaid-blocks' );
 	}
 
 	/**
@@ -80,6 +73,63 @@ final class Themes {
 			'redux-color'      => __( 'Redux Color', 'mermaid-blocks' ),
 			'redux-dark-color' => __( 'Redux Dark Color', 'mermaid-blocks' ),
 		);
+	}
+
+	/**
+	 * Returns the themes the settings page, the block and the Elementor widget
+	 * offer with the request's renderer, in the order they are offered.
+	 *
+	 * Mermaid.js offers every theme. Pele draws a theme as light or dark, so it
+	 * offers the automatic theme, Light and Dark: Mermaid.js's Default and Dark,
+	 * under the names of what Pele draws.
+	 *
+	 * @return array Labels of the themes, by name: names from get_all().
+	 */
+	public function get_offered(): array {
+		$themes = $this->get_all();
+
+		if ( Renderers::PELE !== $this->options->get_renderer() ) {
+			return $themes;
+		}
+
+		return array(
+			self::AUTO => $themes[ self::AUTO ],
+			'default'  => __( 'Light', 'mermaid-blocks' ),
+			'dark'     => __( 'Dark', 'mermaid-blocks' ),
+		);
+	}
+
+	/**
+	 * Returns the themes that aren't offered with the request's renderer, each
+	 * with the offered theme it is drawn as.
+	 *
+	 * A diagram, or the site, may have such a theme from before the site
+	 * switched renderer. A picker shows it as that offered theme, and it is
+	 * kept until another theme is picked: the diagram looks the same, and gets
+	 * its own theme back if the site switches back to Mermaid.js.
+	 *
+	 * @return array Names from get_offered(), by names from get_all(). None
+	 *               with Mermaid.js.
+	 */
+	public function get_aliases(): array {
+		$aliases = array();
+
+		foreach ( array_keys( array_diff_key( $this->get_all(), $this->get_offered() ) ) as $name ) {
+			$aliases[ $name ] = in_array( $name, self::DARK, true ) ? 'dark' : 'default';
+		}
+
+		return $aliases;
+	}
+
+	/**
+	 * Returns the offered theme a picker shows a theme as.
+	 *
+	 * @param string $theme A name from get_all().
+	 *
+	 * @return string A name from get_offered().
+	 */
+	public function get_shown( string $theme ): string {
+		return $this->get_aliases()[ $theme ] ?? $theme;
 	}
 
 	/**

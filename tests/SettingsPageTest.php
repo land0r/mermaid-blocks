@@ -337,15 +337,43 @@ class SettingsPageTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The theme's help says what a theme is only when Pele is the renderer.
+	 * With Pele, the field offers the automatic theme, Light and Dark.
 	 */
-	public function test_the_theme_help_changes_only_with_pele(): void {
-		update_option( Options::RENDERER, 'mermaid' );
-		$this->assertStringNotContainsString( 'With Pele', get_echo( array( $this->settings, 'render_theme_field' ) ) );
+	public function test_outputs_light_and_dark_with_pele(): void {
+		update_option( Options::RENDERER, 'pele' );
+		update_option( Options::THEME, 'dark' );
 
+		$markup = get_echo( array( $this->settings, 'render_theme_field' ) );
+
+		$this->assertSame( 3, substr_count( $markup, '<option ' ) );
+		$this->assertStringContainsString( '<option value="auto" >Automatic</option>', $markup );
+		$this->assertStringContainsString( '<option value="default" >Light</option>', $markup );
+		$this->assertStringContainsString( '<option value="dark"  selected=\'selected\'>Dark</option>', $markup );
+	}
+
+	/**
+	 * With Pele, a site's theme that isn't offered is shown as the one it is
+	 * drawn as, whose option submits it, so saving the page keeps it.
+	 */
+	public function test_keeps_a_site_theme_that_is_not_offered(): void {
+		update_option( Options::RENDERER, 'pele' );
+		update_option( Options::THEME, 'neo-dark' );
+
+		$markup = get_echo( array( $this->settings, 'render_theme_field' ) );
+
+		$this->assertStringContainsString( '<option value="neo-dark"  selected=\'selected\'>Dark</option>', $markup );
+		$this->assertStringContainsString( '<option value="default" >Light</option>', $markup );
+		$this->assertStringNotContainsString( '>Neo Dark<', $markup );
+	}
+
+	/**
+	 * The theme's help says nothing of the renderer: the themes offered do.
+	 */
+	public function test_the_theme_help_is_the_same_with_pele(): void {
 		update_option( Options::RENDERER, 'pele' );
 		$markup = get_echo( array( $this->settings, 'render_theme_field' ) );
-		$this->assertStringContainsString( 'Each diagram block can use its own theme. With Pele, a theme counts as light or dark.', $markup );
+
+		$this->assertStringContainsString( 'Each diagram block can use its own theme.</p>', preg_replace( '/\s+</', '<', $markup ) );
 	}
 
 	/**
