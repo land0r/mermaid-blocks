@@ -35,6 +35,18 @@ The renderer made by Obsidian. It draws faster and loads less than Mermaid.js, i
 **Palette**:
 The colours Pele draws a diagram in: light or dark. Pele has no named themes, so a theme picks one of the two.
 
+**Full layout**:
+A diagram laid out with all the room it wants, as on a wide screen. With Pele, a page lays a diagram out for the width it has, and may turn a wide one vertical; a download, a copied image and a saved image always have the full layout.
+_Avoid_: desktop layout
+
+**Formula**:
+TeX between `$$` in a label, typeset by the renderer: by KaTeX with Mermaid.js, by Temml with Pele.
+_Avoid_: equation, math (in prose)
+
+**Icon pack**:
+A set of icons in an Iconify JSON file, which a site registers by name, such as `fa` or `logos`, for its diagrams to name (`fa:fa-car`). A pack is fetched only for a page whose diagrams name one of its icons.
+_Avoid_: icon set, icon library
+
 ## Looks
 
 **Theme**:
