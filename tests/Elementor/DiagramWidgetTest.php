@@ -159,14 +159,54 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The theme's help says what a theme is only when Pele is the renderer.
+	 * With Pele, the widget offers the automatic theme, Light and Dark, and a
+	 * site's theme that isn't offered is named as the one it is drawn as.
 	 */
-	public function test_the_theme_help_changes_only_with_pele(): void {
+	public function test_offers_light_and_dark_with_pele(): void {
+		update_option( 'mermaid_blocks_renderer', 'pele' );
+		update_option( 'mermaid_blocks_theme', 'forest' );
+
+		$options = $this->get_controls()['theme']['options'];
+
+		$this->assertSame(
+			array(
+				''        => 'Site default (Light)',
+				'auto'    => 'Automatic',
+				'default' => 'Light',
+				'dark'    => 'Dark',
+			),
+			$options
+		);
+
+		update_option( 'mermaid_blocks_theme', 'neo-dark' );
+		$this->assertSame( 'Site default (Dark)', $this->get_controls()['theme']['options'][''] );
+	}
+
+	/**
+	 * The theme's help says nothing of the renderer: the themes offered do.
+	 */
+	public function test_the_theme_help_is_the_same_with_pele(): void {
 		update_option( 'mermaid_blocks_renderer', 'mermaid' );
-		$this->assertStringNotContainsString( 'With Pele', $this->get_controls()['theme']['description'] );
+		$help = $this->get_controls()['theme']['description'];
 
 		update_option( 'mermaid_blocks_renderer', 'pele' );
-		$this->assertStringContainsString( 'With Pele, a theme counts as light or dark.', $this->get_controls()['theme']['description'] );
+		$this->assertSame( $help, $this->get_controls()['theme']['description'] );
+	}
+
+	/**
+	 * A widget keeps a theme the renderer doesn't offer, and is drawn in it.
+	 */
+	public function test_keeps_a_theme_that_is_not_offered(): void {
+		update_option( 'mermaid_blocks_renderer', 'pele' );
+
+		$markup = $this->render_widget(
+			array(
+				'code'  => self::CODE,
+				'theme' => 'forest',
+			)
+		);
+
+		$this->assertStringContainsString( 'data-mermaid-theme="forest"', $markup );
 	}
 
 	/**

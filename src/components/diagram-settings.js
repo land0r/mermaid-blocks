@@ -14,11 +14,11 @@ import {
 } from '@wordpress/components';
 
 import {
-	RENDERER_HELP,
 	SETTINGS_URL,
 	SITE_THEME,
 	THEME_LABELS,
 	getOwnTheme,
+	getShownTheme,
 } from '../editor/settings';
 
 const THEME_OPTIONS = [
@@ -27,7 +27,7 @@ const THEME_OPTIONS = [
 		label: sprintf(
 			/* translators: %s: name of the theme set for the whole site, such as "Automatic" or "Forest". */
 			__( 'Site default (%s)', 'mermaid-blocks' ),
-			THEME_LABELS[ SITE_THEME ] || SITE_THEME
+			THEME_LABELS[ getShownTheme( SITE_THEME ) ] || SITE_THEME
 		),
 	},
 	...Object.entries( THEME_LABELS ).map( ( [ value, label ] ) => ( {
@@ -75,7 +75,6 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 								'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.',
 								'mermaid-blocks'
 							) }
-							{ RENDERER_HELP && ' ' + RENDERER_HELP }
 							{ SETTINGS_URL && (
 								<>
 									{ ' ' }
@@ -89,7 +88,7 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 							) }
 						</>
 					}
-					value={ getOwnTheme( theme ) }
+					value={ getShownTheme( getOwnTheme( theme ) ) }
 					options={ THEME_OPTIONS }
 					onChange={ ( value ) =>
 						setAttributes( { theme: value || undefined } )

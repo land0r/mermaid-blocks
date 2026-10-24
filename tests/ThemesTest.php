@@ -35,23 +35,82 @@ class ThemesTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Only with Pele, which has no themes of its own, does the help say that
-	 * a theme counts as light or dark.
+	 * Mermaid.js offers every theme, with none shown as another.
 	 */
-	public function test_tells_what_themes_are_with_pele_only(): void {
+	public function test_offers_every_theme_with_mermaid(): void {
 		update_option( Options::RENDERER, 'mermaid' );
-		$this->assertSame( '', $this->themes->get_renderer_help() );
 
+		$this->assertSame( $this->themes->get_all(), $this->themes->get_offered() );
+		$this->assertSame( array(), $this->themes->get_aliases() );
+		$this->assertSame( 'forest', $this->themes->get_shown( 'forest' ) );
+	}
+
+	/**
+	 * Pele, which draws a theme as light or dark, offers the automatic theme,
+	 * Light and Dark: Mermaid.js's Default and Dark.
+	 */
+	public function test_offers_light_and_dark_with_pele(): void {
 		update_option( Options::RENDERER, 'pele' );
-		$this->assertSame( 'With Pele, a theme counts as light or dark.', $this->themes->get_renderer_help() );
 
-		// A filter picks the renderer of a request, and the help follows it.
+		$this->assertSame(
+			array(
+				'auto'    => 'Automatic',
+				'default' => 'Light',
+				'dark'    => 'Dark',
+			),
+			$this->themes->get_offered()
+		);
+	}
+
+	/**
+	 * With Pele, each theme that isn't offered is shown as Dark when it is
+	 * dark, and as Light when it isn't.
+	 */
+	public function test_shows_the_other_themes_as_light_or_dark_with_pele(): void {
+		update_option( Options::RENDERER, 'pele' );
+
+		$aliases = $this->themes->get_aliases();
+
+		$this->assertSame( array_keys( array_diff_key( $this->themes->get_all(), $this->themes->get_offered() ) ), array_keys( $aliases ) );
+
+		foreach ( $aliases as $theme => $shown ) {
+			$this->assertSame( false !== strpos( $theme, 'dark' ) ? 'dark' : 'default', $shown, $theme );
+		}
+
+		$this->assertSame( 'default', $this->themes->get_shown( 'forest' ) );
+		$this->assertSame( 'dark', $this->themes->get_shown( 'redux-dark-color' ) );
+		$this->assertSame( 'dark', $this->themes->get_shown( 'dark' ) );
+		$this->assertSame( 'auto', $this->themes->get_shown( 'auto' ) );
+	}
+
+	/**
+	 * A filter picks the renderer of a request, and the themes offered
+	 * follow it.
+	 */
+	public function test_offers_the_themes_of_the_renderer_of_the_request(): void {
+		update_option( Options::RENDERER, 'pele' );
+
 		$filter = static function () {
 			return 'mermaid';
 		};
 		add_filter( 'mermaid_blocks_renderer', $filter );
-		$this->assertSame( '', $this->themes->get_renderer_help() );
+		$this->assertSame( $this->themes->get_all(), $this->themes->get_offered() );
 		remove_filter( 'mermaid_blocks_renderer', $filter );
+
+		$this->assertCount( 3, $this->themes->get_offered() );
+	}
+
+	/**
+	 * Offering fewer themes changes nothing a diagram is drawn in: a theme
+	 * that isn't offered is still a theme.
+	 */
+	public function test_keeps_the_themes_that_are_not_offered(): void {
+		update_option( Options::RENDERER, 'pele' );
+		update_option( Options::THEME, 'forest' );
+
+		$this->assertTrue( $this->themes->exists( 'neo-dark' ) );
+		$this->assertSame( 'neo-dark', $this->themes->resolve( 'neo-dark' ) );
+		$this->assertSame( 'forest', $this->themes->resolve() );
 	}
 
 	/**

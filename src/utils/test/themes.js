@@ -148,6 +148,20 @@ describe( 'the themes', () => {
 		expect( names ).toEqual( [ AUTO_THEME, ...THEMES ] );
 	} );
 
+	it( 'are dark where the server says so', () => {
+		const php = readFileSync(
+			join( __dirname, '../../../includes/Themes.php' ),
+			'utf8'
+		);
+		const [ , list ] = /const DARK = array\(([^)]*)\);/.exec( php );
+		const names = Array.from(
+			list.matchAll( /'([\w-]+)'/g ),
+			( [ , name ] ) => name
+		);
+
+		expect( names ).toEqual( THEMES.filter( isDarkTheme ) );
+	} );
+
 	it( 'have a dark counterpart for each theme Mermaid picks by itself', () => {
 		// Mermaid's default configuration, in one of the files of its build.
 		const chunksDir = join( mermaidDir, 'dist/chunks/mermaid.core' );

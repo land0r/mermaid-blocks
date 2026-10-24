@@ -86,15 +86,40 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The editor is told what a theme is with the site's renderer: the
-	 * sidebar says it with Pele, and nothing with Mermaid.js.
+	 * The editor is told the themes offered with the site's renderer, and
+	 * the theme each other one is shown as: none with Mermaid.js, Light or
+	 * Dark with Pele. The site's theme is told as it is.
 	 */
-	public function test_tells_the_editor_what_themes_are_with_the_renderer(): void {
+	public function test_tells_the_editor_the_themes_of_the_renderer(): void {
+		update_option( Options::THEME, 'forest' );
+
 		update_option( Options::RENDERER, 'mermaid' );
-		$this->assertSame( '', $this->get_editor_settings()['rendererHelp'] );
+		$settings = $this->get_editor_settings();
+		$this->assertSame( mermaid_blocks()->themes()->get_all(), $settings['themes'] );
+		$this->assertSame( array(), $settings['themeAliases'] );
 
 		update_option( Options::RENDERER, 'pele' );
-		$this->assertSame( 'With Pele, a theme counts as light or dark.', $this->get_editor_settings()['rendererHelp'] );
+		$settings = $this->get_editor_settings();
+		$this->assertSame( array( 'auto', 'default', 'dark' ), array_keys( $settings['themes'] ) );
+		$this->assertSame( mermaid_blocks()->themes()->get_aliases(), $settings['themeAliases'] );
+		$this->assertSame( 'default', $settings['themeAliases']['forest'] );
+		$this->assertSame( 'forest', $settings['theme'] );
+		$this->assertArrayNotHasKey( 'rendererHelp', $settings );
+	}
+
+	/**
+	 * With none, the theme each one that isn't offered is shown as is still
+	 * an object, as JavaScript reads it.
+	 */
+	public function test_tells_the_aliases_as_an_object(): void {
+		update_option( Options::RENDERER, 'mermaid' );
+
+		$this->editor->add_editor_settings();
+
+		$handles = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME )->editor_script_handles;
+		$before  = (array) wp_scripts()->get_data( end( $handles ), 'before' );
+
+		$this->assertStringContainsString( '"themeAliases":{}', (string) end( $before ) );
 	}
 
 	/**

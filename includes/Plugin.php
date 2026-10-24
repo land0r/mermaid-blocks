@@ -64,7 +64,7 @@ final class Plugin {
 		Images\ImageSync::class                 => array( 'wp_after_insert_post' ),
 		Images\ImagesController::class          => array( 'rest_api_init' ),
 		// Only where Elementor is active.
-		Integrations\Elementor\Registrar::class => array( 'elementor/widgets/register', 'elementor/frontend/after_register_scripts' ),
+		Integrations\Elementor\Registrar::class => array( 'elementor/widgets/register', 'elementor/frontend/after_register_scripts', 'elementor/editor/after_enqueue_scripts' ),
 	);
 
 	/**

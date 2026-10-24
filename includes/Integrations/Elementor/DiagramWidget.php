@@ -178,18 +178,14 @@ final class DiagramWidget extends Widget_Base {
 	}
 
 	/**
-	 * Adds the theme and the alignment.
+	 * Adds the theme, with the themes offered with the site's renderer, and
+	 * the alignment. A widget's theme that isn't offered is shown as the one
+	 * it is drawn as by the script of Registrar::EDITOR_SCRIPT.
 	 */
 	private function register_settings_controls(): void {
 		$themes = mermaid_blocks()->themes();
-		$labels = $themes->get_all();
-
-		$help          = esc_html__( 'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.', 'mermaid-blocks' );
-		$renderer_help = $themes->get_renderer_help();
-
-		if ( '' !== $renderer_help ) {
-			$help .= ' ' . esc_html( $renderer_help );
-		}
+		$labels = $themes->get_offered();
+		$help   = esc_html__( 'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.', 'mermaid-blocks' );
 
 		// Only the editor shows it: the front end loads the controls too, and needs nothing of the admin.
 		if ( is_admin() && current_user_can( 'manage_options' ) ) {
@@ -216,7 +212,7 @@ final class DiagramWidget extends Widget_Base {
 					'' => sprintf(
 						/* translators: %s: name of the theme set for the whole site, such as "Automatic" or "Forest". */
 						__( 'Site default (%s)', 'mermaid-blocks' ),
-						$labels[ $themes->get_site_theme() ]
+						$labels[ $themes->get_shown( $themes->get_site_theme() ) ]
 					),
 				) + $labels,
 				'default'     => '',

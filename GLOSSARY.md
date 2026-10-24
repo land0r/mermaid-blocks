@@ -38,7 +38,7 @@ The colours Pele draws a diagram in: light or dark. Pele has no named themes, so
 ## Looks
 
 **Theme**:
-What a diagram is drawn in: Automatic, or one of Mermaid.js's named themes, such as Forest or Neo Dark. With Pele, a theme counts as light or dark by its name.
+What a diagram is drawn in: Automatic, or one of Mermaid.js's named themes, such as Forest or Neo Dark. With Pele, a theme counts as light or dark by its name, and the settings offer Automatic, Light and Dark (Mermaid.js's Default and Dark); a diagram keeps another theme it had, shown as Light or Dark.
 _Avoid_: using "theme" alone for the site's WordPress theme
 
 **Site theme**:

@@ -115,11 +115,11 @@ final class Editor implements Hookable {
 	}
 
 	/**
-	 * Tells the editor the themes a diagram can have, what they are with the
-	 * site's renderer, the site's theme, which the preview of a block without a
-	 * theme of its own is drawn in, and, to those who may change that one,
-	 * where. It also tells whether to draw the images of the diagrams of a
-	 * post: see Images\ImageSync.
+	 * Tells the editor the themes offered with the site's renderer, the theme
+	 * each one that isn't offered is shown as, the site's theme, which the
+	 * preview of a block without a theme of its own is drawn in, and, to those
+	 * who may change that one, where. It also tells whether to draw the images
+	 * of the diagrams of a post: see Images\ImageSync.
 	 */
 	public function add_editor_settings(): void {
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
@@ -129,8 +129,9 @@ final class Editor implements Hookable {
 		}
 
 		$settings = array(
-			'themes'       => $this->themes->get_all(),
-			'rendererHelp' => $this->themes->get_renderer_help(),
+			'themes'       => $this->themes->get_offered(),
+			// An object, even with none.
+			'themeAliases' => (object) $this->themes->get_aliases(),
 			'theme'        => $this->themes->get_site_theme(),
 			'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
 			'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
