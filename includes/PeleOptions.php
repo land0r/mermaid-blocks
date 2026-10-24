@@ -103,12 +103,14 @@ final class PeleOptions {
 		 *
 		 * Only the keys below, of the type given here, are kept; anything else
 		 * is ignored. The plugin sets `idPrefix`, `responsive`, `fontFamily`,
-		 * `fontFamilyMono` and `measurer` itself, and they win over these. The
-		 * options only apply when the renderer is Pele.
+		 * `fontFamilyMono`, `measurer`, `maxWidth`, `icons` and `math` itself,
+		 * and they win over these. The options only apply when the renderer is
+		 * Pele.
 		 *
 		 * - `fontSize`, `padding`, `directionBreakpoint`: positive numbers.
 		 * - `autoDirection`, `links`, `images`: true or false.
-		 * - `linkSchemes`, `imageSchemes`: lists of URL schemes, such as `https`.
+		 * - `linkSchemes`, `imageSchemes`: lists of URL schemes, such as `https`;
+		 *   a list with anything but strings in it is ignored.
 		 * - `linkRel`: the `rel` of links.
 		 * - `limit`, `outputLimit`, `maxEdges`: positive whole numbers.
 		 * - `config`: an array, Mermaid configuration used by default.
@@ -144,8 +146,10 @@ final class PeleOptions {
 					$options[ $name ] = $value;
 				}
 			} elseif ( in_array( $name, self::LISTS, true ) ) {
-				if ( is_array( $value ) ) {
-					$options[ $name ] = array_values( array_filter( $value, 'is_string' ) );
+				// A list with an item that is no string is ignored whole: kept shorter,
+				// or empty, it would turn links or images off.
+				if ( is_array( $value ) && array_filter( $value, 'is_string' ) === $value ) {
+					$options[ $name ] = array_values( $value );
 				}
 			} elseif ( in_array( $name, self::STRINGS, true ) ) {
 				if ( is_string( $value ) ) {

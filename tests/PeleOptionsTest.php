@@ -99,7 +99,7 @@ class PeleOptionsTest extends WP_UnitTestCase {
 				'links'               => 1,
 				'images'              => null,
 				'linkSchemes'         => 'https',
-				'imageSchemes'        => array( 'https', 5, array() ),
+				'imageSchemes'        => array( 'https' ),
 				'linkRel'             => array( 'nofollow' ),
 				'limit'               => 1.5,
 				'outputLimit'         => '2000',
@@ -114,6 +114,21 @@ class PeleOptionsTest extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( array( 'imageSchemes' => array( 'https' ) ), $settings );
+	}
+
+	/**
+	 * A list with an item that is no string is ignored as a whole, not kept as
+	 * a shorter list: an empty `linkSchemes` turns every link off.
+	 */
+	public function test_ignores_a_list_with_an_item_that_is_no_string(): void {
+		$settings = $this->filtered(
+			array(
+				'linkSchemes'  => array( 5 ),
+				'imageSchemes' => array( 'https', array() ),
+			)
+		);
+
+		$this->assertSame( array(), $settings );
 	}
 
 	/**
