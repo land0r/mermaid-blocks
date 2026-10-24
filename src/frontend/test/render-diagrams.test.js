@@ -628,23 +628,6 @@ describe( 'redrawInPlace', () => {
 		expect( listener ).not.toHaveBeenCalled();
 	} );
 
-	it( 'keeps the width a zoomed diagram has', async () => {
-		setup( [ 'flowchart LR\nA --> B' ] );
-		const diagram = getDiagram();
-
-		await renderDraw( peleRenderer );
-
-		const svg = getCanvas( diagram ).querySelector( 'svg' );
-		diagram.classList.add( 'is-zoomed' );
-		svg.style.width = '900px';
-		svg.style.maxWidth = 'none';
-
-		await redrawInPlace( peleRenderer, diagram );
-
-		expect( svg.style.width ).toBe( '900px' );
-		expect( svg.style.maxWidth ).toBe( 'none' );
-	} );
-
 	it( 'leaves a Mermaid.js diagram alone', async () => {
 		setup();
 		const diagram = getDiagram();

@@ -269,7 +269,7 @@ export async function redrawInPlace( renderer, diagram ) {
 		);
 
 		if ( ! result.error ) {
-			replaceSvg( svg, result.svg, diagram );
+			replaceSvg( svg, result.svg );
 			setAccessibleText( svg, {
 				title: diagram.dataset.mermaidTitle,
 				description: diagram.dataset.mermaidDescription,
@@ -291,12 +291,10 @@ export async function redrawInPlace( renderer, diagram ) {
  * Puts a new drawing in the place of an SVG element, in the same element, so
  * what refers to it, such as the zoom, still does.
  *
- * @param {SVGSVGElement} svg     The element on the page.
- * @param {string}        markup  The new drawing.
- * @param {HTMLElement}   diagram The diagram element, which says whether it
- *                                is zoomed.
+ * @param {SVGSVGElement} svg    The element on the page.
+ * @param {string}        markup The new drawing.
  */
-function replaceSvg( svg, markup, diagram ) {
+function replaceSvg( svg, markup ) {
 	const template = svg.ownerDocument.createElement( 'template' );
 	template.innerHTML = markup;
 
@@ -306,10 +304,6 @@ function replaceSvg( svg, markup, diagram ) {
 		return;
 	}
 
-	// The zoom sets the width of the SVG itself: the new drawing keeps it.
-	const { width, maxWidth } = svg.style;
-	const zoomed = diagram.classList.contains( 'is-zoomed' );
-
 	Array.from( svg.attributes ).forEach( ( { name } ) =>
 		svg.removeAttribute( name )
 	);
@@ -317,9 +311,4 @@ function replaceSvg( svg, markup, diagram ) {
 		svg.setAttribute( name, value )
 	);
 	svg.replaceChildren( ...Array.from( next.childNodes ) );
-
-	if ( zoomed ) {
-		svg.style.width = width;
-		svg.style.maxWidth = maxWidth;
-	}
 }
