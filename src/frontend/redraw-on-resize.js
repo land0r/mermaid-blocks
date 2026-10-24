@@ -9,10 +9,9 @@ const watched = new WeakSet();
 /**
  * Draws a rendered Pele diagram again when its width changes: a resized
  * window, a rotated phone, fullscreen in and out. It stops watching a diagram
- * that left the page. Pele lays a diagram out for
- * the width of the diagram element it is drawn for (see `draw()` of the Pele
- * renderer), so that is the width watched, not the canvas's: a theme may pad
- * the one and not the other.
+ * that left the page. Pele lays a diagram out for the width of the diagram
+ * element it is drawn for (see `draw()` of the Pele renderer), so that is the
+ * width watched, not the canvas's: a theme may pad the one and not the other.
  *
  * The canvas, its toolbar and its palette stay (see redrawInPlace()), and a
  * change of the diagram's height is not a reason to draw again. Mermaid.js
