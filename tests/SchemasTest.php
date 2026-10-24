@@ -8,6 +8,7 @@
 namespace MermaidBlocks\Tests;
 
 use MermaidBlocks\Abilities\Schemas;
+use MermaidBlocks\Options;
 use MermaidBlocks\Posts\PostDiagrams;
 use WP_UnitTestCase;
 
@@ -60,6 +61,48 @@ class SchemasTest extends WP_UnitTestCase {
 
 		$this->assertSame( array_merge( array( '' ), array_keys( mermaid_blocks()->themes()->get_all() ) ), $properties['theme']['enum'] );
 		$this->assertSame( array( '', 'center', 'wide', 'full' ), $properties['align']['enum'] );
+	}
+
+	/**
+	 * With Mermaid.js, which draws each theme and the colours in the code,
+	 * the code and the theme say nothing of a renderer.
+	 */
+	public function test_says_nothing_of_pele_with_mermaid(): void {
+		update_option( Options::RENDERER, 'mermaid' );
+
+		$this->assertStringNotContainsString( 'Pele', $this->schemas->get_code()['description'] );
+		$this->assertStringNotContainsString( 'Pele', $this->schemas->get_attributes()['properties']['theme']['description'] );
+	}
+
+	/**
+	 * With Pele, the theme names the themes the site offers, and the code
+	 * says its colours are ignored.
+	 */
+	public function test_says_what_pele_draws(): void {
+		update_option( Options::RENDERER, 'pele' );
+
+		$theme = $this->schemas->get_attributes()['properties']['theme']['description'];
+
+		$this->assertStringContainsString( 'Pele, which draws every theme as light or dark', $theme );
+
+		foreach ( array_keys( mermaid_blocks()->themes()->get_offered() ) as $name ) {
+			$this->assertMatchesRegularExpression( '/\b' . $name . '\b/', $theme, $name );
+		}
+
+		$this->assertStringContainsString( 'themeVariables', $this->schemas->get_code()['description'] );
+	}
+
+	/**
+	 * With Pele, every theme is still taken, so a diagram's attributes, as an
+	 * ability returned them, can be passed back as they are.
+	 */
+	public function test_takes_every_theme_with_pele(): void {
+		update_option( Options::RENDERER, 'pele' );
+
+		$schema = $this->schemas->get_attributes();
+
+		$this->assertSame( array_merge( array( '' ), array_keys( mermaid_blocks()->themes()->get_all() ) ), $schema['properties']['theme']['enum'] );
+		$this->assertTrue( rest_validate_value_from_schema( array( 'theme' => 'forest' ), $schema ) );
 	}
 
 	/**

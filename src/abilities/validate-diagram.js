@@ -32,12 +32,12 @@ export const OUTPUT_SCHEMA = {
 	properties: {
 		valid: {
 			type: 'boolean',
-			description: 'Whether Mermaid can parse the source.',
+			description: "Whether the editor's renderer can parse the source.",
 		},
 		type: {
 			type: 'string',
 			description:
-				'The type of diagram Mermaid detected, such as flowchart-v2 or sequence. Only for valid source.',
+				'The type of diagram detected, named as Mermaid.js names it, such as flowchart-v2 or sequence. Only for valid source.',
 		},
 		error: {
 			type: 'object',
@@ -53,7 +53,8 @@ export const OUTPUT_SCHEMA = {
 };
 
 /**
- * Validates Mermaid source with the copy of Mermaid the editor loaded.
+ * Validates Mermaid source with the renderer the editor loaded: Mermaid.js, or
+ * Pele where the site uses it.
  *
  * @param {Object} input      The input.
  * @param {string} input.code The Mermaid source.
@@ -64,7 +65,9 @@ export async function validateDiagram( { code } ) {
 	const renderer = getRenderer( window );
 
 	if ( ! renderer ) {
-		throw new Error( 'Mermaid is not loaded on this page.' );
+		throw new Error(
+			'Neither Mermaid.js nor Pele is loaded on this page.'
+		);
 	}
 
 	const result = await renderer.parse( code );
