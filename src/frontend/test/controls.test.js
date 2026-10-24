@@ -234,7 +234,39 @@ describe( 'addControls', () => {
 
 		expect( downloadDiagram ).toHaveBeenCalledWith(
 			diagram.querySelector( '.mermaid-blocks-diagram__canvas svg' ),
-			format
+			format,
+			expect.any( Function )
+		);
+	} );
+
+	it( 'draws a Pele diagram in full for a download', async () => {
+		const renderer = {
+			name: 'pele',
+			draw: jest.fn().mockResolvedValue( {
+				svg: '<svg viewBox="0 0 1600 200"></svg>',
+			} ),
+		};
+		const diagram = setup( 'download' );
+		diagram.querySelector( 'pre' ).textContent = 'flowchart LR\nA --> B';
+		diagram.querySelector(
+			'.mermaid-blocks-diagram__canvas'
+		).dataset.mermaidTheme = 'dark';
+		addControls( diagram, undefined, renderer );
+
+		button( diagram, 'Download as SVG' ).click();
+		await settle();
+
+		const use = jest.fn();
+		await downloadDiagram.mock.calls[ 0 ][ 2 ]( use );
+
+		expect( renderer.draw ).toHaveBeenCalledWith(
+			'flowchart LR\nA --> B',
+			'dark',
+			expect.any( window.HTMLElement ),
+			expect.any( String )
+		);
+		expect( use.mock.calls[ 0 ][ 0 ].getAttribute( 'viewBox' ) ).toBe(
+			'0 0 1600 200'
 		);
 	} );
 

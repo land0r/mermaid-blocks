@@ -1,5 +1,6 @@
 import { getPaletteName, getPaletteVariables } from '../utils/pele-palette';
 import { getSurface } from '../utils/surface';
+import getContentWidth from '../utils/content-width';
 import { getMessage, toError } from './error';
 
 /*
@@ -8,8 +9,10 @@ import { getMessage, toError } from './error';
  *
  * Pele draws synchronously, as SVG text that CSS variables colour, and
  * touches nothing in the document: there is nothing to queue, and nothing to
- * clean up after a failure. Its `render()` is used, never its `mount()`, so
- * Pele's own zoom and resizing stay off.
+ * clean up after a failure. Its `render()` is used, never its `mount()`: the
+ * plugin lays a diagram out for the width of the element it is drawn in
+ * (`maxWidth`), and draws it again when that width changes (see
+ * watch-width.js), where `mount()` would do both itself.
  */
 
 // Pele's prefix on a syntax error, which counts the lines of the text it
@@ -128,6 +131,10 @@ async function loadType( pele, code ) {
  * This is the one place Pele's options are put together: the site's, which
  * the server tells the page (see `PeleOptions`), under the plugin's own.
  *
+ * `draw()` lays a diagram out for the content width of `element`, so Pele can
+ * turn a wide one vertical on a narrow screen. An element with no width gets
+ * the full layout: see withFullLayout() in full-layout.js.
+ *
  * @param {Object}   pele               The Pele module: the lazy build's, or the
  *                                      single-file build's.
  * @param {Object}   [options]          Options.
@@ -164,13 +171,22 @@ export function createPeleRenderer(
 
 				const view = element.ownerDocument.defaultView;
 				const { font, mono } = getFonts( view, element );
+				const width = getContentWidth( element );
 				const options = {
-					autoDirection: false,
 					...site,
 					idPrefix: id,
 					responsive: true,
 					fontFamilyMono: mono,
 				};
+
+				// The layout for the room the element has, which may turn a wide
+				// diagram vertical (Pele's `autoDirection`). An element with no
+				// width, as one that is hidden or off the page, gets the full layout.
+				if ( width ) {
+					options.maxWidth = width;
+				} else {
+					delete options.maxWidth;
+				}
 
 				if ( font ) {
 					options.fontFamily = font;

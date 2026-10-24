@@ -29,6 +29,16 @@ function createDiagram( markup = DIAGRAM ) {
 	return document.body.firstElementChild;
 }
 
+// Another diagram, 1000 pixels wide, on the page.
+function createWide() {
+	const wrapper = document.createElement( 'div' );
+
+	wrapper.innerHTML = '<svg viewBox="0 0 1000 100"></svg>';
+	document.body.appendChild( wrapper );
+
+	return wrapper.firstElementChild;
+}
+
 const parse = ( markup ) =>
 	new window.DOMParser().parseFromString( markup, 'image/svg+xml' );
 
@@ -265,6 +275,17 @@ describe( 'downloadDiagram', () => {
 		expect( document.querySelector( 'a' ) ).toBeNull();
 	} );
 
+	it( 'makes the file from the diagram it is given instead, when it is given a way', async () => {
+		const made = jest.fn( ( use ) => use( createWide() ) );
+
+		await downloadDiagram( createDiagram(), 'png', made );
+
+		const [ , , , width, height ] = png.context.drawImage.mock.calls[ 0 ];
+
+		expect( made ).toHaveBeenCalledTimes( 1 );
+		expect( [ width, height ] ).toEqual( [ 2000, 200 ] );
+	} );
+
 	it( 'downloads a PNG twice the size, on a white background', async () => {
 		await downloadDiagram( createDiagram(), 'png' );
 
@@ -407,6 +428,12 @@ describe( 'copyDiagram', () => {
 		expect( png.context.fillStyle ).toBe( '#fff' );
 		expect( png.context.fillRect ).toHaveBeenCalledWith( 0, 0, 600, 301 );
 		expect( png.downloads ).toEqual( [] );
+	} );
+
+	it( 'copies the diagram it is given a way to, in place of the one on the page', async () => {
+		await copyDiagram( createDiagram(), ( use ) => use( createWide() ) );
+
+		expect( png.context.fillRect ).toHaveBeenCalledWith( 0, 0, 2000, 200 );
 	} );
 
 	it( 'writes to the clipboard before the PNG has been drawn', async () => {

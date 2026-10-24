@@ -99,15 +99,24 @@ describe( 'the options of the site', () => {
 		expect( options.fontFamily ).toBe( 'Georgia, serif' );
 	} );
 
-	it( 'may change what the plugin only defaults', async () => {
+	it( 'leave autoDirection to Pele, unless the site sets it', async () => {
 		const { module, render } = spy();
 
+		await createPeleRenderer( module, { measurer } ).draw(
+			code,
+			'auto-light',
+			document.body,
+			'x'
+		);
 		await createPeleRenderer( module, {
 			measurer,
-			site: { autoDirection: true },
+			site: { autoDirection: false },
 		} ).draw( code, 'auto-light', document.body, 'x' );
 
-		expect( render.mock.calls[ 0 ][ 1 ].autoDirection ).toBe( true );
+		expect( render.mock.calls[ 0 ][ 1 ] ).not.toHaveProperty(
+			'autoDirection'
+		);
+		expect( render.mock.calls[ 1 ][ 1 ].autoDirection ).toBe( false );
 	} );
 
 	it( 'leave the defaults when there are none', async () => {
@@ -120,8 +129,89 @@ describe( 'the options of the site', () => {
 			'x'
 		);
 
-		expect( render.mock.calls[ 0 ][ 1 ].autoDirection ).toBe( false );
 		expect( render.mock.calls[ 0 ][ 1 ] ).not.toHaveProperty( 'links' );
+	} );
+} );
+
+describe( 'the width of the element', () => {
+	const code = 'flowchart LR\nA --> B';
+	const spy = () => {
+		const module = { ...pele, render: jest.fn( pele.render ) };
+
+		return { module, render: module.render };
+	};
+
+	/**
+	 * Puts an element on the page, which has the width given: jsdom lays
+	 * nothing out.
+	 *
+	 * @param {number} width   Its `clientWidth`.
+	 * @param {string} padding Its horizontal padding.
+	 */
+	const place = ( width, padding = '0' ) => {
+		const element = document.createElement( 'div' );
+
+		element.style.padding = `0 ${ padding }`;
+		Object.defineProperty( element, 'clientWidth', { value: width } );
+		document.body.appendChild( element );
+
+		return element;
+	};
+
+	afterEach( () => {
+		document.body.innerHTML = '';
+	} );
+
+	it( 'is the maxWidth, less the padding, and wins over the site', async () => {
+		const { module, render } = spy();
+		const element = place( 400, '20px' );
+
+		await createPeleRenderer( module, {
+			measurer,
+			site: { maxWidth: 999 },
+		} ).draw( code, 'auto-light', element, 'x' );
+
+		expect( render.mock.calls[ 0 ][ 1 ].maxWidth ).toBe( 360 );
+	} );
+
+	it.each( [
+		[ 'is not on a page', () => document.createElement( 'div' ) ],
+		[ 'has no width', () => place( 0 ) ],
+		[ 'is all padding', () => place( 40, '20px' ) ],
+	] )( 'gives no maxWidth to an element that %s', async ( name, make ) => {
+		const { module, render } = spy();
+
+		await createPeleRenderer( module, {
+			measurer,
+			site: { maxWidth: 999 },
+		} ).draw( code, 'auto-light', make(), 'x' );
+
+		expect( render.mock.calls[ 0 ][ 1 ] ).not.toHaveProperty( 'maxWidth' );
+	} );
+
+	it( 'turns a wide flowchart vertical on a narrow element only', async () => {
+		const wide =
+			'flowchart LR\n' +
+			Array.from(
+				{ length: 9 },
+				( _, i ) => `N${ i } --> N${ i + 1 }`
+			).join( '\n' );
+		const own = createPeleRenderer( pele, { measurer } );
+		const size = async ( element ) => {
+			const { svg } = await own.draw( wide, 'auto-light', element, 'x' );
+			const [ , , w, h ] = svg
+				.match( /viewBox="([^"]+)"/ )[ 1 ]
+				.split( ' ' )
+				.map( Number );
+
+			return { w, h };
+		};
+
+		const full = await size( place( 0 ) );
+		const narrow = await size( place( 375 ) );
+
+		expect( full.w ).toBeGreaterThan( full.h );
+		expect( narrow.h ).toBeGreaterThan( narrow.w );
 	} );
 } );
 

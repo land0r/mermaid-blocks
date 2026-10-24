@@ -329,7 +329,8 @@ describe( 'the toolbar menu', () => {
 		);
 
 		expect( copyDiagram ).toHaveBeenCalledWith(
-			container.querySelector( '.mermaid-container__diagram > svg' )
+			container.querySelector( '.mermaid-container__diagram > svg' ),
+			expect.any( Function )
 		);
 		expect( mockNotices.createSuccessNotice ).toHaveBeenCalled();
 		expect( mockNotices.createErrorNotice ).not.toHaveBeenCalled();

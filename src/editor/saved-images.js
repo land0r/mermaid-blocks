@@ -103,12 +103,29 @@ export async function drawImage( renderer, code, theme ) {
 
 	counter += 1;
 
-	const result = await renderer.draw(
-		code,
-		drawnTheme,
-		renderer.document.body,
-		`mermaid-blocks-image-${ counter }`
-	);
+	/*
+	 * Drawn for a hidden element: it has no width, so Pele lays the diagram out
+	 * in full, whatever the width of the editor, and it inherits the fonts of
+	 * the canvas.
+	 */
+	const probe = renderer.document.createElement( 'div' );
+
+	probe.hidden = true;
+	probe.style.display = 'none';
+	renderer.document.body.appendChild( probe );
+
+	let result;
+
+	try {
+		result = await renderer.draw(
+			code,
+			drawnTheme,
+			probe,
+			`mermaid-blocks-image-${ counter }`
+		);
+	} finally {
+		probe.remove();
+	}
 
 	if ( result.error ) {
 		// eslint-disable-next-line no-console

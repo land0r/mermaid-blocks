@@ -9,6 +9,7 @@
 import createZoom from './zoom';
 import createFullscreen from './fullscreen';
 import { downloadDiagram } from '../utils/export-diagram';
+import { createFullLayout } from '../utils/full-layout';
 
 const CANVAS_SELECTOR = '.mermaid-blocks-diagram__canvas';
 const SOURCE_SELECTOR = '.mermaid-blocks-diagram__source';
@@ -184,10 +185,12 @@ function createZoomButtons( doc, diagram, canvas, svg, text ) {
  * @param {SVGSVGElement} svg    The rendered diagram.
  * @param {Object}        status Where to tell that a download failed.
  * @param {Object}        text   The labels.
+ * @param {Function}      full   What gives a Pele diagram its full layout: see
+ *                               createFullLayout().
  *
  * @return {HTMLButtonElement[]} The buttons.
  */
-function createDownloadButtons( doc, svg, status, text ) {
+function createDownloadButtons( doc, svg, status, text, full ) {
 	let busy = false;
 
 	const download = ( format ) => () => {
@@ -198,7 +201,7 @@ function createDownloadButtons( doc, svg, status, text ) {
 		busy = true;
 		status.clear();
 
-		downloadDiagram( svg, format )
+		downloadDiagram( svg, format, full )
 			.catch( ( error ) => {
 				status.show( text.downloadError );
 				// eslint-disable-next-line no-console
@@ -317,11 +320,14 @@ function createFullscreenButton( doc, diagram, zoom, text ) {
 /**
  * Adds the controls a rendered diagram asks for, in a toolbar above it.
  *
- * @param {HTMLElement} diagram  The diagram element.
- * @param {Object}      [labels] Translated labels, by the keys of
- *                               DEFAULT_LABELS.
+ * @param {HTMLElement} diagram    The diagram element.
+ * @param {Object}      [labels]   Translated labels, by the keys of
+ *                                 DEFAULT_LABELS.
+ * @param {Object}      [renderer] The renderer the diagram was drawn with,
+ *                                 which draws it again in full for a download:
+ *                                 view.js hands it over, as this file has none.
  */
-export default function addControls( diagram, labels ) {
+export default function addControls( diagram, labels, renderer ) {
 	const canvas = diagram.querySelector( CANVAS_SELECTOR );
 	const svg = canvas && canvas.querySelector( 'svg' );
 
@@ -354,7 +360,17 @@ export default function addControls( diagram, labels ) {
 	const actions = [];
 
 	if ( controls.includes( 'download' ) ) {
-		actions.push( ...createDownloadButtons( doc, svg, status, text ) );
+		const source = diagram.querySelector( SOURCE_SELECTOR );
+		const full = createFullLayout(
+			renderer,
+			svg,
+			() => ( source ? source.textContent : '' ),
+			() => canvas.dataset.mermaidTheme
+		);
+
+		actions.push(
+			...createDownloadButtons( doc, svg, status, text, full )
+		);
 	}
 
 	if ( controls.includes( 'copy' ) ) {

@@ -23,6 +23,7 @@ import renderDiagrams, {
 } from './frontend/render-diagrams';
 import loadRenderer, { getRendererUrl } from './frontend/load-renderer';
 import loadControls from './frontend/load-controls';
+import redrawOnResize from './frontend/redraw-on-resize';
 import watchSurface from './utils/watch-surface';
 import watchFonts from './utils/watch-fonts';
 
@@ -70,8 +71,13 @@ function addControls( diagram ) {
 		return;
 	}
 
-	loadControls( getControlsUrl() )
-		.then( ( add ) => add( diagram, i18n ) )
+	// The renderer is the one that drew the diagram, so it is already loaded.
+	// The controls get it to draw a Pele diagram in full for a download.
+	Promise.all( [
+		loadControls( getControlsUrl() ),
+		loadRenderer( settings ),
+	] )
+		.then( ( [ add, renderer ] ) => add( diagram, i18n, renderer ) )
 		.catch( ( error ) => {
 			// eslint-disable-next-line no-console
 			console.error(
@@ -140,7 +146,11 @@ function redrawForFonts() {
  */
 function renderNow( diagram ) {
 	return loadRenderer( settings )
-		.then( ( renderer ) => renderDiagrams( renderer, diagram ) )
+		.then( ( renderer ) =>
+			renderDiagrams( renderer, diagram ).then( () =>
+				redrawOnResize( renderer, diagram )
+			)
+		)
 		.catch( ( error ) => {
 			diagram.classList.add( 'has-error' );
 			// eslint-disable-next-line no-console
