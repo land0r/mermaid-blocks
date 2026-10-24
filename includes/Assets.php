@@ -64,32 +64,23 @@ final class Assets implements Hookable {
 	private Options $options;
 
 	/**
-	 * The options a site gives Pele.
+	 * What a script needs to build its renderer.
 	 *
-	 * @var PeleOptions
+	 * @var RendererSettings
 	 */
-	private PeleOptions $pele_options;
-
-	/**
-	 * The icon packs a site registers.
-	 *
-	 * @var IconPacks
-	 */
-	private IconPacks $icon_packs;
+	private RendererSettings $renderer_settings;
 
 	/**
 	 * Sets up the assets.
 	 *
-	 * @param Files       $files        The plugin's files.
-	 * @param Options     $options      The stored settings.
-	 * @param PeleOptions $pele_options The options a site gives Pele.
-	 * @param IconPacks   $icon_packs   The icon packs a site registers.
+	 * @param Files            $files             The plugin's files.
+	 * @param Options          $options           The stored settings.
+	 * @param RendererSettings $renderer_settings What a script needs to build its renderer.
 	 */
-	public function __construct( Files $files, Options $options, PeleOptions $pele_options, IconPacks $icon_packs ) {
-		$this->files        = $files;
-		$this->options      = $options;
-		$this->pele_options = $pele_options;
-		$this->icon_packs   = $icon_packs;
+	public function __construct( Files $files, Options $options, RendererSettings $renderer_settings ) {
+		$this->files             = $files;
+		$this->options           = $options;
+		$this->renderer_settings = $renderer_settings;
 	}
 
 	/**
@@ -177,7 +168,6 @@ final class Assets implements Hookable {
 		$mermaid  = $this->files->get_build_asset( 'mermaid' );
 		$pele     = $this->files->get_build_asset( 'pele' );
 		$controls = $this->files->get_build_asset( 'controls' );
-		$math     = $this->files->get_build_asset( 'math' );
 
 		// The script has no dependencies, so its few labels are translated here.
 		$settings = array(
@@ -185,7 +175,6 @@ final class Assets implements Hookable {
 			'mermaidUrl'  => add_query_arg( 'ver', $mermaid['version'], $this->files->get_build_url( 'mermaid/mermaid.esm.min.js' ) ),
 			'peleUrl'     => add_query_arg( 'ver', $pele['version'], $this->files->get_build_url( 'pele/lazy.js' ) ),
 			'controlsUrl' => add_query_arg( 'ver', $controls['version'], $this->files->get_build_url( 'controls.js' ) ),
-			'mathUrl'     => add_query_arg( 'ver', $math['version'], $this->files->get_build_url( 'math.js' ) ),
 			'i18n'        => array(
 				'controls'       => __( 'Diagram controls', 'mermaid-blocks' ),
 				'zoomIn'         => __( 'Zoom in', 'mermaid-blocks' ),
@@ -204,7 +193,7 @@ final class Assets implements Hookable {
 
 		wp_add_inline_script(
 			self::DIAGRAM,
-			'var mermaidBlocksSettings = ' . wp_json_encode( $this->icon_packs->add_to( $this->pele_options->add_to( $settings ) ) ) . ';',
+			'var mermaidBlocksSettings = ' . wp_json_encode( $this->renderer_settings->add_to( $settings ) ) . ';',
 			'before'
 		);
 	}

@@ -8,12 +8,10 @@
 namespace MermaidBlocks\Admin;
 
 use MermaidBlocks\Assets;
-use MermaidBlocks\Files;
 use MermaidBlocks\Hookable;
-use MermaidBlocks\IconPacks;
 use MermaidBlocks\Integrations\Block;
 use MermaidBlocks\Options;
-use MermaidBlocks\PeleOptions;
+use MermaidBlocks\RendererSettings;
 use MermaidBlocks\Themes;
 use WP_Block_Type_Registry;
 
@@ -49,43 +47,25 @@ final class Editor implements Hookable {
 	private SettingsPage $settings_page;
 
 	/**
-	 * The options a site gives Pele.
+	 * What a script needs to build its renderer.
 	 *
-	 * @var PeleOptions
+	 * @var RendererSettings
 	 */
-	private PeleOptions $pele_options;
-
-	/**
-	 * The icon packs a site registers.
-	 *
-	 * @var IconPacks
-	 */
-	private IconPacks $icon_packs;
-
-	/**
-	 * The paths and URLs of what `build/` holds.
-	 *
-	 * @var Files
-	 */
-	private Files $files;
+	private RendererSettings $renderer_settings;
 
 	/**
 	 * Sets up what the editor needs.
 	 *
-	 * @param Themes       $themes        The themes a diagram can be drawn in.
-	 * @param Options      $options       The stored settings.
-	 * @param SettingsPage $settings_page The settings page.
-	 * @param PeleOptions  $pele_options  The options a site gives Pele.
-	 * @param IconPacks    $icon_packs    The icon packs a site registers.
-	 * @param Files        $files         The paths and URLs of the build.
+	 * @param Themes           $themes            The themes a diagram can be drawn in.
+	 * @param Options          $options           The stored settings.
+	 * @param SettingsPage     $settings_page     The settings page.
+	 * @param RendererSettings $renderer_settings What a script needs to build its renderer.
 	 */
-	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page, PeleOptions $pele_options, IconPacks $icon_packs, Files $files ) {
-		$this->themes        = $themes;
-		$this->options       = $options;
-		$this->settings_page = $settings_page;
-		$this->pele_options  = $pele_options;
-		$this->icon_packs    = $icon_packs;
-		$this->files         = $files;
+	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page, RendererSettings $renderer_settings ) {
+		$this->themes            = $themes;
+		$this->options           = $options;
+		$this->settings_page     = $settings_page;
+		$this->renderer_settings = $renderer_settings;
 	}
 
 	/**
@@ -160,9 +140,7 @@ final class Editor implements Hookable {
 			return;
 		}
 
-		$math = $this->files->get_build_asset( 'math' );
-
-		$settings = $this->pele_options->add_to(
+		$settings = $this->renderer_settings->add_to(
 			array(
 				'themes'       => $this->themes->get_offered(),
 				// An object, even with none.
@@ -170,10 +148,8 @@ final class Editor implements Hookable {
 				'theme'        => $this->themes->get_site_theme(),
 				'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
 				'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
-				'mathUrl'      => add_query_arg( 'ver', $math['version'], $this->files->get_build_url( 'math.js' ) ),
 			)
 		);
-		$settings = $this->icon_packs->add_to( $settings );
 
 		// The block's own editor script: the libraries are not.
 		foreach ( array_diff( $block_type->editor_script_handles, Assets::LIBRARIES ) as $handle ) {
