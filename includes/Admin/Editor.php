@@ -11,6 +11,7 @@ use MermaidBlocks\Assets;
 use MermaidBlocks\Hookable;
 use MermaidBlocks\Integrations\Block;
 use MermaidBlocks\Options;
+use MermaidBlocks\RendererSettings;
 use MermaidBlocks\Themes;
 use WP_Block_Type_Registry;
 
@@ -46,16 +47,25 @@ final class Editor implements Hookable {
 	private SettingsPage $settings_page;
 
 	/**
+	 * What a script needs to build its renderer.
+	 *
+	 * @var RendererSettings
+	 */
+	private RendererSettings $renderer_settings;
+
+	/**
 	 * Sets up what the editor needs.
 	 *
-	 * @param Themes       $themes        The themes a diagram can be drawn in.
-	 * @param Options      $options       The stored settings.
-	 * @param SettingsPage $settings_page The settings page.
+	 * @param Themes           $themes            The themes a diagram can be drawn in.
+	 * @param Options          $options           The stored settings.
+	 * @param SettingsPage     $settings_page     The settings page.
+	 * @param RendererSettings $renderer_settings What a script needs to build its renderer.
 	 */
-	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page ) {
-		$this->themes        = $themes;
-		$this->options       = $options;
-		$this->settings_page = $settings_page;
+	public function __construct( Themes $themes, Options $options, SettingsPage $settings_page, RendererSettings $renderer_settings ) {
+		$this->themes            = $themes;
+		$this->options           = $options;
+		$this->settings_page     = $settings_page;
+		$this->renderer_settings = $renderer_settings;
 	}
 
 	/**
@@ -119,7 +129,9 @@ final class Editor implements Hookable {
 	 * each one that isn't offered is shown as, the site's theme, which the
 	 * preview of a block without a theme of its own is drawn in, and, to those
 	 * who may change that one, where. It also tells whether to draw the images
-	 * of the diagrams of a post: see Images\ImageSync.
+	 * of the diagrams of a post: see Images\ImageSync. With Pele, it also
+	 * tells the options the site gives it. The icon packs the site registers
+	 * are told with either renderer.
 	 */
 	public function add_editor_settings(): void {
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
@@ -128,13 +140,15 @@ final class Editor implements Hookable {
 			return;
 		}
 
-		$settings = array(
-			'themes'       => $this->themes->get_offered(),
-			// An object, even with none.
-			'themeAliases' => (object) $this->themes->get_aliases(),
-			'theme'        => $this->themes->get_site_theme(),
-			'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
-			'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
+		$settings = $this->renderer_settings->add_to(
+			array(
+				'themes'       => $this->themes->get_offered(),
+				// An object, even with none.
+				'themeAliases' => (object) $this->themes->get_aliases(),
+				'theme'        => $this->themes->get_site_theme(),
+				'settingsUrl'  => current_user_can( 'manage_options' ) ? $this->settings_page->get_url() : '',
+				'saveImages'   => $this->options->is_on( Options::SAVE_IMAGES ),
+			)
 		);
 
 		// The block's own editor script: the libraries are not.

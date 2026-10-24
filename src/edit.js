@@ -21,6 +21,9 @@ import CodeInput from './components/code-input';
 import DiagramSettings from './components/diagram-settings';
 import MermaidDiagram from './components/mermaid-diagram';
 import { SITE_THEME, getOwnTheme } from './editor/settings';
+import { getRenderer } from './renderers';
+import { createFullLayout } from './utils/full-layout';
+import { resolveTheme } from './utils/themes';
 import {
 	canCopyImage,
 	copyDiagram,
@@ -74,11 +77,24 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 		previewRef.current &&
 		previewRef.current.querySelector( '.mermaid-container__diagram > svg' );
 
+	// A Pele preview is laid out for the width of the editor: the file is drawn
+	// again in full. The code and the theme are those of the preview.
+	const getFullLayout = ( svg ) => {
+		const container = svg.closest( '.mermaid-container' );
+
+		return createFullLayout(
+			getRenderer( svg.ownerDocument.defaultView ),
+			svg,
+			() => previewCode,
+			() => resolveTheme( getOwnTheme( theme ) || SITE_THEME, container )
+		);
+	};
+
 	const downloadPreview = ( format ) => {
 		const svg = getPreviewSvg();
 
 		if ( svg ) {
-			downloadDiagram( svg, format ).catch( () =>
+			downloadDiagram( svg, format, getFullLayout( svg ) ).catch( () =>
 				createErrorNotice(
 					__( 'The file could not be created.', 'mermaid-blocks' ),
 					{ type: 'snackbar' }
@@ -91,7 +107,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 		const svg = getPreviewSvg();
 
 		if ( svg ) {
-			copyDiagram( svg ).then(
+			copyDiagram( svg, getFullLayout( svg ) ).then(
 				() =>
 					createSuccessNotice(
 						__(

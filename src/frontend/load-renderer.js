@@ -1,4 +1,5 @@
 import loadMermaid from './load-mermaid';
+import loadMath, { getMathUrl } from '../utils/load-math';
 import { createMermaidRenderer } from '../renderers/mermaid';
 import { createPeleRenderer } from '../renderers/pele';
 
@@ -21,10 +22,14 @@ function loadPele( url ) {
  * when the settings name it, and Mermaid.js for anything else, such as a page
  * cached before there was a choice. A page loads one renderer, never both.
  *
- * @param {Object} settings            What the page is told: see `Assets`.
- * @param {string} settings.renderer   `pele`, or `mermaid`.
- * @param {string} settings.mermaidUrl URL of `build/mermaid/mermaid.esm.min.js`.
- * @param {string} settings.peleUrl    URL of `build/pele/lazy.js`.
+ * @param {Object} settings               What the page is told: see `Assets`.
+ * @param {string} settings.renderer      `pele`, or `mermaid`.
+ * @param {string} settings.mermaidUrl    URL of `build/mermaid/mermaid.esm.min.js`.
+ * @param {string} settings.peleUrl       URL of `build/pele/lazy.js`.
+ * @param {string} [settings.mathUrl]     URL of `build/math.js`.
+ * @param {Object} [settings.peleOptions] Pele's render options for the site.
+ * @param {Object} [settings.iconPacks]   The URL of the Iconify JSON of each icon
+ *                                        pack the site registered, by name.
  *
  * @return {Promise<Object>} The renderer: see createMermaidRenderer(). Rejects
  * when it could not be loaded.
@@ -35,8 +40,18 @@ export default function loadRenderer( settings ) {
 	if ( ! loading ) {
 		loading =
 			renderer === 'pele'
-				? loadPele( peleUrl ).then( createPeleRenderer )
-				: loadMermaid( mermaidUrl ).then( createMermaidRenderer );
+				? loadPele( peleUrl ).then( ( pele ) =>
+						createPeleRenderer( pele, {
+							site: settings.peleOptions,
+							iconPacks: settings.iconPacks,
+							loadMath: () => loadMath( getMathUrl( settings ) ),
+						} )
+				  )
+				: loadMermaid( mermaidUrl ).then( ( mermaid ) =>
+						createMermaidRenderer( mermaid, {
+							iconPacks: settings.iconPacks,
+						} )
+				  );
 	}
 
 	return loading;

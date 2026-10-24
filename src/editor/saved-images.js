@@ -17,6 +17,7 @@ import { select, subscribe } from '@wordpress/data';
 import { getRenderer, hasRenderer } from '../renderers';
 import { AUTO_LIGHT, THEMES } from '../utils/themes';
 import { getPngBlob, getThemeBackground } from '../utils/export-diagram';
+import { inHiddenElement } from '../utils/full-layout';
 
 // How long to wait for the editor canvas and its Mermaid when the editor
 // opens, and how often to look for them.
@@ -103,11 +104,14 @@ export async function drawImage( renderer, code, theme ) {
 
 	counter += 1;
 
-	const result = await renderer.draw(
-		code,
-		drawnTheme,
-		renderer.document.body,
-		`mermaid-blocks-image-${ counter }`
+	// In full, whatever the width of the editor, in the fonts of the canvas.
+	const result = await inHiddenElement( renderer.document.body, ( probe ) =>
+		renderer.draw(
+			code,
+			drawnTheme,
+			probe,
+			`mermaid-blocks-image-${ counter }`
+		)
 	);
 
 	if ( result.error ) {

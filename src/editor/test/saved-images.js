@@ -15,7 +15,7 @@ jest.mock( '../../renderers/mermaid', () => {
 
 	return {
 		mockDraw,
-		createMermaidRenderer: ( mermaid, doc ) => ( {
+		createMermaidRenderer: ( mermaid, { doc } ) => ( {
 			name: 'mermaid',
 			document: doc,
 			draw: mockDraw,
@@ -175,7 +175,7 @@ describe( 'drawImage', () => {
 		expect( draw ).toHaveBeenCalledWith(
 			'graph TD',
 			'dark',
-			document.body,
+			expect.any( window.HTMLElement ),
 			expect.stringMatching( /^mermaid-blocks-image-\d+$/ )
 		);
 		expect( blob ).toEqual( { png: SVG, background: '#333' } );
@@ -208,6 +208,31 @@ describe( 'drawImage', () => {
 
 		expect( svg.style.getPropertyValue( '--pele-fg' ) ).toBe( '#1f1f1f' );
 		expect( svg.style.getPropertyValue( '--pele-bg' ) ).toBe( '#ffffff' );
+	} );
+
+	it( 'draws a Pele diagram in full, for a hidden element with no width', async () => {
+		const render = jest.fn( () => ( {
+			svg: '<svg class="pele" viewBox="0 0 300 150"><g></g></svg>',
+		} ) );
+
+		// The body of the editor has a width, as a page's does.
+		Object.defineProperty( document.body, 'clientWidth', {
+			configurable: true,
+			value: 375,
+		} );
+
+		try {
+			await drawImage(
+				createPeleRenderer( { render } ),
+				'flowchart LR\nA-->B',
+				'auto'
+			);
+		} finally {
+			delete document.body.clientWidth;
+		}
+
+		expect( render.mock.calls[ 0 ][ 1 ] ).not.toHaveProperty( 'maxWidth' );
+		expect( document.body.querySelector( '[hidden]' ) ).toBeNull();
 	} );
 
 	it( 'gives each render an id of its own', async () => {
@@ -317,7 +342,7 @@ describe( 'saveImages', () => {
 		expect( draw ).toHaveBeenCalledWith(
 			'graph TD',
 			'forest',
-			frame.contentWindow.document.body,
+			expect.any( frame.contentWindow.HTMLElement ),
 			expect.any( String )
 		);
 	} );

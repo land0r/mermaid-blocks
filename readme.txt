@@ -43,17 +43,67 @@ Pele draws in a plain look of its own, so a diagram looks different from the sam
 
 - **Themes count as light or dark.** The theme settings offer Automatic, Light and Dark. Automatic follows the page, and turns dark with it without drawing the diagram again. A diagram that had another theme keeps it: Dark, Neo Dark, Redux Dark and Redux Dark Color are dark, and every other theme is light. A theme written in the code, in its front matter or in an `%%{init}%%` directive, counts the same way.
 - **Colours set in the code are ignored**, such as `themeVariables`.
-- **Math between `$$` is shown as text**, and `click` with a JavaScript callback is dropped, as Mermaid.js does at its strict security level. Links (`click A "https://…"`) work.
-- A diagram's direction stays the same on every screen width.
+- **Formulas between `$$` are typeset** with [Temml](https://temml.org/), as MathML that the browser draws in its own math font. Temml is loaded only on a page whose diagrams have a formula. Mermaid.js keeps its own formulas, drawn by KaTeX.
+- **`click` with a JavaScript callback is dropped**, as Mermaid.js does at its strict security level. Links (`click A "https://…"`) work.
+- **A wide diagram is laid out for the width it has.** On a narrow screen it may turn vertical below 640 pixels, and it is laid out again when its width changes, such as when a phone is turned. A download or a saved image has the full layout, whatever the screen.
+- **Zoom is Pele's own.** A diagram with the zoom control can be zoomed with a pinch, a double-click, Ctrl or ⌘ and the wheel, or by dragging, and with `+`, `-`, `0` and the arrow keys once it has focus.
+- **Labels are measured again once the site's web font has loaded**, so boxes fit the text in the font the page shows.
 - A diagram that Pele can't draw is shown as an error in the editor, and left as code on the page, as a syntax error is. Pele's error message shows the line and a mark under the column.
 
-Zoom, downloads, copying, fullscreen, saved images and the accessible title and description work with both renderers. A download or a saved image of a Pele diagram has the colours of the diagram as you see it.
+Downloads, copying, fullscreen, saved images and the accessible title and description work with both renderers, and so does zoom. A download or a saved image of a Pele diagram has the colours of the diagram as you see it.
 
 A developer can choose the renderer for a request, such as Pele only on some pages, with the `mermaid_blocks_renderer` filter. It gets the site's renderer, `mermaid` or `pele`, and returns one of them; anything else means Mermaid.js:
 
     add_filter( 'mermaid_blocks_renderer', function ( $renderer ) {
         return is_page( 'landing' ) ? 'pele' : $renderer;
     } );
+
+#### Pele's options
+A developer can set what Pele may do with the `mermaid_blocks_pele_options` filter. It applies only when the renderer is Pele. People who write diagrams can't set these options: the site decides what a diagram may do, such as showing links and images.
+
+- `links`, `images`: true or false, to allow links and images in diagrams.
+- `linkSchemes`, `imageSchemes`: lists of the URL schemes they may use, such as `https`. A list with anything but strings in it is ignored.
+- `linkRel`: the `rel` of links.
+- `fontSize`, `padding`, `directionBreakpoint`: positive numbers. `directionBreakpoint` is the width in pixels below which a wide diagram may turn vertical.
+- `autoDirection`: true or false, to turn that off.
+- `limit`, `outputLimit`, `maxEdges`: positive whole numbers, Pele's limits.
+- `config`: an array of Mermaid configuration used when a diagram sets none.
+
+A key Pele doesn't know, or a value of the wrong type, is ignored. The plugin sets the font, the measuring, the ids and the responsive layout itself, and they win over the filter:
+
+    add_filter( 'mermaid_blocks_pele_options', function ( $options ) {
+        $options['links']    = false;
+        $options['fontSize'] = 15;
+        return $options;
+    } );
+
+#### Styling Pele diagrams with CSS
+Pele draws with CSS variables, so a theme can restyle its diagrams. CSS written for Mermaid.js's SVG doesn't apply to Pele's, which has other elements and classes.
+
+- **Colours:** `--pele-bg`, `--pele-fg`, `--pele-muted`, `--pele-line`, `--pele-surface`, `--pele-surface-alt`, `--pele-border`, `--pele-accent`, `--pele-critical`, `--pele-error`, and `--pele-series-1` to `--pele-series-8` for charts.
+- **Fonts:** `--pele-font` for labels and `--pele-font-mono` for monospace labels.
+- **Weights and corners:** `--pele-title-weight`, `--pele-heading-weight`, `--pele-bold-weight` and `--pele-radius`.
+- **Classes:** `.pele` on the SVG, and `.pele-node`, `.pele-edge`, `.pele-edge-label`, `.pele-cluster`, `.pele-cluster-label`, `.pele-label`, `.pele-title`, `.pele-marker`, `.pele-icon` and `.pele-math` on its parts. A node also has a `data-id`, its id in the code, so `[data-id="start"]` picks one node. [Pele's page about theming](https://pele.run/theming) lists them all.
+
+The plugin puts the light or dark palette on the diagram's canvas, `.mermaid-blocks-diagram__canvas`, as inline variables, which beat a rule on the canvas or on an element above it. To change a colour, set the variable on the SVG inside it:
+
+    .mermaid-blocks-diagram__canvas > svg {
+        --pele-accent: #c2410c;
+        --pele-radius: 8px;
+    }
+
+Fonts are different: labels are measured in the font before they are drawn. The plugin reads `--pele-font` and `--pele-font-mono` on the diagram, `.mermaid-blocks-diagram`, or else uses the diagram's own font, and writes the font it measured in into the SVG. So set them on `.mermaid-blocks-diagram`, not on the SVG. A download takes the values the diagram has on the page, so your CSS counts in it too.
+
+### Icons:
+A developer can register icon packs with the `mermaid_blocks_icon_packs` filter, for diagrams drawn by either renderer. A pack is the URL of an [Iconify](https://iconify.design/) JSON file, by the name diagrams use before the colon:
+
+    add_filter( 'mermaid_blocks_icon_packs', function ( $packs ) {
+        $packs['fa']    = 'https://cdn.jsdelivr.net/npm/@iconify-json/fa6-solid@1.2.4/icons.json';
+        $packs['logos'] = 'https://cdn.jsdelivr.net/npm/@iconify-json/logos@1.2.17/icons.json';
+        return $packs;
+    } );
+
+Then a diagram can use `fa:fa-car` in a label, an icon shape such as `A@{ icon: "fa:user" }`, and `(logos:aws)` in an architecture diagram. A pack's name has lower-case letters, digits and hyphens. A pack is fetched only on a page whose diagrams use one of its icons. Register only packs you trust: their markup goes into the page as it is. People who write diagrams can't add packs.
 
 ### Shortcode:
 Where the block can't be used, write the diagram between `[mermaid]` and `[/mermaid]`:
@@ -108,7 +158,7 @@ A diagram is drawn in the visitor's browser, so a feed reader, or a browser that
 The diagrams of synced patterns, template parts, widgets and shortcodes get no image.
 
 ### Libraries:
-The diagrams are drawn by [Mermaid](https://mermaid.js.org/), by the Mermaid project (MIT licence), or by [Pele](https://pele.run/), by Obsidian (MIT licence). Both are included in the plugin.
+The diagrams are drawn by [Mermaid](https://mermaid.js.org/), by the Mermaid project (MIT licence), or by [Pele](https://pele.run/), by Obsidian (MIT licence). With Pele, formulas are typeset by [Temml](https://temml.org/), by Ron Kok (MIT licence). All three are included in the plugin.
 
 == Installation ==
 
@@ -138,6 +188,12 @@ Three things are loaded only for a diagram that uses them: formulas (80 KB compr
 
 = Should I use Pele? =
 If page weight and speed matter more to you than the look of Mermaid.js's themes, yes: choose it under Settings → Mermaid Blocks, look at your diagrams, and switch back if you prefer the old look. Pele draws every diagram type the plugin offers, but in a plainer look of its own, with a light and a dark palette in place of Mermaid's themes. The section "Pele, a lighter renderer" above says what is different.
+
+= Can diagrams show formulas? =
+Yes. Write the formula between `$$` in a label. Mermaid.js draws it with KaTeX, Pele with Temml. Either is loaded only on a page whose diagrams have a formula.
+
+= Can diagrams show icons? =
+Yes, once a developer has registered icon packs with the `mermaid_blocks_icon_packs` filter. The section "Icons" above shows how. A name that no registered pack has is drawn as before: with Pele, in its own symbol where it has one, such as `database` in an architecture diagram.
 
 = Why does my theme look the same in Pele? =
 Pele has no named themes, so with Pele the theme settings offer Automatic, Light and Dark. A diagram that had another theme before keeps it, and shows it as Dark if it is Dark, Neo Dark, Redux Dark or Redux Dark Color, and as Light otherwise; switch back to Mermaid.js and it looks as it did. A theme written in the diagram's code counts the same way.

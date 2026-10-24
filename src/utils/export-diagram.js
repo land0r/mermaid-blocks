@@ -381,17 +381,25 @@ function saveFile( blob, name ) {
  *
  * @param {SVGSVGElement} svg    The rendered diagram.
  * @param {string}        format `svg` or `png`.
+ * @param {Function}      [full] Given a function that makes a file from an
+ *                               SVG, calls it with the SVG to use: see
+ *                               createFullLayout(). Default: the one given.
  *
  * @return {Promise<void>} Resolves once the download started. Rejects when the
  * file could not be created.
  */
-export async function downloadDiagram( svg, format ) {
-	const blob =
+export async function downloadDiagram(
+	svg,
+	format,
+	full = ( use ) => use( svg )
+) {
+	const blob = await full( ( source ) =>
 		format === 'png'
-			? await getPngBlob( svg )
-			: new window.Blob( [ getSvgMarkup( svg ) ], {
+			? getPngBlob( source )
+			: new window.Blob( [ getSvgMarkup( source ) ], {
 					type: 'image/svg+xml;charset=utf-8',
-			  } );
+			  } )
+	);
 
 	saveFile( blob, `${ FILE_NAME }.${ format }` );
 }
@@ -421,13 +429,14 @@ export function canCopyImage( view = window ) {
  * that asked for it still counts as one: Safari refuses a write that starts
  * after the PNG has been drawn.
  *
- * @param {SVGSVGElement} svg The rendered diagram.
+ * @param {SVGSVGElement} svg    The rendered diagram.
+ * @param {Function}      [full] As in downloadDiagram().
  *
  * @return {Promise<void>} Resolves once the image is on the clipboard. Rejects
  * when the PNG could not be created or the browser refused to copy it.
  */
-export function copyDiagram( svg ) {
+export function copyDiagram( svg, full = ( use ) => use( svg ) ) {
 	return window.navigator.clipboard.write( [
-		new window.ClipboardItem( { 'image/png': getPngBlob( svg ) } ),
+		new window.ClipboardItem( { 'image/png': full( getPngBlob ) } ),
 	] );
 }

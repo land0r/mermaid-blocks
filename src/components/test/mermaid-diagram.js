@@ -152,3 +152,93 @@ describe( 'the preview with Pele', () => {
 		);
 	} );
 } );
+
+describe( 'the preview and its width', () => {
+	let observers;
+	let frames;
+	let width;
+
+	class FakeResizeObserver {
+		constructor( callback ) {
+			this.callback = callback;
+			this.observe = jest.fn();
+			this.disconnect = jest.fn();
+			observers.push( this );
+		}
+	}
+
+	// A wide flowchart: vertical when the preview is narrow.
+	const code =
+		'flowchart LR\n' +
+		Array.from( { length: 9 }, ( _, i ) => `N${ i } --> N${ i + 1 }` ).join(
+			'\n'
+		);
+
+	const viewBox = () =>
+		diagram()
+			.querySelector( 'svg' )
+			.getAttribute( 'viewBox' )
+			.split( ' ' )
+			.map( Number );
+
+	// The editor is resized: the observer tells, and the frame runs.
+	const resize = async ( to ) => {
+		width = to;
+		observers.forEach( ( observer ) => observer.callback( [] ) );
+
+		await act( async () => {
+			frames.splice( 0 ).forEach( ( callback ) => callback() );
+		} );
+	};
+
+	beforeEach( () => {
+		observers = [];
+		frames = [];
+		width = 1000;
+		window.ResizeObserver = FakeResizeObserver;
+		jest.spyOn( window, 'requestAnimationFrame' ).mockImplementation(
+			( callback ) => frames.push( callback )
+		);
+		Object.defineProperty( window.HTMLElement.prototype, 'clientWidth', {
+			configurable: true,
+			get: () => width,
+		} );
+	} );
+
+	afterEach( () => {
+		delete window.ResizeObserver;
+		delete window.HTMLElement.prototype.clientWidth;
+		delete window.mermaid;
+	} );
+
+	it( 'lays a Pele preview out for the width of the editor, and again when it changes', async () => {
+		await render( { code } );
+
+		const [ , , wideWidth, wideHeight ] = viewBox();
+
+		expect( wideWidth ).toBeGreaterThan( wideHeight );
+
+		await resize( 375 );
+
+		const [ , , narrowWidth, narrowHeight ] = viewBox();
+
+		expect( narrowHeight ).toBeGreaterThan( narrowWidth );
+
+		// The drawing changed the height, not the width.
+		await resize( 375 );
+
+		expect( viewBox() ).toEqual( [ 0, 0, narrowWidth, narrowHeight ] );
+	} );
+
+	it( 'does not watch a Mermaid.js preview', async () => {
+		delete window.pele;
+		window.mermaid = {
+			initialize: jest.fn(),
+			render: async () => ( { svg: '<svg></svg>' } ),
+		};
+
+		await render( { code } );
+
+		expect( observers ).toHaveLength( 0 );
+	} );
+} );

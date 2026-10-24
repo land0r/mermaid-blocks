@@ -4,7 +4,8 @@
  * the site's renderer, by name and in the order they are offered; the theme
  * each one that isn't offered is shown as; the site's theme, which a diagram
  * without a theme of its own is drawn in; and the URL of the page that theme
- * is set on, for those who may change it.
+ * is set on, for those who may change it. With Pele, also the options the
+ * site gives it.
  */
 import { AUTO_THEME, THEMES } from '../utils/themes';
 
@@ -49,3 +50,13 @@ export function getOwnTheme( theme ) {
 export function getShownTheme( theme ) {
 	return hasOwn( THEME_ALIASES, theme ) ? THEME_ALIASES[ theme ] : theme;
 }
+
+// Pele's render options for the site, which the renderer merges under its own.
+export const PELE_OPTIONS = settings.peleOptions || undefined;
+
+// Where the math module is, `build/math.js`, which draws the formulas of Pele diagrams.
+export const MATH_URL = settings.mathUrl || '';
+
+// The URL of the Iconify JSON of each icon pack the site registered, by name,
+// for either renderer.
+export const ICON_PACKS = settings.iconPacks || undefined;

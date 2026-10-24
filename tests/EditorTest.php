@@ -73,6 +73,21 @@ class EditorTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The editor is told where the math module is, for the formulas of Pele
+	 * diagrams, with the version of the file. Whatever the renderer is.
+	 */
+	public function test_tells_the_editor_where_the_math_module_is(): void {
+		$files = mermaid_blocks()->get( Files::class );
+		$asset = $files->get_build_asset( 'math' );
+
+		$this->assertNotEmpty( $asset['version'] );
+		$this->assertSame(
+			$files->get_build_url( 'math.js' ) . '?ver=' . $asset['version'],
+			$this->get_editor_settings()['mathUrl']
+		);
+	}
+
+	/**
 	 * The editor is told the themes, the site's theme, and where it is set.
 	 */
 	public function test_tells_the_editor_the_themes(): void {
@@ -141,6 +156,51 @@ class EditorTest extends WP_UnitTestCase {
 
 		update_option( Options::SAVE_IMAGES, 0 );
 		$this->assertFalse( $this->get_editor_settings()['saveImages'] );
+	}
+
+	/**
+	 * The editor is told the options a filter gives Pele, with Pele and only
+	 * when there are some.
+	 */
+	public function test_tells_the_editor_the_options_of_pele(): void {
+		$filter = static function () {
+			return array(
+				'padding' => 12,
+				'unknown' => 1,
+			);
+		};
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertArrayNotHasKey( 'peleOptions', $this->get_editor_settings() );
+
+		add_filter( 'mermaid_blocks_pele_options', $filter );
+		$this->assertSame( array( 'padding' => 12 ), $this->get_editor_settings()['peleOptions'] );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertArrayNotHasKey( 'peleOptions', $this->get_editor_settings() );
+
+		remove_filter( 'mermaid_blocks_pele_options', $filter );
+	}
+
+	/**
+	 * The editor is told the icon packs a filter registers, with either
+	 * renderer and only when there are some.
+	 */
+	public function test_tells_the_editor_the_icon_packs(): void {
+		$filter = static function () {
+			return array( 'logos' => 'https://example.com/logos.json' );
+		};
+
+		$this->assertArrayNotHasKey( 'iconPacks', $this->get_editor_settings() );
+
+		add_filter( 'mermaid_blocks_icon_packs', $filter );
+
+		foreach ( array( 'mermaid', 'pele' ) as $renderer ) {
+			update_option( Options::RENDERER, $renderer );
+			$this->assertSame( array( 'logos' => 'https://example.com/logos.json' ), $this->get_editor_settings()['iconPacks'], $renderer );
+		}
+
+		remove_filter( 'mermaid_blocks_icon_packs', $filter );
 	}
 
 	/**

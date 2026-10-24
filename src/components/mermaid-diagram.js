@@ -30,6 +30,8 @@ import { getRenderer } from '../renderers';
 import { THEMES, resolveTheme } from '../utils/themes';
 import { withAccessibleText } from '../utils/accessible-text';
 import watchSurface from '../utils/watch-surface';
+import watchFonts from '../utils/watch-fonts';
+import watchWidth from '../utils/watch-width';
 
 // No drawing: the preview is empty, or shows an error.
 const EMPTY = { svg: '', style: null };
@@ -108,6 +110,41 @@ export default function MermaidDiagram( {
 		} );
 	}, [ theme ] );
 
+	// Counts the times web fonts finished loading: Pele draws again then.
+	const [ fontsLoaded, setFontsLoaded ] = useState( 0 );
+
+	useEffect( () => {
+		const { ownerDocument } = containerRef.current;
+
+		return watchFonts( () => {
+			const renderer = getRenderer( ownerDocument.defaultView );
+
+			// Mermaid.js measures nothing in advance.
+			if ( renderer && typeof renderer.forgetTextWidths === 'function' ) {
+				renderer.forgetTextWidths();
+				setFontsLoaded( ( count ) => count + 1 );
+			}
+		}, ownerDocument );
+	}, [] );
+
+	// Counts the times the width of the preview changed: a Pele diagram is laid
+	// out for the width it has, so it is drawn again then. Mermaid.js diagrams
+	// are not watched.
+	const [ resized, setResized ] = useState( 0 );
+
+	useEffect( () => {
+		const container = containerRef.current;
+		const renderer = getRenderer( container.ownerDocument.defaultView );
+
+		if ( ! renderer || renderer.name !== 'pele' ) {
+			return;
+		}
+
+		return watchWidth( container, () =>
+			setResized( ( count ) => count + 1 )
+		);
+	}, [] );
+
 	useEffect( () => {
 		if ( ! drawnTheme ) {
 			return;
@@ -162,7 +199,7 @@ export default function MermaidDiagram( {
 		return () => {
 			cancelled = true;
 		};
-	}, [ code, drawnTheme, instanceId ] );
+	}, [ code, drawnTheme, instanceId, fontsLoaded, resized ] );
 
 	// As on the front end, where the script writes both into the SVG.
 	const { svg, style } = drawing;

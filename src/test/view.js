@@ -272,6 +272,42 @@ describe( 'view script', () => {
 		expect( canvas( themed ) ).toBe( before[ 1 ] );
 	} );
 
+	it( 'watches web fonts from the first render on, not once it is done', async () => {
+		const fonts = {
+			addEventListener: jest.fn(),
+			removeEventListener: jest.fn(),
+		};
+		Object.defineProperty( document, 'fonts', {
+			value: fonts,
+			configurable: true,
+		} );
+		window.mermaidBlocksSettings = {
+			renderer: 'pele',
+			peleUrl: 'https://example.test/plugin/build/pele/lazy.js',
+		};
+		document.body.innerHTML = DIAGRAM;
+
+		// A renderer that is still loading, as it is for a first diagram.
+		jest.isolateModules( () => {
+			jest.doMock( '../frontend/load-renderer', () => ( {
+				__esModule: true,
+				default: () => new Promise( () => {} ),
+				getRendererUrl: ( { peleUrl } ) => peleUrl,
+			} ) );
+			require( '../view' );
+		} );
+		jest.dontMock( '../frontend/load-renderer' );
+
+		scrollIntoView( diagrams()[ 0 ] );
+
+		expect( fonts.addEventListener ).toHaveBeenCalledWith(
+			'loadingdone',
+			expect.any( Function )
+		);
+
+		delete document.fonts;
+	} );
+
 	it( 'exposes render() for diagrams added later', async () => {
 		window.mermaidBlocks = { existing: true };
 

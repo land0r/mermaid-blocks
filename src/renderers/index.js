@@ -4,6 +4,8 @@
 import MERMAID_CONFIG from '../utils/mermaid-config';
 import { createMermaidRenderer } from './mermaid';
 import { createPeleRenderer } from './pele';
+import { ICON_PACKS, MATH_URL, PELE_OPTIONS } from '../editor/settings';
+import loadMath from '../utils/load-math';
 
 /**
  * The renderers made for each loaded library, so a window always gets the
@@ -62,13 +64,21 @@ export function getRenderer( view ) {
 		if ( owner.pele ) {
 			renderers.set(
 				library,
-				createPeleRenderer( library, { doc: owner.document } )
+				createPeleRenderer( library, {
+					doc: owner.document,
+					site: PELE_OPTIONS,
+					iconPacks: ICON_PACKS,
+					loadMath: MATH_URL ? () => loadMath( MATH_URL ) : undefined,
+				} )
 			);
 		} else {
 			library.initialize( MERMAID_CONFIG );
 			renderers.set(
 				library,
-				createMermaidRenderer( library, owner.document )
+				createMermaidRenderer( library, {
+					doc: owner.document,
+					iconPacks: ICON_PACKS,
+				} )
 			);
 		}
 	}

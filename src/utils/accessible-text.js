@@ -63,6 +63,26 @@ export function setAccessibleText( svg, text = {} ) {
 }
 
 /**
+ * Returns the title and the description a rendered diagram has, from its
+ * source or from setAccessibleText(), so another drawing of it can get them.
+ *
+ * @param {SVGSVGElement} svg The rendered diagram.
+ *
+ * @return {{title: string, description: string}} The text: empty for none.
+ */
+export function getAccessibleText( svg ) {
+	return Object.fromEntries(
+		ELEMENTS.map( ( { key, tag } ) => {
+			const element = Array.from( svg.children ).find(
+				( child ) => child.localName === tag
+			);
+
+			return [ key, element ? element.textContent : '' ];
+		} )
+	);
+}
+
+/**
  * Returns the markup of a rendered diagram with a title and a description
  * for assistive technology.
  *

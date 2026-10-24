@@ -9,12 +9,18 @@
 import createZoom from './zoom';
 import createFullscreen from './fullscreen';
 import { downloadDiagram } from '../utils/export-diagram';
+import { createFullLayout } from '../utils/full-layout';
+import { REDRAWN_EVENT } from '../utils/redrawn-event';
 
 const CANVAS_SELECTOR = '.mermaid-blocks-diagram__canvas';
 const SOURCE_SELECTOR = '.mermaid-blocks-diagram__source';
 const TOOLBAR_CLASS = 'mermaid-blocks-diagram__toolbar';
 const BUTTON_CLASS = 'mermaid-blocks-diagram__button';
 const STATUS_CLASS = 'mermaid-blocks-diagram__status';
+
+// Pele's zoom of each canvas: it is enabled once for a canvas, however often
+// the diagram gets its controls, and again for a canvas that took its place.
+const peleZooms = new WeakMap();
 
 // How long a message, such as a failed download or "Copied", stays.
 const STATUS_DURATION = 5000;
@@ -178,16 +184,48 @@ function createZoomButtons( doc, diagram, canvas, svg, text ) {
 }
 
 /**
+ * Makes a Pele diagram zoomable with Pele's own zoom: pinch, Ctrl or Cmd and
+ * the wheel, drag, double-click, `+` `-` `0` and the arrow keys, and Pele's
+ * buttons, which it puts in the canvas. The wheel alone is left to the page.
+ * The zoom is refreshed when the diagram is drawn again in place.
+ *
+ * @param {HTMLElement} diagram  The diagram element.
+ * @param {HTMLElement} canvas   The element around the SVG.
+ * @param {Object}      renderer The Pele renderer.
+ * @param {Object}      text     The labels.
+ *
+ * @return {Object} Pele's zoom.
+ */
+function enablePeleZoom( diagram, canvas, renderer, text ) {
+	const zoom = renderer.enableZoom( canvas, {
+		// Even a diagram that fits its column: the reader asked for the zoom.
+		always: true,
+		labels: {
+			zoomIn: text.zoomIn,
+			zoomOut: text.zoomOut,
+			reset: text.resetZoom,
+		},
+	} );
+
+	diagram.addEventListener( REDRAWN_EVENT, () => zoom.refresh() );
+	peleZooms.set( canvas, zoom );
+
+	return zoom;
+}
+
+/**
  * Creates the download buttons of a diagram.
  *
  * @param {Document}      doc    The document of the diagram.
  * @param {SVGSVGElement} svg    The rendered diagram.
  * @param {Object}        status Where to tell that a download failed.
  * @param {Object}        text   The labels.
+ * @param {Function}      full   What gives a Pele diagram its full layout: see
+ *                               createFullLayout().
  *
  * @return {HTMLButtonElement[]} The buttons.
  */
-function createDownloadButtons( doc, svg, status, text ) {
+function createDownloadButtons( doc, svg, status, text, full ) {
 	let busy = false;
 
 	const download = ( format ) => () => {
@@ -198,7 +236,7 @@ function createDownloadButtons( doc, svg, status, text ) {
 		busy = true;
 		status.clear();
 
-		downloadDiagram( svg, format )
+		downloadDiagram( svg, format, full )
 			.catch( ( error ) => {
 				status.show( text.downloadError );
 				// eslint-disable-next-line no-console
@@ -317,11 +355,14 @@ function createFullscreenButton( doc, diagram, zoom, text ) {
 /**
  * Adds the controls a rendered diagram asks for, in a toolbar above it.
  *
- * @param {HTMLElement} diagram  The diagram element.
- * @param {Object}      [labels] Translated labels, by the keys of
- *                               DEFAULT_LABELS.
+ * @param {HTMLElement} diagram    The diagram element.
+ * @param {Object}      [labels]   Translated labels, by the keys of
+ *                                 DEFAULT_LABELS.
+ * @param {Object}      [renderer] The renderer the diagram was drawn with,
+ *                                 which draws it again in full for a download:
+ *                                 view.js hands it over, as this file has none.
  */
-export default function addControls( diagram, labels ) {
+export default function addControls( diagram, labels, renderer ) {
 	const canvas = diagram.querySelector( CANVAS_SELECTOR );
 	const svg = canvas && canvas.querySelector( 'svg' );
 
@@ -337,8 +378,17 @@ export default function addControls( diagram, labels ) {
 	const status = createStatus( doc );
 	let zoom = null;
 
-	// Zooming scales the drawing through its `viewBox`.
-	if ( controls.includes( 'zoom' ) && svg.hasAttribute( 'viewBox' ) ) {
+	// Pele's renderer is the one with a zoom of its own.
+	if (
+		controls.includes( 'zoom' ) &&
+		renderer &&
+		typeof renderer.enableZoom === 'function'
+	) {
+		zoom =
+			peleZooms.get( canvas ) ||
+			enablePeleZoom( diagram, canvas, renderer, text );
+	} else if ( controls.includes( 'zoom' ) && svg.hasAttribute( 'viewBox' ) ) {
+		// Zooming scales the drawing through its `viewBox`.
 		const zoomControls = createZoomButtons(
 			doc,
 			diagram,
@@ -354,7 +404,17 @@ export default function addControls( diagram, labels ) {
 	const actions = [];
 
 	if ( controls.includes( 'download' ) ) {
-		actions.push( ...createDownloadButtons( doc, svg, status, text ) );
+		const source = diagram.querySelector( SOURCE_SELECTOR );
+		const full = createFullLayout(
+			renderer,
+			svg,
+			() => ( source ? source.textContent : '' ),
+			() => canvas.dataset.mermaidTheme
+		);
+
+		actions.push(
+			...createDownloadButtons( doc, svg, status, text, full )
+		);
 	}
 
 	if ( controls.includes( 'copy' ) ) {

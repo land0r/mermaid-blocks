@@ -1,4 +1,5 @@
 import addControls from '../controls';
+import { REDRAWN_EVENT } from '../../utils/redrawn-event';
 import { downloadDiagram } from '../../utils/export-diagram';
 
 jest.mock( '../../utils/export-diagram', () => ( {
@@ -102,6 +103,121 @@ describe( 'addControls', () => {
 		const diagram = setup( 'zoom' );
 
 		addControls( diagram );
+
+		expect( labels( diagram ) ).toEqual( [
+			'Zoom out',
+			'Zoom in',
+			'Reset zoom',
+		] );
+	} );
+
+	describe( 'a Pele diagram', () => {
+		const zoomLabels = { zoomIn: 'In', zoomOut: 'Out', resetZoom: 'Back' };
+
+		const peleRenderer = ( zoom = {} ) => ( {
+			name: 'pele',
+			enableZoom: jest.fn( () => ( {
+				reset: jest.fn(),
+				refresh: jest.fn(),
+				...zoom,
+			} ) ),
+		} );
+
+		it( 'gets the zoom of Pele, with the translated labels, and not the buttons of the plugin', () => {
+			const diagram = setup( 'zoom' );
+			const renderer = peleRenderer();
+
+			addControls( diagram, zoomLabels, renderer );
+
+			expect( renderer.enableZoom ).toHaveBeenCalledTimes( 1 );
+			expect( renderer.enableZoom ).toHaveBeenCalledWith(
+				diagram.querySelector( '.mermaid-blocks-diagram__canvas' ),
+				{
+					always: true,
+					labels: { zoomIn: 'In', zoomOut: 'Out', reset: 'Back' },
+				}
+			);
+			expect( labels( diagram ) ).toEqual( [] );
+		} );
+
+		it( 'keeps the other controls in the toolbar of the plugin', () => {
+			const diagram = setup( 'zoom download fullscreen' );
+
+			addControls( diagram, undefined, peleRenderer() );
+
+			expect( labels( diagram ) ).toEqual( [
+				'Download as SVG',
+				'Download as PNG',
+				'View fullscreen',
+			] );
+		} );
+
+		it( 'gets no zoom without the control', () => {
+			const diagram = setup( 'download' );
+			const renderer = peleRenderer();
+
+			addControls( diagram, undefined, renderer );
+
+			expect( renderer.enableZoom ).not.toHaveBeenCalled();
+		} );
+
+		it( 'is zoomed once, however many times it gets its controls', () => {
+			const diagram = setup( 'zoom' );
+			const renderer = peleRenderer();
+
+			addControls( diagram, undefined, renderer );
+			addControls( diagram, undefined, renderer );
+
+			expect( renderer.enableZoom ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( 'is zoomed again on a canvas that took the place of its own', () => {
+			const diagram = setup( 'zoom' );
+			const renderer = peleRenderer();
+
+			addControls( diagram, undefined, renderer );
+
+			const previous = diagram.querySelector(
+				'.mermaid-blocks-diagram__canvas'
+			);
+			const canvas = previous.cloneNode( true );
+
+			previous.replaceWith( canvas );
+			addControls( diagram, undefined, renderer );
+
+			expect( renderer.enableZoom ).toHaveBeenCalledTimes( 2 );
+			expect( renderer.enableZoom.mock.calls[ 1 ][ 0 ] ).toBe( canvas );
+		} );
+
+		it( 'refreshes its zoom when it was drawn again', () => {
+			const diagram = setup( 'zoom' );
+			const refresh = jest.fn();
+
+			addControls( diagram, undefined, peleRenderer( { refresh } ) );
+			diagram.dispatchEvent( new CustomEvent( REDRAWN_EVENT ) );
+
+			expect( refresh ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( 'resets its zoom going fullscreen and leaving it', () => {
+			const diagram = setup( 'zoom fullscreen' );
+			const reset = jest.fn();
+
+			addControls( diagram, undefined, peleRenderer( { reset } ) );
+			button( diagram, 'View fullscreen' ).click();
+
+			expect( reset ).toHaveBeenCalledTimes( 1 );
+
+			button( diagram, 'Exit fullscreen' ).click();
+
+			expect( reset ).toHaveBeenCalledTimes( 2 );
+		} );
+	} );
+
+	it( 'gives a diagram of Mermaid.js the zoom buttons of the plugin', () => {
+		const diagram = setup( 'zoom' );
+
+		addControls( diagram, undefined, { name: 'mermaid' } );
 
 		expect( labels( diagram ) ).toEqual( [
 			'Zoom out',
@@ -234,7 +350,39 @@ describe( 'addControls', () => {
 
 		expect( downloadDiagram ).toHaveBeenCalledWith(
 			diagram.querySelector( '.mermaid-blocks-diagram__canvas svg' ),
-			format
+			format,
+			expect.any( Function )
+		);
+	} );
+
+	it( 'draws a Pele diagram in full for a download', async () => {
+		const renderer = {
+			name: 'pele',
+			draw: jest.fn().mockResolvedValue( {
+				svg: '<svg viewBox="0 0 1600 200"></svg>',
+			} ),
+		};
+		const diagram = setup( 'download' );
+		diagram.querySelector( 'pre' ).textContent = 'flowchart LR\nA --> B';
+		diagram.querySelector(
+			'.mermaid-blocks-diagram__canvas'
+		).dataset.mermaidTheme = 'dark';
+		addControls( diagram, undefined, renderer );
+
+		button( diagram, 'Download as SVG' ).click();
+		await settle();
+
+		const use = jest.fn();
+		await downloadDiagram.mock.calls[ 0 ][ 2 ]( use );
+
+		expect( renderer.draw ).toHaveBeenCalledWith(
+			'flowchart LR\nA --> B',
+			'dark',
+			expect.any( window.HTMLElement ),
+			expect.any( String )
+		);
+		expect( use.mock.calls[ 0 ][ 0 ].getAttribute( 'viewBox' ) ).toBe(
+			'0 0 1600 200'
 		);
 	} );
 

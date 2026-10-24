@@ -93,6 +93,54 @@ class AssetsTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The script is told the options a filter gives Pele, with Pele and only
+	 * when there are some.
+	 */
+	public function test_tells_the_script_the_options_of_pele(): void {
+		$filter = static function () {
+			return array(
+				'links'   => true,
+				'unknown' => 1,
+			);
+		};
+
+		update_option( Options::RENDERER, 'pele' );
+		$this->assertArrayNotHasKey( 'peleOptions', $this->get_settings() );
+
+		add_filter( 'mermaid_blocks_pele_options', $filter );
+		$this->assertSame( array( 'links' => true ), $this->get_settings()['peleOptions'] );
+
+		update_option( Options::RENDERER, 'mermaid' );
+		$this->assertArrayNotHasKey( 'peleOptions', $this->get_settings() );
+
+		remove_filter( 'mermaid_blocks_pele_options', $filter );
+	}
+
+	/**
+	 * The script is told the icon packs a filter registers, with either
+	 * renderer and only when there are some.
+	 */
+	public function test_tells_the_script_the_icon_packs(): void {
+		$filter = static function () {
+			return array(
+				'fa'   => 'https://example.com/fa.json',
+				'Bad!' => 'https://example.com/bad.json',
+			);
+		};
+
+		$this->assertArrayNotHasKey( 'iconPacks', $this->get_settings() );
+
+		add_filter( 'mermaid_blocks_icon_packs', $filter );
+
+		foreach ( array( 'mermaid', 'pele' ) as $renderer ) {
+			update_option( Options::RENDERER, $renderer );
+			$this->assertSame( array( 'fa' => 'https://example.com/fa.json' ), $this->get_settings()['iconPacks'], $renderer );
+		}
+
+		remove_filter( 'mermaid_blocks_icon_packs', $filter );
+	}
+
+	/**
 	 * The renderer a filter picks is the one the script is told, even for a
 	 * request the filter looks at once the query ran.
 	 */
@@ -151,6 +199,23 @@ class AssetsTest extends WP_UnitTestCase {
 		$this->assertSame(
 			$this->files->get_build_url( 'controls.js' ) . '?ver=' . $asset['version'],
 			$this->get_settings()['controlsUrl']
+		);
+	}
+
+	/**
+	 * The math module is a module of its own, which Pele diagrams import by its
+	 * URL, with the version of that file. It is told whatever the renderer is:
+	 * as Pele's URL is.
+	 */
+	public function test_says_where_the_math_module_is(): void {
+		$asset = $this->files->get_build_asset( 'math' );
+
+		$this->assertNotEmpty( $asset['version'] );
+		$this->assertSame( 'module', $asset['type'] );
+		$this->assertFileExists( $this->files->get_build_path( 'math.js' ) );
+		$this->assertSame(
+			$this->files->get_build_url( 'math.js' ) . '?ver=' . $asset['version'],
+			$this->get_settings()['mathUrl']
 		);
 	}
 

@@ -1,11 +1,13 @@
 import renderDraw, {
 	isOutdated,
 	redrawDiagram as redrawWith,
+	redrawInPlace,
 } from '../render-diagrams';
 // eslint-disable-next-line import/no-unresolved
 import * as pele from 'pele/lazy';
 import { createMermaidRenderer } from '../../renderers/mermaid';
 import { createPeleRenderer } from '../../renderers/pele';
+import { REDRAWN_EVENT } from '../../utils/redrawn-event';
 import { DARK, LIGHT, PALETTES } from '../../utils/pele-palette';
 
 // The tests drive Mermaid.js through the renderer interface.
@@ -556,5 +558,125 @@ describe( 'renderDiagrams with Pele', () => {
 		await redrawWith( renderer, diagram );
 
 		expect( getPalette( getCanvas( diagram ) ) ).toBe( 'light' );
+	} );
+} );
+
+describe( 'redrawInPlace', () => {
+	const measurer = { width: ( text, size ) => text.length * size * 0.55 };
+	const peleRenderer = createPeleRenderer( pele, { measurer } );
+
+	it( 'draws a Pele diagram again in its canvas, keeping the palette, the controls and the element', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+		diagram.dataset.mermaidTitle = 'A title';
+
+		await renderDraw( peleRenderer );
+
+		const canvas = getCanvas( diagram );
+		const svg = canvas.querySelector( 'svg' );
+		const id = svg.id;
+		const toolbar = document.createElement( 'div' );
+		toolbar.className = 'mermaid-blocks-diagram__toolbar';
+		diagram.appendChild( toolbar );
+		const palette = canvas.style.getPropertyValue( '--pele-fg' );
+
+		// Something the first drawing did not have.
+		diagram.querySelector( 'pre' ).textContent =
+			'flowchart LR\nA --> B --> C';
+
+		await expect( redrawInPlace( peleRenderer, diagram ) ).resolves.toBe(
+			true
+		);
+
+		expect( getCanvas( diagram ) ).toBe( canvas );
+		expect( canvas.querySelector( 'svg' ) ).toBe( svg );
+		expect( svg.id ).toBe( id );
+		expect( svg.textContent ).toContain( 'C' );
+		expect(
+			diagram.querySelector( '.mermaid-blocks-diagram__toolbar' )
+		).toBe( toolbar );
+		expect( canvas.style.getPropertyValue( '--pele-fg' ) ).toBe( palette );
+		expect( svg.querySelector( 'title' ).textContent ).toBe( 'A title' );
+		expect( svg.getAttribute( 'aria-labelledby' ) ).toBe(
+			svg.querySelector( 'title' ).id
+		);
+		expect( diagram.dataset.mermaidProcessing ).toBeUndefined();
+	} );
+
+	it( 'tells the diagram that it was drawn again', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+		const listener = jest.fn();
+
+		await renderDraw( peleRenderer );
+		diagram.addEventListener( REDRAWN_EVENT, listener );
+		await redrawInPlace( peleRenderer, diagram );
+
+		expect( listener ).toHaveBeenCalledTimes( 1 );
+	} );
+
+	it( 'tells nobody when the diagram was not drawn again', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+		const listener = jest.fn();
+
+		await renderDraw( peleRenderer );
+		diagram.querySelector( 'pre' ).textContent = 'flowchart LR\nA -->';
+		diagram.addEventListener( REDRAWN_EVENT, listener );
+		await redrawInPlace( peleRenderer, diagram );
+
+		expect( listener ).not.toHaveBeenCalled();
+	} );
+
+	it( 'leaves a Mermaid.js diagram alone', async () => {
+		setup();
+		const diagram = getDiagram();
+		const mermaid = themed();
+		const renderer = createMermaidRenderer( mermaid );
+
+		await renderDraw( renderer, diagram );
+		mermaid.render.mockClear();
+
+		await expect( redrawInPlace( renderer, diagram ) ).resolves.toBe(
+			false
+		);
+		expect( mermaid.render ).not.toHaveBeenCalled();
+	} );
+
+	it( 'skips a diagram that is not rendered or is being processed', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+		const draw = jest.spyOn( peleRenderer, 'draw' );
+
+		await expect( redrawInPlace( peleRenderer, diagram ) ).resolves.toBe(
+			false
+		);
+
+		await renderDraw( peleRenderer );
+		draw.mockClear();
+		diagram.dataset.mermaidProcessing = '1';
+
+		await expect( redrawInPlace( peleRenderer, diagram ) ).resolves.toBe(
+			false
+		);
+		expect( draw ).not.toHaveBeenCalled();
+
+		draw.mockRestore();
+	} );
+
+	it( 'leaves the diagram as it is when the new drawing fails', async () => {
+		setup( [ 'flowchart LR\nA --> B' ] );
+		const diagram = getDiagram();
+
+		await renderDraw( peleRenderer );
+
+		const html = getCanvas( diagram ).innerHTML;
+		diagram.querySelector( 'pre' ).textContent = 'nonsense';
+
+		await expect( redrawInPlace( peleRenderer, diagram ) ).resolves.toBe(
+			false
+		);
+		expect( getCanvas( diagram ).innerHTML ).toBe( html );
+		expect( diagram.dataset.mermaidProcessing ).toBeUndefined();
 	} );
 } );

@@ -4,7 +4,7 @@ import { AUTO_DARK, AUTO_LIGHT } from '../../utils/themes';
 
 // Draws through the renderer interface, in the document of the window.
 const renderDiagram = ( mermaid, id, code, doc = document, theme ) =>
-	createMermaidRenderer( mermaid, doc ).draw( code, theme, doc.body, id );
+	createMermaidRenderer( mermaid, { doc } ).draw( code, theme, doc.body, id );
 const parseDiagram = ( mermaid, code ) =>
 	createMermaidRenderer( mermaid ).parse( code );
 
@@ -451,5 +451,84 @@ describe( 'parseDiagram', () => {
 		await Promise.all( [ rendered, parsed ] );
 
 		expect( calls ).toEqual( [ 'start render', 'end render', 'parse' ] );
+	} );
+} );
+
+describe( 'icon packs', () => {
+	const pack = { prefix: 'fa', icons: { car: { body: '<path/>' } } };
+	let n = 0;
+	let url;
+
+	const fakeMermaid = () => ( { registerIconPacks: jest.fn() } );
+
+	beforeEach( () => {
+		url = `/fa-mermaid-${ ++n }.json`;
+		global.fetch = jest.fn( () =>
+			Promise.resolve( { ok: true, json: () => Promise.resolve( pack ) } )
+		);
+	} );
+
+	afterEach( () => {
+		jest.restoreAllMocks();
+		delete global.fetch;
+	} );
+
+	it( 'registers each pack with a loader, and fetches nothing yet', () => {
+		const mermaid = fakeMermaid();
+
+		createMermaidRenderer( mermaid, {
+			iconPacks: { fa: url, logos: '/l.json' },
+		} );
+
+		expect( mermaid.registerIconPacks ).toHaveBeenCalledTimes( 1 );
+		expect( mermaid.registerIconPacks ).toHaveBeenCalledWith( [
+			{ name: 'fa', loader: expect.any( Function ) },
+			{ name: 'logos', loader: expect.any( Function ) },
+		] );
+		expect( global.fetch ).not.toHaveBeenCalled();
+	} );
+
+	it( 'loads the Iconify JSON of a pack through the loader, once', async () => {
+		const mermaid = fakeMermaid();
+
+		createMermaidRenderer( mermaid, { iconPacks: { fa: url } } );
+		const [ [ [ { loader } ] ] ] = mermaid.registerIconPacks.mock.calls;
+
+		await expect( loader() ).resolves.toEqual( pack );
+		await loader();
+
+		expect( global.fetch ).toHaveBeenCalledTimes( 1 );
+	} );
+
+	it( 'rejects in the loader when the pack failed, for Mermaid to show its own mark', async () => {
+		jest.spyOn( console, 'error' ).mockImplementation( () => {} );
+		global.fetch = jest.fn( () =>
+			Promise.reject( new Error( 'offline' ) )
+		);
+		const mermaid = fakeMermaid();
+
+		createMermaidRenderer( mermaid, { iconPacks: { fa: url } } );
+
+		await expect(
+			mermaid.registerIconPacks.mock.calls[ 0 ][ 0 ][ 0 ].loader()
+		).rejects.toThrow();
+	} );
+
+	it( 'registers the packs once per Mermaid, however many renderers', () => {
+		const mermaid = fakeMermaid();
+
+		createMermaidRenderer( mermaid, { iconPacks: { fa: url } } );
+		createMermaidRenderer( mermaid, { iconPacks: { fa: url } } );
+
+		expect( mermaid.registerIconPacks ).toHaveBeenCalledTimes( 1 );
+	} );
+
+	it( 'registers nothing without packs, or with none', () => {
+		const mermaid = fakeMermaid();
+
+		createMermaidRenderer( mermaid );
+		createMermaidRenderer( mermaid, { iconPacks: {} } );
+
+		expect( mermaid.registerIconPacks ).not.toHaveBeenCalled();
 	} );
 } );
