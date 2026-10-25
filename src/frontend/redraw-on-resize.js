@@ -1,7 +1,7 @@
 import { redrawInPlace } from './render-diagrams';
 import watchWidth from '../utils/watch-width';
 
-const CANVAS_SELECTOR = '.mermaid-blocks-diagram__canvas';
+const CANVAS_SELECTOR = '.graphdraw-diagram__canvas';
 
 // The diagrams being watched: a diagram is watched once.
 const watched = new WeakSet();
@@ -44,7 +44,7 @@ export default function redrawOnResize( renderer, diagram ) {
 
 		return redrawInPlace( renderer, diagram ).catch( ( error ) => {
 			// eslint-disable-next-line no-console
-			console.error( 'Mermaid Blocks: failed to render diagram.', error );
+			console.error( 'GraphDraw: failed to render diagram.', error );
 
 			return false;
 		} );

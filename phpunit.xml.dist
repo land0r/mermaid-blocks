@@ -9,7 +9,7 @@
 	convertDeprecationsToExceptions="true"
 >
 	<testsuites>
-		<testsuite name="Mermaid Blocks">
+		<testsuite name="GraphDraw">
 			<directory suffix="Test.php">./tests/</directory>
 			<!-- With Elementor active: phpunit-elementor.xml.dist. -->
 			<exclude>./tests/Elementor/</exclude>

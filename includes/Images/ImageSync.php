@@ -2,14 +2,14 @@
 /**
  * The saved images of a post, kept in step with its diagrams.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Images;
+namespace GraphDraw\Images;
 
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Posts\PostDiagrams;
-use MermaidBlocks\Themes;
+use GraphDraw\Hookable;
+use GraphDraw\Posts\PostDiagrams;
+use GraphDraw\Themes;
 use WP_Post;
 
 if ( ! defined( 'ABSPATH' ) ) {

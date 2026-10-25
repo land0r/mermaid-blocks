@@ -5,7 +5,7 @@ const MERMAID_URL =
 const CONTROLS_URL = 'https://example.test/plugin/build/controls.js?ver=2';
 
 const DIAGRAM =
-	'<div class="mermaid-blocks-diagram"><pre class="mermaid-blocks-diagram__source">graph LR\nA--&gt;B</pre></div>';
+	'<div class="graphdraw-diagram"><pre class="graphdraw-diagram__source">graph LR\nA--&gt;B</pre></div>';
 
 const mockLoadMermaid = jest.fn();
 const mockLoadControls = jest.fn();
@@ -67,7 +67,7 @@ function loadViewScript() {
 }
 
 const diagrams = () =>
-	Array.from( document.querySelectorAll( '.mermaid-blocks-diagram' ) );
+	Array.from( document.querySelectorAll( '.graphdraw-diagram' ) );
 
 describe( 'view script', () => {
 	let mermaid;
@@ -78,7 +78,7 @@ describe( 'view script', () => {
 		mockLoadMermaid.mockResolvedValue( mermaid );
 		mockLoadControls.mockReset();
 		mockLoadControls.mockResolvedValue( addControls );
-		window.mermaidBlocksSettings = {
+		window.graphDrawSettings = {
 			mermaidUrl: MERMAID_URL,
 			controlsUrl: CONTROLS_URL,
 		};
@@ -86,8 +86,8 @@ describe( 'view script', () => {
 	} );
 
 	afterEach( () => {
-		delete window.mermaidBlocks;
-		delete window.mermaidBlocksSettings;
+		delete window.graphDraw;
+		delete window.graphDrawSettings;
 		delete window.IntersectionObserver;
 		FakeIntersectionObserver.instance = null;
 		document.body.innerHTML = '';
@@ -145,7 +145,7 @@ describe( 'view script', () => {
 	} );
 
 	it( 'adds the controls a rendered diagram asks for', async () => {
-		window.mermaidBlocksSettings.i18n = { zoomIn: 'Inzoomen' };
+		window.graphDrawSettings.i18n = { zoomIn: 'Inzoomen' };
 		document.body.innerHTML = DIAGRAM + DIAGRAM;
 		const [ plain, withControls ] = diagrams();
 		withControls.dataset.mermaidControls = 'zoom download';
@@ -193,7 +193,7 @@ describe( 'view script', () => {
 		'finds the controls next to Mermaid, at %s, on a page that says nothing of them',
 		async ( mermaidUrl, expected ) => {
 			// A page cached before the controls became a file of their own.
-			window.mermaidBlocksSettings = { mermaidUrl };
+			window.graphDrawSettings = { mermaidUrl };
 			document.body.innerHTML = DIAGRAM;
 			const [ diagram ] = diagrams();
 			diagram.dataset.mermaidControls = 'zoom';
@@ -248,7 +248,7 @@ describe( 'view script', () => {
 		following.dataset.mermaidControls = 'zoom';
 		themed.dataset.mermaidTheme = 'forest';
 		const canvas = ( diagram ) =>
-			diagram.querySelector( '.mermaid-blocks-diagram__canvas' );
+			diagram.querySelector( '.graphdraw-diagram__canvas' );
 
 		loadViewScript();
 		scrollIntoView( following );
@@ -267,7 +267,7 @@ describe( 'view script', () => {
 		expect( canvas( following ).dataset.mermaidTheme ).toBe( 'auto-dark' );
 		expect( following.querySelectorAll( 'button' ) ).toHaveLength( 3 );
 		expect(
-			following.querySelectorAll( '.mermaid-blocks-diagram__canvas' )
+			following.querySelectorAll( '.graphdraw-diagram__canvas' )
 		).toHaveLength( 1 );
 		expect( canvas( themed ) ).toBe( before[ 1 ] );
 	} );
@@ -281,7 +281,7 @@ describe( 'view script', () => {
 			value: fonts,
 			configurable: true,
 		} );
-		window.mermaidBlocksSettings = {
+		window.graphDrawSettings = {
 			renderer: 'pele',
 			peleUrl: 'https://example.test/plugin/build/pele/lazy.js',
 		};
@@ -309,20 +309,20 @@ describe( 'view script', () => {
 	} );
 
 	it( 'exposes render() for diagrams added later', async () => {
-		window.mermaidBlocks = { existing: true };
+		window.graphDraw = { existing: true };
 
 		loadViewScript();
 
 		const container = document.createElement( 'div' );
 		container.innerHTML = DIAGRAM;
 		document.body.appendChild( container );
-		window.mermaidBlocks.render( container );
+		window.graphDraw.render( container );
 
 		const [ diagram ] = diagrams();
 		scrollIntoView( diagram );
 		await settle();
 
-		expect( window.mermaidBlocks.existing ).toBe( true );
+		expect( window.graphDraw.existing ).toBe( true );
 		expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
 	} );
 
@@ -338,7 +338,7 @@ describe( 'view script', () => {
 			FakeIntersectionObserver.instance,
 			'observe'
 		);
-		window.mermaidBlocks.render();
+		window.graphDraw.render();
 
 		expect( observe ).not.toHaveBeenCalled();
 		expect( first.classList.contains( 'is-pending' ) ).toBe( false );
@@ -363,7 +363,7 @@ describe( 'view script', () => {
 
 	it( 'warns and leaves diagrams alone without the URL of Mermaid', async () => {
 		jest.spyOn( console, 'warn' ).mockImplementation( () => {} );
-		delete window.mermaidBlocksSettings;
+		delete window.graphDrawSettings;
 		document.body.innerHTML = DIAGRAM;
 
 		loadViewScript();

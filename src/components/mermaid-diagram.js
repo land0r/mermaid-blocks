@@ -165,7 +165,7 @@ export default function MermaidDiagram( {
 			setError( {
 				message: __(
 					'The diagram renderer is not loaded.',
-					'mermaid-blocks'
+					'graphdraw-mermaid-diagrams-flowcharts'
 				),
 				line: null,
 			} );
@@ -218,10 +218,13 @@ export default function MermaidDiagram( {
 	if ( error ) {
 		heading =
 			error.line === null
-				? __( 'Syntax error', 'mermaid-blocks' )
+				? __( 'Syntax error', 'graphdraw-mermaid-diagrams-flowcharts' )
 				: sprintf(
 						/* translators: %d: line number in the Mermaid code where the error was found. */
-						__( 'Syntax error on line %d', 'mermaid-blocks' ),
+						__(
+							'Syntax error on line %d',
+							'graphdraw-mermaid-diagrams-flowcharts'
+						),
 						error.line
 				  );
 	}

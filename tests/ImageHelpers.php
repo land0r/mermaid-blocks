@@ -2,14 +2,14 @@
 /**
  * What the tests of the saved images share.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Images\ImagesController;
-use MermaidBlocks\Images\SavedImages;
-use MermaidBlocks\Integrations\Block;
+use GraphDraw\Images\ImagesController;
+use GraphDraw\Images\SavedImages;
+use GraphDraw\Integrations\Block;
 use WP_Post;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -127,7 +127,7 @@ trait ImageHelpers {
 	 * @return WP_REST_Response The response.
 	 */
 	protected function send_image( int $post_id, string $code, string $theme = '' ): WP_REST_Response {
-		$key = mermaid_blocks()->get( SavedImages::class )->get_key( $code, $theme );
+		$key = graphdraw()->get( SavedImages::class )->get_key( $code, $theme );
 
 		return $this->request( 'POST', sprintf( '/posts/%d/images/%s', $post_id, $key ), $this->png() );
 	}

@@ -11,8 +11,8 @@ const FITTED_WIDTH = 400;
  */
 function setup( svgStyle = 'max-width: 800px;' ) {
 	document.body.innerHTML =
-		'<div class="mermaid-blocks-diagram is-rendered">' +
-		'<div class="mermaid-blocks-diagram__canvas">' +
+		'<div class="graphdraw-diagram is-rendered">' +
+		'<div class="graphdraw-diagram__canvas">' +
 		'<svg width="100%" viewBox="0 0 800 400" style="' +
 		svgStyle +
 		'"><a href="#node"><rect></rect></a></svg>' +

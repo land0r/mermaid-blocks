@@ -2,17 +2,17 @@
 /**
  * The options a site gives Pele to draw diagrams with.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Reads the `mermaid_blocks_pele_options` filter, and keeps what Pele can use:
+ * Reads the `graphdraw_pele_options` filter, and keeps what Pele can use:
  * the known keys, of the right type. The front end and the editor are told the
  * result, only when the renderer is Pele. Diagram authors never set these:
  * they decide what a diagram may do, such as showing links and images.
@@ -117,7 +117,7 @@ final class PeleOptions {
 		 *
 		 * @param array $options The options by name. Empty by default.
 		 */
-		$filtered = apply_filters( 'mermaid_blocks_pele_options', array() );
+		$filtered = apply_filters( 'graphdraw_pele_options', array() );
 
 		return is_array( $filtered ) ? $this->sanitize( $filtered ) : array();
 	}

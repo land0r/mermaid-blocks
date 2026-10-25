@@ -11,22 +11,22 @@
  * picked it up (`is-pending`), it stays hidden until it renders as it scrolls
  * into view, or fails.
  */
-.mermaid-blocks-diagram:not(.is-rendered):not(.has-error)
-.mermaid-blocks-diagram__source {
+.graphdraw-diagram:not(.is-rendered):not(.has-error)
+.graphdraw-diagram__source {
 	visibility: hidden;
 }
 
-.mermaid-blocks-diagram:not(.is-rendered):not(.has-error):not(.is-pending)
-.mermaid-blocks-diagram__source {
-	animation: mermaid-blocks-reveal-source 0s linear 5s forwards;
+.graphdraw-diagram:not(.is-rendered):not(.has-error):not(.is-pending)
+.graphdraw-diagram__source {
+	animation: graphdraw-reveal-source 0s linear 5s forwards;
 }
 
 /* Themes often set `pre { display: block }`, which defeats `hidden`. */
-.mermaid-blocks-diagram .mermaid-blocks-diagram__source[hidden] {
+.graphdraw-diagram .graphdraw-diagram__source[hidden] {
 	display: none;
 }
 
-.mermaid-blocks-diagram .mermaid-blocks-diagram__canvas svg {
+.graphdraw-diagram .graphdraw-diagram__canvas svg {
 	max-width: 100%;
 	height: auto;
 }
@@ -37,20 +37,20 @@
  * JavaScript shows. It is as large as the diagram, and no wider than its
  * column.
  */
-.mermaid-blocks-diagram .mermaid-blocks-diagram__image {
+.graphdraw-diagram .graphdraw-diagram__image {
 	display: block;
 	max-width: 100%;
 	height: auto;
 }
 
-.mermaid-blocks-diagram.aligncenter .mermaid-blocks-diagram__image {
+.graphdraw-diagram.aligncenter .graphdraw-diagram__image {
 	margin-inline: auto;
 }
 
 /* Such a browser shows the image in place of the source, not above it. */
 @media (scripting: none) {
 
-	.mermaid-blocks-diagram.has-image .mermaid-blocks-diagram__source {
+	.graphdraw-diagram.has-image .graphdraw-diagram__source {
 		display: none;
 	}
 }
@@ -60,8 +60,8 @@
  * caption. A zoomed diagram wider than its canvas doesn't fit the line, which
  * then starts at the canvas's edge, so all of it can be scrolled to.
  */
-.mermaid-blocks-diagram.aligncenter .mermaid-blocks-diagram__canvas,
-.mermaid-blocks-diagram.aligncenter .mermaid-blocks-diagram__caption {
+.graphdraw-diagram.aligncenter .graphdraw-diagram__canvas,
+.graphdraw-diagram.aligncenter .graphdraw-diagram__caption {
 	text-align: center;
 }
 
@@ -69,7 +69,7 @@
  * The caption, spaced as under an image. Themes style `.wp-element-caption`,
  * and `:where()` lets any of their rules win.
  */
-:where(.mermaid-blocks-diagram__caption) {
+:where(.graphdraw-diagram__caption) {
 	margin-top: 0.5em;
 	margin-bottom: 1em;
 }
@@ -79,7 +79,7 @@
  * above it. They take the colour of the text around the diagram, so they suit
  * any theme.
  */
-.mermaid-blocks-diagram__toolbar {
+.graphdraw-diagram__toolbar {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 4px;
@@ -96,13 +96,13 @@
  * Tells when a download failed, or that the code was copied. Empty, it sets
  * the buttons after it apart.
  */
-.mermaid-blocks-diagram__status {
+.graphdraw-diagram__status {
 	margin-inline: 4px;
 	font-weight: 400;
 }
 
 /* Doubled class: themes style `button`. */
-.mermaid-blocks-diagram .mermaid-blocks-diagram__button {
+.graphdraw-diagram .graphdraw-diagram__button {
 	all: unset;
 	display: inline-flex;
 	gap: 4px;
@@ -150,7 +150,7 @@
  * diagram is panned. The canvas grows with the diagram, up to most of the
  * window's height.
  */
-.mermaid-blocks-diagram.is-zoomed .mermaid-blocks-diagram__canvas {
+.graphdraw-diagram.is-zoomed .graphdraw-diagram__canvas {
 	overflow: auto;
 	max-height: 80vh;
 	box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.4);
@@ -158,7 +158,7 @@
 	user-select: none;
 }
 
-.mermaid-blocks-diagram.is-panning .mermaid-blocks-diagram__canvas {
+.graphdraw-diagram.is-panning .graphdraw-diagram__canvas {
 	cursor: grabbing;
 }
 
@@ -167,19 +167,19 @@
  * toolbar stays at the top, and the canvas takes the rest and scrolls. The
  * page is no longer behind the diagram, so it brings the page's colour along.
  */
-.mermaid-blocks-diagram.is-fullscreen {
+.graphdraw-diagram.is-fullscreen {
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
 	padding: 16px;
-	background: var(--mermaid-blocks-surface, Canvas);
+	background: var(--graphdraw-surface, Canvas);
 }
 
 /*
  * Where the browser shows no element fullscreen, the diagram covers the page
  * itself.
  */
-.mermaid-blocks-diagram.is-fullscreen-overlay {
+.graphdraw-diagram.is-fullscreen-overlay {
 	position: fixed;
 	inset: 0;
 	z-index: 100000;
@@ -188,12 +188,12 @@
 	margin: 0;
 }
 
-.mermaid-blocks-diagram.is-fullscreen .mermaid-blocks-diagram__toolbar,
-.mermaid-blocks-diagram.is-fullscreen .mermaid-blocks-diagram__caption {
+.graphdraw-diagram.is-fullscreen .graphdraw-diagram__toolbar,
+.graphdraw-diagram.is-fullscreen .graphdraw-diagram__caption {
 	flex: none;
 }
 
-.mermaid-blocks-diagram.is-fullscreen .mermaid-blocks-diagram__canvas {
+.graphdraw-diagram.is-fullscreen .graphdraw-diagram__canvas {
 	display: flex;
 	flex: 1;
 	min-height: 0;
@@ -205,14 +205,14 @@
  * Automatic margins centre a diagram smaller than the screen, and let a
  * zoomed one be scrolled to from every edge.
  */
-.mermaid-blocks-diagram.is-fullscreen .mermaid-blocks-diagram__canvas svg {
+.graphdraw-diagram.is-fullscreen .graphdraw-diagram__canvas svg {
 	flex: none;
 	margin: auto;
 }
 
 /* Until it is zoomed, a tall diagram is fitted to the height of the screen. */
-.mermaid-blocks-diagram.is-fullscreen:not(.is-zoomed)
-.mermaid-blocks-diagram__canvas svg {
+.graphdraw-diagram.is-fullscreen:not(.is-zoomed)
+.graphdraw-diagram__canvas svg {
 	max-height: 100%;
 }
 
@@ -220,11 +220,11 @@
  * Focus shows for the keyboard only: some themes outline every focused
  * element, a dragged diagram included.
  */
-.mermaid-blocks-diagram.is-zoomed .mermaid-blocks-diagram__canvas:focus {
+.graphdraw-diagram.is-zoomed .graphdraw-diagram__canvas:focus {
 	outline: none;
 }
 
-.mermaid-blocks-diagram.is-zoomed .mermaid-blocks-diagram__canvas:focus-visible {
+.graphdraw-diagram.is-zoomed .graphdraw-diagram__canvas:focus-visible {
 	outline: 2px solid;
 	outline-offset: 2px;
 }
@@ -232,17 +232,17 @@
 /* Print the source of diagrams that never scrolled into view. */
 @media print {
 
-	.mermaid-blocks-diagram__toolbar {
+	.graphdraw-diagram__toolbar {
 		display: none;
 	}
 
-	.mermaid-blocks-diagram:not(.is-rendered):not(.has-error)
-	.mermaid-blocks-diagram__source {
+	.graphdraw-diagram:not(.is-rendered):not(.has-error)
+	.graphdraw-diagram__source {
 		visibility: visible;
 	}
 }
 
-@keyframes mermaid-blocks-reveal-source {
+@keyframes graphdraw-reveal-source {
 
 	to {
 		visibility: visible;

@@ -1,8 +1,8 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "mermaid-blocks/diagram",
-	"version": "2.0.0",
+	"name": "graphdraw/diagram",
+	"version": "1.0.0",
 	"title": "Mermaid Diagram",
 	"category": "widgets",
 	"description": "MermaidJS diagram: flowcharts, Gantt charts, sequence diagrams, and more.",
@@ -47,9 +47,9 @@
 			"type": "string"
 		}
 	},
-	"textdomain": "mermaid-blocks",
+	"textdomain": "graphdraw-mermaid-diagrams-flowcharts",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
-	"style": "mermaid-blocks-diagram",
-	"viewScript": "mermaid-blocks-diagram"
+	"style": "graphdraw-diagram",
+	"viewScript": "graphdraw-diagram"
 }

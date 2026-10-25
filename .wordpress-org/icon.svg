@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>GraphDraw</title>
+  <rect width="256" height="256" fill="#3B3FB6"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M158 71 H94 A23 23 0 0 0 71 94 V158"/>
+    <path d="M98 185 H178 A23 23 0 0 0 201 162 A23 23 0 0 0 178 139 H162"/>
+    <path d="M176 125 L162 139 L176 153"/>
+  </g>
+  <rect x="158" y="44" width="54" height="54" rx="16" fill="#FFB86B"/>
+  <rect x="44" y="158" width="54" height="54" rx="16" fill="#FFFFFF"/>
+  <rect x="106" y="116" width="46" height="46" rx="14" fill="#FFFFFF"/>
+</svg>

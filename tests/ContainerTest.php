@@ -2,22 +2,22 @@
 /**
  * Tests of the container.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
 use LogicException;
-use MermaidBlocks\Abilities\Ability;
-use MermaidBlocks\Assets;
-use MermaidBlocks\Container;
-use MermaidBlocks\Diagram;
-use MermaidBlocks\Files;
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Options;
-use MermaidBlocks\Plugin;
-use MermaidBlocks\Tests\Fixtures\Chicken;
-use MermaidBlocks\Themes;
+use GraphDraw\Abilities\Ability;
+use GraphDraw\Assets;
+use GraphDraw\Container;
+use GraphDraw\Diagram;
+use GraphDraw\Files;
+use GraphDraw\Hookable;
+use GraphDraw\Options;
+use GraphDraw\Plugin;
+use GraphDraw\Tests\Fixtures\Chicken;
+use GraphDraw\Themes;
 use ReflectionClass;
 use WP_Query;
 use WP_UnitTestCase;
@@ -30,7 +30,7 @@ require_once __DIR__ . '/fixtures/Egg.php';
  * How the objects of the plugin are created: on first use, one of each, with
  * what their constructors ask for.
  *
- * @covers \MermaidBlocks\Container
+ * @covers \GraphDraw\Container
  */
 class ContainerTest extends WP_UnitTestCase {
 
@@ -50,7 +50,7 @@ class ContainerTest extends WP_UnitTestCase {
 		parent::set_up();
 
 		$this->container = new Container();
-		$this->container->set( new Files( MERMAID_BLOCKS_PLUGIN_FILE ) );
+		$this->container->set( new Files( GRAPHDRAW_PLUGIN_FILE ) );
 	}
 
 	/**
@@ -141,7 +141,7 @@ class ContainerTest extends WP_UnitTestCase {
 	public function data_refused(): array {
 		return array(
 			'a class of WordPress'        => array( WP_Query::class, 'is not a class of the plugin' ),
-			'a class that does not exist' => array( 'MermaidBlocks\\Nothing', 'is not a class of the plugin' ),
+			'a class that does not exist' => array( 'GraphDraw\\Nothing', 'is not a class of the plugin' ),
 			'an interface'                => array( Hookable::class, 'is not a class of the plugin' ),
 			'an abstract class'           => array( Ability::class, 'cannot be created' ),
 			'a private constructor'       => array( Plugin::class, 'cannot be created' ),
@@ -190,7 +190,7 @@ class ContainerTest extends WP_UnitTestCase {
 			$this->assertFalse( $container->has( Assets::class ) );
 		}
 
-		$container->set( new Files( MERMAID_BLOCKS_PLUGIN_FILE ) );
+		$container->set( new Files( GRAPHDRAW_PLUGIN_FILE ) );
 
 		$this->assertInstanceOf( Assets::class, $container->get( Assets::class ) );
 	}

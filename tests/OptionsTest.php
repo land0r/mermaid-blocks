@@ -2,13 +2,13 @@
 /**
  * Tests of the stored settings.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Options;
-use MermaidBlocks\Renderers;
+use GraphDraw\Options;
+use GraphDraw\Renderers;
 use ReflectionClass;
 use WP_UnitTestCase;
 
@@ -16,7 +16,7 @@ use WP_UnitTestCase;
  * What the plugin's settings are set to, and that they are all deleted with
  * the plugin.
  *
- * @covers \MermaidBlocks\Options
+ * @covers \GraphDraw\Options
  */
 class OptionsTest extends WP_UnitTestCase {
 
@@ -33,7 +33,7 @@ class OptionsTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->options = mermaid_blocks()->get( Options::class );
+		$this->options = graphdraw()->get( Options::class );
 	}
 
 	/**
@@ -58,7 +58,7 @@ class OptionsTest extends WP_UnitTestCase {
 	 * Removes the filter some tests add.
 	 */
 	public function tear_down(): void {
-		remove_all_filters( 'mermaid_blocks_renderer' );
+		remove_all_filters( 'graphdraw_renderer' );
 
 		parent::tear_down();
 	}
@@ -111,7 +111,7 @@ class OptionsTest extends WP_UnitTestCase {
 	public function test_the_site_renderer_is_not_filtered(): void {
 		update_option( Options::RENDERER, 'mermaid' );
 		add_filter(
-			'mermaid_blocks_renderer',
+			'graphdraw_renderer',
 			static function () {
 				return 'pele';
 			}
@@ -127,7 +127,7 @@ class OptionsTest extends WP_UnitTestCase {
 	public function test_a_filter_picks_the_renderer_of_a_request(): void {
 		update_option( Options::RENDERER, 'mermaid' );
 		add_filter(
-			'mermaid_blocks_renderer',
+			'graphdraw_renderer',
 			static function ( $renderer ) {
 				return 'mermaid' === $renderer ? 'pele' : $renderer;
 			}
@@ -136,9 +136,9 @@ class OptionsTest extends WP_UnitTestCase {
 		$this->assertSame( 'pele', $this->options->get_renderer() );
 
 		update_option( Options::RENDERER, 'pele' );
-		remove_all_filters( 'mermaid_blocks_renderer' );
+		remove_all_filters( 'graphdraw_renderer' );
 		add_filter(
-			'mermaid_blocks_renderer',
+			'graphdraw_renderer',
 			static function () {
 				return 'mermaid';
 			}
@@ -174,7 +174,7 @@ class OptionsTest extends WP_UnitTestCase {
 	public function test_a_filter_value_that_names_no_renderer_gives_mermaid( $value ): void {
 		update_option( Options::RENDERER, 'pele' );
 		add_filter(
-			'mermaid_blocks_renderer',
+			'graphdraw_renderer',
 			static function () use ( $value ) {
 				return $value;
 			}
@@ -233,7 +233,7 @@ class OptionsTest extends WP_UnitTestCase {
 		$this->assertCount( count( Options::ALL ), array_unique( Options::ALL ) );
 
 		foreach ( Options::ALL as $option ) {
-			$this->assertStringStartsWith( 'mermaid_blocks_', $option );
+			$this->assertStringStartsWith( 'graphdraw_', $option );
 		}
 	}
 
@@ -246,7 +246,7 @@ class OptionsTest extends WP_UnitTestCase {
 		}
 
 		if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-			define( 'WP_UNINSTALL_PLUGIN', 'mermaid-blocks/mermaid-blocks.php' );
+			define( 'WP_UNINSTALL_PLUGIN', 'graphdraw-mermaid-diagrams-flowcharts/graphdraw-mermaid-diagrams-flowcharts.php' );
 		}
 
 		require dirname( __DIR__ ) . '/uninstall.php';

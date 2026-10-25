@@ -16,9 +16,9 @@ const SVG = '<svg width="100%" viewBox="0 0 800 400"></svg>';
  */
 function setup( controls, svg = SVG ) {
 	document.body.innerHTML =
-		'<div class="mermaid-blocks-diagram is-rendered">' +
-		'<pre class="mermaid-blocks-diagram__source" hidden>graph LR</pre>' +
-		`<div class="mermaid-blocks-diagram__canvas">${ svg }</div>` +
+		'<div class="graphdraw-diagram is-rendered">' +
+		'<pre class="graphdraw-diagram__source" hidden>graph LR</pre>' +
+		`<div class="graphdraw-diagram__canvas">${ svg }</div>` +
 		'</div>';
 
 	const diagram = document.body.firstElementChild;
@@ -39,7 +39,7 @@ function setup( controls, svg = SVG ) {
 }
 
 const toolbar = ( diagram ) =>
-	diagram.querySelector( '.mermaid-blocks-diagram__toolbar' );
+	diagram.querySelector( '.graphdraw-diagram__toolbar' );
 
 const labels = ( diagram ) =>
 	Array.from( diagram.querySelectorAll( 'button' ) ).map( ( button ) =>
@@ -131,7 +131,7 @@ describe( 'addControls', () => {
 
 			expect( renderer.enableZoom ).toHaveBeenCalledTimes( 1 );
 			expect( renderer.enableZoom ).toHaveBeenCalledWith(
-				diagram.querySelector( '.mermaid-blocks-diagram__canvas' ),
+				diagram.querySelector( '.graphdraw-diagram__canvas' ),
 				{
 					always: true,
 					labels: { zoomIn: 'In', zoomOut: 'Out', reset: 'Back' },
@@ -178,7 +178,7 @@ describe( 'addControls', () => {
 			addControls( diagram, undefined, renderer );
 
 			const previous = diagram.querySelector(
-				'.mermaid-blocks-diagram__canvas'
+				'.graphdraw-diagram__canvas'
 			);
 			const canvas = previous.cloneNode( true );
 
@@ -249,7 +249,7 @@ describe( 'addControls', () => {
 		expect( group.getAttribute( 'role' ) ).toBe( 'group' );
 		expect( group.getAttribute( 'aria-label' ) ).toBe( 'Diagram controls' );
 		expect( group.nextElementSibling.className ).toBe(
-			'mermaid-blocks-diagram__canvas'
+			'graphdraw-diagram__canvas'
 		);
 		expect( labels( diagram ) ).toHaveLength( 5 );
 		diagram.querySelectorAll( 'button' ).forEach( ( element ) => {
@@ -286,7 +286,7 @@ describe( 'addControls', () => {
 
 	it( 'adds nothing to a diagram that did not render', () => {
 		const diagram = setup( 'zoom download' );
-		diagram.querySelector( '.mermaid-blocks-diagram__canvas' ).remove();
+		diagram.querySelector( '.graphdraw-diagram__canvas' ).remove();
 
 		addControls( diagram );
 
@@ -349,7 +349,7 @@ describe( 'addControls', () => {
 		await settle();
 
 		expect( downloadDiagram ).toHaveBeenCalledWith(
-			diagram.querySelector( '.mermaid-blocks-diagram__canvas svg' ),
+			diagram.querySelector( '.graphdraw-diagram__canvas svg' ),
 			format,
 			expect.any( Function )
 		);
@@ -365,7 +365,7 @@ describe( 'addControls', () => {
 		const diagram = setup( 'download' );
 		diagram.querySelector( 'pre' ).textContent = 'flowchart LR\nA --> B';
 		diagram.querySelector(
-			'.mermaid-blocks-diagram__canvas'
+			'.graphdraw-diagram__canvas'
 		).dataset.mermaidTheme = 'dark';
 		addControls( diagram, undefined, renderer );
 

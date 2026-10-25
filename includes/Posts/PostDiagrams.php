@@ -2,13 +2,13 @@
 /**
  * The diagrams in the content of posts.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Posts;
+namespace GraphDraw\Posts;
 
-use MermaidBlocks\DiagramTypes;
-use MermaidBlocks\Integrations\Block;
+use GraphDraw\DiagramTypes;
+use GraphDraw\Integrations\Block;
 use WP_Error;
 use WP_Post;
 
@@ -279,8 +279,8 @@ final class PostDiagrams {
 
 		if ( ! hash_equals( $this->get_hash( $diagrams[ $index ] ), $hash ) ) {
 			return new WP_Error(
-				'mermaid_blocks_diagram_changed',
-				__( 'The diagram changed since it was read. Read it again, and base the change on what it is now.', 'mermaid-blocks' ),
+				'graphdraw_diagram_changed',
+				__( 'The diagram changed since it was read. Read it again, and base the change on what it is now.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -309,10 +309,10 @@ final class PostDiagrams {
 	 */
 	public function get_not_found_error( int $index ): WP_Error {
 		return new WP_Error(
-			'mermaid_blocks_diagram_not_found',
+			'graphdraw_diagram_not_found',
 			sprintf(
 				/* translators: %d: The index of a diagram in a post, counting from 0. */
-				__( 'The post has no diagram at index %d.', 'mermaid-blocks' ),
+				__( 'The post has no diagram at index %d.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				$index
 			),
 			array( 'status' => 404 )

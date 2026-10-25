@@ -2,16 +2,16 @@
 /**
  * The Mermaid Diagram widget of Elementor.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Integrations\Elementor;
+namespace GraphDraw\Integrations\Elementor;
 
 use Elementor\Controls_Manager;
 use Elementor\Widget_Base;
-use MermaidBlocks\Admin\SettingsPage;
-use MermaidBlocks\Assets;
-use MermaidBlocks\DiagramTypes;
+use GraphDraw\Admin\SettingsPage;
+use GraphDraw\Assets;
+use GraphDraw\DiagramTypes;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * outputs the shortcode.
  *
  * Elementor creates it, with arrays for its constructor, so it is no part of
- * the plugin: it reaches the plugin through mermaid_blocks(). Only Elementor
+ * the plugin: it reaches the plugin through graphdraw(). Only Elementor
  * can load it, because it extends a class of Elementor. In the editor,
  * Elementor renders it again over AJAX after each change, and the script of
  * Registrar draws the new diagram.
@@ -33,7 +33,7 @@ final class DiagramWidget extends Widget_Base {
 	/**
 	 * The name of the widget.
 	 */
-	const NAME = 'mermaid-blocks-diagram';
+	const NAME = 'graphdraw-diagram';
 
 	/**
 	 * Where Mermaid's syntax is explained.
@@ -55,7 +55,7 @@ final class DiagramWidget extends Widget_Base {
 	 * @return string The title.
 	 */
 	public function get_title(): string {
-		return __( 'Mermaid Diagram', 'mermaid-blocks' );
+		return __( 'Mermaid Diagram', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -139,17 +139,17 @@ final class DiagramWidget extends Widget_Base {
 	 * Adds the code and the caption.
 	 */
 	private function register_diagram_controls(): void {
-		$types = mermaid_blocks()->get( DiagramTypes::class )->get_all();
+		$types = graphdraw()->get( DiagramTypes::class )->get_all();
 
 		$this->start_controls_section(
 			'section_diagram',
-			array( 'label' => __( 'Diagram', 'mermaid-blocks' ) )
+			array( 'label' => __( 'Diagram', 'graphdraw-mermaid-diagrams-flowcharts' ) )
 		);
 
 		$this->add_control(
 			'code',
 			array(
-				'label'       => __( 'Code', 'mermaid-blocks' ),
+				'label'       => __( 'Code', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'type'        => Controls_Manager::CODE,
 				'language'    => 'text',
 				'rows'        => 12,
@@ -157,7 +157,7 @@ final class DiagramWidget extends Widget_Base {
 				'description' => sprintf(
 					'<a href="%s" target="_blank" rel="noopener">%s</a>',
 					esc_url( self::SYNTAX_URL ),
-					esc_html__( 'Mermaid syntax', 'mermaid-blocks' )
+					esc_html__( 'Mermaid syntax', 'graphdraw-mermaid-diagrams-flowcharts' )
 				),
 				// Elementor's AI writes HTML and CSS, not Mermaid.
 				'ai'          => array( 'active' => false ),
@@ -167,7 +167,7 @@ final class DiagramWidget extends Widget_Base {
 		$this->add_control(
 			'caption',
 			array(
-				'label'       => __( 'Caption', 'mermaid-blocks' ),
+				'label'       => __( 'Caption', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'type'        => Controls_Manager::TEXT,
 				'label_block' => true,
 				'ai'          => array( 'active' => false ),
@@ -183,35 +183,35 @@ final class DiagramWidget extends Widget_Base {
 	 * it is drawn as by the script of Registrar::EDITOR_SCRIPT.
 	 */
 	private function register_settings_controls(): void {
-		$themes = mermaid_blocks()->themes();
+		$themes = graphdraw()->themes();
 		$labels = $themes->get_offered();
-		$help   = esc_html__( 'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.', 'mermaid-blocks' );
+		$help   = esc_html__( 'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.', 'graphdraw-mermaid-diagrams-flowcharts' );
 
 		// Only the editor shows it: the front end loads the controls too, and needs nothing of the admin.
 		if ( is_admin() && current_user_can( 'manage_options' ) ) {
 			$help .= sprintf(
 				' <a href="%s" target="_blank" rel="noopener">%s</a>',
-				esc_url( mermaid_blocks()->get( SettingsPage::class )->get_url() ),
-				esc_html__( 'Change the site default', 'mermaid-blocks' )
+				esc_url( graphdraw()->get( SettingsPage::class )->get_url() ),
+				esc_html__( 'Change the site default', 'graphdraw-mermaid-diagrams-flowcharts' )
 			);
 		}
 
 		$this->start_controls_section(
 			'section_settings',
-			array( 'label' => __( 'Settings', 'mermaid-blocks' ) )
+			array( 'label' => __( 'Settings', 'graphdraw-mermaid-diagrams-flowcharts' ) )
 		);
 
 		$this->add_control(
 			'theme',
 			array(
-				'label'       => __( 'Theme', 'mermaid-blocks' ),
+				'label'       => __( 'Theme', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'type'        => Controls_Manager::SELECT,
 				// Under its label, wide enough for "Site default (Automatic)".
 				'label_block' => true,
 				'options'     => array(
 					'' => sprintf(
 						/* translators: %s: name of the theme set for the whole site, such as "Automatic" or "Forest". */
-						__( 'Site default (%s)', 'mermaid-blocks' ),
+						__( 'Site default (%s)', 'graphdraw-mermaid-diagrams-flowcharts' ),
 						$labels[ $themes->get_shown( $themes->get_site_theme() ) ]
 					),
 				) + $labels,
@@ -223,7 +223,7 @@ final class DiagramWidget extends Widget_Base {
 		$this->add_control(
 			'align',
 			array(
-				'label'        => __( 'Center', 'mermaid-blocks' ),
+				'label'        => __( 'Center', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'return_value' => 'center',
 				'default'      => '',
@@ -239,14 +239,14 @@ final class DiagramWidget extends Widget_Base {
 	private function register_visitor_controls(): void {
 		$this->start_controls_section(
 			'section_visitor_controls',
-			array( 'label' => __( 'Visitor controls', 'mermaid-blocks' ) )
+			array( 'label' => __( 'Visitor controls', 'graphdraw-mermaid-diagrams-flowcharts' ) )
 		);
 
 		$this->add_control(
 			'visitor_controls_help',
 			array(
 				'type'            => Controls_Manager::RAW_HTML,
-				'raw'             => esc_html__( 'Buttons on the published diagram.', 'mermaid-blocks' ),
+				'raw'             => esc_html__( 'Buttons on the published diagram.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'content_classes' => 'elementor-descriptor',
 			)
 		);
@@ -272,10 +272,10 @@ final class DiagramWidget extends Widget_Base {
 	 */
 	private function get_visitor_control_labels(): array {
 		return array(
-			'zoom'       => __( 'Zoom controls', 'mermaid-blocks' ),
-			'download'   => __( 'Download buttons', 'mermaid-blocks' ),
-			'copy'       => __( 'Copy code button', 'mermaid-blocks' ),
-			'fullscreen' => __( 'Fullscreen button', 'mermaid-blocks' ),
+			'zoom'       => __( 'Zoom controls', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'download'   => __( 'Download buttons', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'copy'       => __( 'Copy code button', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'fullscreen' => __( 'Fullscreen button', 'graphdraw-mermaid-diagrams-flowcharts' ),
 		);
 	}
 
@@ -285,16 +285,16 @@ final class DiagramWidget extends Widget_Base {
 	private function register_accessibility_controls(): void {
 		$this->start_controls_section(
 			'section_accessibility',
-			array( 'label' => __( 'Accessibility', 'mermaid-blocks' ) )
+			array( 'label' => __( 'Accessibility', 'graphdraw-mermaid-diagrams-flowcharts' ) )
 		);
 
 		$this->add_control(
 			'accTitle',
 			array(
-				'label'       => __( 'Title', 'mermaid-blocks' ),
+				'label'       => __( 'Title', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'type'        => Controls_Manager::TEXT,
 				'label_block' => true,
-				'description' => __( 'A short name, read by screen readers.', 'mermaid-blocks' ),
+				'description' => __( 'A short name, read by screen readers.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'ai'          => array( 'active' => false ),
 			)
 		);
@@ -302,9 +302,9 @@ final class DiagramWidget extends Widget_Base {
 		$this->add_control(
 			'accDescr',
 			array(
-				'label'       => __( 'Description', 'mermaid-blocks' ),
+				'label'       => __( 'Description', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'type'        => Controls_Manager::TEXTAREA,
-				'description' => __( 'What the diagram shows, read by screen readers.', 'mermaid-blocks' ),
+				'description' => __( 'What the diagram shows, read by screen readers.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'ai'          => array( 'active' => false ),
 			)
 		);
@@ -317,6 +317,6 @@ final class DiagramWidget extends Widget_Base {
 	 */
 	protected function render(): void {
 		// Escaped by Diagram: the source and the attributes, and the caption with wp_kses_post().
-		echo mermaid_blocks()->diagram()->render( $this->get_settings_for_display() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo graphdraw()->diagram()->render( $this->get_settings_for_display() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }

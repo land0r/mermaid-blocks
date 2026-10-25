@@ -1,12 +1,12 @@
 <?php
 /**
- * The plugin's global functions. Its classes are in the `MermaidBlocks`
+ * The plugin's global functions. Its classes are in the `GraphDraw`
  * namespace, and Composer's autoloader loads them.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-use MermaidBlocks\Plugin;
+use GraphDraw\Plugin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,6 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @return Plugin The plugin.
  */
-function mermaid_blocks(): Plugin {
+function graphdraw(): Plugin {
 	return Plugin::instance();
 }

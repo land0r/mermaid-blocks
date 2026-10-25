@@ -2,20 +2,20 @@
 /**
  * Tests of the shortcode.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Assets;
-use MermaidBlocks\Integrations\Shortcode;
+use GraphDraw\Assets;
+use GraphDraw\Integrations\Shortcode;
 use WP_UnitTestCase;
 
 /**
  * The shortcode, run as WordPress runs it: in post content, with the filters
  * that change the content before a shortcode sees it.
  *
- * @covers \MermaidBlocks\Integrations\Shortcode
+ * @covers \GraphDraw\Integrations\Shortcode
  */
 class ShortcodeTest extends WP_UnitTestCase {
 
@@ -38,7 +38,7 @@ class ShortcodeTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->shortcode = mermaid_blocks()->get( Shortcode::class );
+		$this->shortcode = graphdraw()->get( Shortcode::class );
 
 		wp_dequeue_script( Assets::DIAGRAM );
 		wp_dequeue_style( Assets::DIAGRAM );
@@ -63,7 +63,7 @@ class ShortcodeTest extends WP_UnitTestCase {
 	 * @return string|null The source, or null when the markup has none.
 	 */
 	private function get_source( string $markup ): ?string {
-		if ( ! preg_match( '#<pre class="mermaid-blocks-diagram__source">(.*?)</pre>#s', $markup, $matches ) ) {
+		if ( ! preg_match( '#<pre class="graphdraw-diagram__source">(.*?)</pre>#s', $markup, $matches ) ) {
 			return null;
 		}
 
@@ -88,8 +88,8 @@ class ShortcodeTest extends WP_UnitTestCase {
 	 */
 	public function test_registers_both_tags(): void {
 		$this->assertTrue( shortcode_exists( 'mermaid' ) );
-		$this->assertTrue( shortcode_exists( 'mermaid_blocks' ) );
-		$this->assertSame( array( 'mermaid', 'mermaid_blocks' ), $this->shortcode->get_tags() );
+		$this->assertTrue( shortcode_exists( 'graphdraw' ) );
+		$this->assertSame( array( 'mermaid', 'graphdraw' ), $this->shortcode->get_tags() );
 	}
 
 	/**
@@ -100,7 +100,7 @@ class ShortcodeTest extends WP_UnitTestCase {
 	public function data_tags(): array {
 		return array(
 			'short'    => array( 'mermaid' ),
-			'prefixed' => array( 'mermaid_blocks' ),
+			'prefixed' => array( 'graphdraw' ),
 		);
 	}
 
@@ -114,7 +114,7 @@ class ShortcodeTest extends WP_UnitTestCase {
 	public function test_renders_a_diagram( string $tag ): void {
 		$markup = do_shortcode( $this->shortcode( self::CODE, '', $tag ) );
 
-		$this->assertStringStartsWith( '<div class="mermaid-blocks-diagram" data-mermaid-theme="', $markup );
+		$this->assertStringStartsWith( '<div class="graphdraw-diagram" data-mermaid-theme="', $markup );
 		$this->assertSame( self::CODE, $this->get_source( $markup ) );
 		$this->assertTrue( wp_script_is( Assets::DIAGRAM ) );
 		$this->assertTrue( wp_style_is( Assets::DIAGRAM ) );
@@ -222,18 +222,18 @@ class ShortcodeTest extends WP_UnitTestCase {
 	 * plugin's shortcode and a shortcode written as text stay as they are.
 	 */
 	public function test_protects_only_its_own_code(): void {
-		add_shortcode( 'mermaid_blocks_test', '__return_empty_string' );
+		add_shortcode( 'graphdraw_test', '__return_empty_string' );
 
-		$other = "<p>1 < 2</p>\n[mermaid_blocks_test]a < b[/mermaid_blocks_test]\n[[mermaid]a < b[/mermaid]]\n[mermaid /]";
+		$other = "<p>1 < 2</p>\n[graphdraw_test]a < b[/graphdraw_test]\n[[mermaid]a < b[/mermaid]]\n[mermaid /]";
 
 		$this->assertSame( $other, $this->shortcode->protect_code( $other ) );
 		$this->assertSame(
-			$other . "\n[mermaid zoom]a &lt;--&gt; b[/mermaid]\n[mermaid_blocks]c &lt; d[/mermaid_blocks]",
-			$this->shortcode->protect_code( $other . "\n[mermaid zoom]a <--> b[/mermaid]\n[mermaid_blocks]c < d[/mermaid_blocks]" )
+			$other . "\n[mermaid zoom]a &lt;--&gt; b[/mermaid]\n[graphdraw]c &lt; d[/graphdraw]",
+			$this->shortcode->protect_code( $other . "\n[mermaid zoom]a <--> b[/mermaid]\n[graphdraw]c < d[/graphdraw]" )
 		);
 		$this->assertNull( $this->shortcode->protect_code( null ) );
 
-		remove_shortcode( 'mermaid_blocks_test' );
+		remove_shortcode( 'graphdraw_test' );
 	}
 
 	/**
@@ -284,12 +284,12 @@ class ShortcodeTest extends WP_UnitTestCase {
 	 * Nodes named like shortcodes stay text.
 	 */
 	public function test_leaves_shortcodes_in_the_code_alone(): void {
-		add_shortcode( 'mermaid_blocks_test', '__return_empty_string' );
+		add_shortcode( 'graphdraw_test', '__return_empty_string' );
 
-		$code    = "flowchart LR\nA[mermaid_blocks_test] --> B[gallery]";
+		$code    = "flowchart LR\nA[graphdraw_test] --> B[gallery]";
 		$content = apply_filters( 'the_content', $this->shortcode( $code ) );
 
-		remove_shortcode( 'mermaid_blocks_test' );
+		remove_shortcode( 'graphdraw_test' );
 
 		$this->assertSame( $code, $this->get_source( $content ) );
 	}
@@ -313,8 +313,8 @@ class ShortcodeTest extends WP_UnitTestCase {
 	public function test_adds_a_caption(): void {
 		$markup = do_shortcode( $this->shortcode( self::CODE, 'caption="The <em>checkout</em> flow<script>alert(1)</script>"' ) );
 
-		$this->assertStringStartsWith( '<figure class="mermaid-blocks-diagram"', $markup );
-		$this->assertStringContainsString( '<figcaption class="mermaid-blocks-diagram__caption wp-element-caption">The <em>checkout</em> flow', $markup );
+		$this->assertStringStartsWith( '<figure class="graphdraw-diagram"', $markup );
+		$this->assertStringContainsString( '<figcaption class="graphdraw-diagram__caption wp-element-caption">The <em>checkout</em> flow', $markup );
 		$this->assertStringNotContainsString( '<script', $markup );
 	}
 
@@ -361,7 +361,7 @@ class ShortcodeTest extends WP_UnitTestCase {
 	 * The diagram is drawn in the theme of its shortcode, or else the site's.
 	 */
 	public function test_sets_the_theme(): void {
-		update_option( 'mermaid_blocks_theme', 'neutral' );
+		update_option( 'graphdraw_theme', 'neutral' );
 
 		$this->assertStringContainsString( ' data-mermaid-theme="forest"', do_shortcode( $this->shortcode( self::CODE, 'theme="forest"' ) ) );
 		$this->assertStringContainsString( ' data-mermaid-theme="neutral"', do_shortcode( $this->shortcode() ) );
@@ -383,11 +383,11 @@ class ShortcodeTest extends WP_UnitTestCase {
 	/**
 	 * The alignments of the block, and no other class.
 	 *
-	 * @testWith ["center", "mermaid-blocks-diagram aligncenter"]
-	 *           ["wide", "mermaid-blocks-diagram alignwide"]
-	 *           ["full", "mermaid-blocks-diagram alignfull"]
-	 *           ["left", "mermaid-blocks-diagram"]
-	 *           ["wide\" onclick=\"alert(1)", "mermaid-blocks-diagram"]
+	 * @testWith ["center", "graphdraw-diagram aligncenter"]
+	 *           ["wide", "graphdraw-diagram alignwide"]
+	 *           ["full", "graphdraw-diagram alignfull"]
+	 *           ["left", "graphdraw-diagram"]
+	 *           ["wide\" onclick=\"alert(1)", "graphdraw-diagram"]
 	 *
 	 * @param string $align   The alignment.
 	 * @param string $classes The classes of the diagram.
@@ -405,7 +405,7 @@ class ShortcodeTest extends WP_UnitTestCase {
 	public function test_keeps_wptexturize_away(): void {
 		$tags = apply_filters( 'no_texturize_shortcodes', array( 'code' ) );
 
-		$this->assertSame( array( 'code', 'mermaid', 'mermaid_blocks' ), $tags );
+		$this->assertSame( array( 'code', 'mermaid', 'graphdraw' ), $tags );
 	}
 
 	/**
@@ -414,15 +414,15 @@ class ShortcodeTest extends WP_UnitTestCase {
 	 */
 	public function test_leaves_a_taken_tag_alone(): void {
 		remove_shortcode( 'mermaid' );
-		remove_shortcode( 'mermaid_blocks' );
+		remove_shortcode( 'graphdraw' );
 		add_shortcode( 'mermaid', '__return_empty_string' );
 
 		$this->shortcode->register();
 
 		$this->assertSame( '', do_shortcode( $this->shortcode() ) );
-		$this->assertSame( self::CODE, $this->get_source( do_shortcode( $this->shortcode( self::CODE, '', 'mermaid_blocks' ) ) ) );
-		$this->assertSame( array( 'mermaid_blocks' ), $this->shortcode->get_tags() );
-		$this->assertSame( array( 'mermaid_blocks' ), apply_filters( 'no_texturize_shortcodes', array() ) );
+		$this->assertSame( self::CODE, $this->get_source( do_shortcode( $this->shortcode( self::CODE, '', 'graphdraw' ) ) ) );
+		$this->assertSame( array( 'graphdraw' ), $this->shortcode->get_tags() );
+		$this->assertSame( array( 'graphdraw' ), apply_filters( 'no_texturize_shortcodes', array() ) );
 	}
 
 	/**
@@ -431,6 +431,6 @@ class ShortcodeTest extends WP_UnitTestCase {
 	public function test_notices_a_tag_taken_later(): void {
 		add_shortcode( 'mermaid', '__return_empty_string' );
 
-		$this->assertSame( array( 'mermaid_blocks' ), $this->shortcode->get_tags() );
+		$this->assertSame( array( 'graphdraw' ), $this->shortcode->get_tags() );
 	}
 }

@@ -2,39 +2,39 @@
 /**
  * Tests of the plugin.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Abilities\ClientAbilities;
-use MermaidBlocks\Abilities\ListDiagrams;
-use MermaidBlocks\Abilities\Registrar;
-use MermaidBlocks\Abilities\Schemas;
-use MermaidBlocks\Admin\Editor;
-use MermaidBlocks\Admin\SettingsPage;
-use MermaidBlocks\Assets;
-use MermaidBlocks\Container;
-use MermaidBlocks\Diagram;
-use MermaidBlocks\DiagramTypes;
-use MermaidBlocks\Files;
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Images\ImagesController;
-use MermaidBlocks\Images\ImageSync;
-use MermaidBlocks\Images\SavedImages;
-use MermaidBlocks\Integrations\Block;
-use MermaidBlocks\Integrations\CodeBlocks;
-use MermaidBlocks\Integrations\Elementor\DiagramWidget;
-use MermaidBlocks\Integrations\Elementor\Registrar as ElementorRegistrar;
-use MermaidBlocks\Integrations\Shortcode;
-use MermaidBlocks\Options;
-use MermaidBlocks\IconPacks;
-use MermaidBlocks\PeleOptions;
-use MermaidBlocks\RendererSettings;
-use MermaidBlocks\Plugin;
-use MermaidBlocks\Posts\EditablePosts;
-use MermaidBlocks\Posts\PostDiagrams;
-use MermaidBlocks\Themes;
+use GraphDraw\Abilities\ClientAbilities;
+use GraphDraw\Abilities\ListDiagrams;
+use GraphDraw\Abilities\Registrar;
+use GraphDraw\Abilities\Schemas;
+use GraphDraw\Admin\Editor;
+use GraphDraw\Admin\SettingsPage;
+use GraphDraw\Assets;
+use GraphDraw\Container;
+use GraphDraw\Diagram;
+use GraphDraw\DiagramTypes;
+use GraphDraw\Files;
+use GraphDraw\Hookable;
+use GraphDraw\Images\ImagesController;
+use GraphDraw\Images\ImageSync;
+use GraphDraw\Images\SavedImages;
+use GraphDraw\Integrations\Block;
+use GraphDraw\Integrations\CodeBlocks;
+use GraphDraw\Integrations\Elementor\DiagramWidget;
+use GraphDraw\Integrations\Elementor\Registrar as ElementorRegistrar;
+use GraphDraw\Integrations\Shortcode;
+use GraphDraw\Options;
+use GraphDraw\IconPacks;
+use GraphDraw\PeleOptions;
+use GraphDraw\RendererSettings;
+use GraphDraw\Plugin;
+use GraphDraw\Posts\EditablePosts;
+use GraphDraw\Posts\PostDiagrams;
+use GraphDraw\Themes;
 use ReflectionClass;
 use WP_Hook;
 use WP_UnitTestCase;
@@ -44,7 +44,7 @@ require_once __DIR__ . '/PluginClasses.php';
 /**
  * Which parts of the plugin a request gets, and when.
  *
- * @covers \MermaidBlocks\Plugin
+ * @covers \GraphDraw\Plugin
  */
 class PluginTest extends WP_UnitTestCase {
 
@@ -65,7 +65,7 @@ class PluginTest extends WP_UnitTestCase {
 			$constructor->setAccessible( true );
 		}
 
-		$constructor->invoke( $plugin, MERMAID_BLOCKS_PLUGIN_FILE );
+		$constructor->invoke( $plugin, GRAPHDRAW_PLUGIN_FILE );
 
 		return $plugin;
 	}
@@ -120,7 +120,7 @@ class PluginTest extends WP_UnitTestCase {
 	 * time, and the two that integrations call by name.
 	 */
 	public function test_gives_access_to_its_parts(): void {
-		$plugin = mermaid_blocks();
+		$plugin = graphdraw();
 
 		$this->assertSame( Plugin::instance(), $plugin );
 		$this->assertInstanceOf( SavedImages::class, $plugin->get( SavedImages::class ) );
@@ -330,7 +330,7 @@ class PluginTest extends WP_UnitTestCase {
 	 */
 	public function test_parts_add_their_hooks_once(): void {
 		foreach ( $this->get_listed_parts() as $part ) {
-			$instance = mermaid_blocks()->get( $part );
+			$instance = graphdraw()->get( $part );
 
 			$instance->hooks();
 

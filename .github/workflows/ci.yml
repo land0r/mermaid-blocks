@@ -84,8 +84,8 @@ jobs:
 
       - name: Check the plugin ZIP
         run: |
-          unzip -q mermaid-blocks.zip -d plugin-zip
-          cd plugin-zip/mermaid-blocks
+          unzip -q graphdraw-mermaid-diagrams-flowcharts.zip -d plugin-zip
+          cd plugin-zip/graphdraw-mermaid-diagrams-flowcharts
           if [ ! -f build/block.json ] || [ ! -f vendor/autoload.php ]; then
             echo "::error::The plugin ZIP has no build/ or no autoloader."
             exit 1
@@ -102,7 +102,7 @@ jobs:
             require "vendor/autoload.php";
             eval( "namespace Elementor; abstract class Widget_Base {}" );
             foreach ( array_merge( glob( "includes/[A-Z]*.php" ), glob( "includes/*/[A-Z]*.php" ), glob( "includes/*/*/[A-Z]*.php" ) ) as $file ) {
-              $class = "MermaidBlocks\\" . str_replace( "/", "\\", substr( $file, 9, -4 ) );
+              $class = "GraphDraw\\" . str_replace( "/", "\\", substr( $file, 9, -4 ) );
               if ( ! class_exists( $class ) && ! interface_exists( $class ) ) {
                 echo "::error::$class does not load from the plugin ZIP.\n";
                 exit( 1 );
@@ -113,11 +113,11 @@ jobs:
       - name: Upload the plugin ZIP
         uses: actions/upload-artifact@v7
         with:
-          name: mermaid-blocks
-          path: mermaid-blocks.zip
+          name: graphdraw
+          path: graphdraw-mermaid-diagrams-flowcharts.zip
 
   php-minimum:
-    # The oldest PHP the plugin supports: "Requires PHP" in mermaid-blocks.php.
+    # The oldest PHP the plugin supports: "Requires PHP" in graphdraw-mermaid-diagrams-flowcharts.php.
     name: PHP tests on PHP 7.4
     runs-on: ubuntu-latest
 

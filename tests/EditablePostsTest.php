@@ -2,12 +2,12 @@
 /**
  * Tests of the posts diagrams can be in.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Posts\EditablePosts;
+use GraphDraw\Posts\EditablePosts;
 use WP_Error;
 use WP_Post;
 use WP_UnitTestCase;
@@ -15,7 +15,7 @@ use WP_UnitTestCase;
 /**
  * Which posts are found, and who may work with their diagrams.
  *
- * @covers \MermaidBlocks\Posts\EditablePosts
+ * @covers \GraphDraw\Posts\EditablePosts
  */
 class EditablePostsTest extends WP_UnitTestCase {
 
@@ -32,7 +32,7 @@ class EditablePostsTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->posts = mermaid_blocks()->get( EditablePosts::class );
+		$this->posts = graphdraw()->get( EditablePosts::class );
 	}
 
 	/**
@@ -99,8 +99,8 @@ class EditablePostsTest extends WP_UnitTestCase {
 
 		$this->assertSame( $attachment, $this->posts->find( $attachment )->ID );
 		$this->assertSame( $trashed, $this->posts->find( $trashed )->ID );
-		$this->assertError( 'mermaid_blocks_post_not_found', 404, $this->posts->find( 999999 ) );
-		$this->assertError( 'mermaid_blocks_post_not_found', 404, $this->posts->find( 0 ) );
+		$this->assertError( 'graphdraw_post_not_found', 404, $this->posts->find( 999999 ) );
+		$this->assertError( 'graphdraw_post_not_found', 404, $this->posts->find( 0 ) );
 	}
 
 	/**
@@ -114,9 +114,9 @@ class EditablePostsTest extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_Post::class, $this->posts->get( $draft ) );
 		$this->assertSame( $page, $this->posts->get( $page )->ID );
 
-		$this->assertError( 'mermaid_blocks_post_not_found', 404, $this->posts->get( 999999 ) );
-		$this->assertError( 'mermaid_blocks_invalid_post_type', 400, $this->posts->get( self::factory()->attachment->create() ) );
-		$this->assertError( 'mermaid_blocks_post_in_trash', 410, $this->posts->get( self::factory()->post->create( array( 'post_status' => 'trash' ) ) ) );
+		$this->assertError( 'graphdraw_post_not_found', 404, $this->posts->get( 999999 ) );
+		$this->assertError( 'graphdraw_invalid_post_type', 400, $this->posts->get( self::factory()->attachment->create() ) );
+		$this->assertError( 'graphdraw_post_in_trash', 410, $this->posts->get( self::factory()->post->create( array( 'post_status' => 'trash' ) ) ) );
 	}
 
 	/**

@@ -1,11 +1,11 @@
 <?php
 /**
- * The `mermaid-blocks/delete-diagram` ability.
+ * The `graphdraw/delete-diagram` ability.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
 use WP_Post;
 
@@ -24,7 +24,7 @@ final class DeleteDiagram extends PostAbility {
 	 * @return string The name.
 	 */
 	public function get_name(): string {
-		return 'mermaid-blocks/delete-diagram';
+		return 'graphdraw/delete-diagram';
 	}
 
 	/**
@@ -33,7 +33,7 @@ final class DeleteDiagram extends PostAbility {
 	 * @return string The label.
 	 */
 	protected function get_label(): string {
-		return __( 'Delete a diagram', 'mermaid-blocks' );
+		return __( 'Delete a diagram', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -42,7 +42,7 @@ final class DeleteDiagram extends PostAbility {
 	 * @return string The description.
 	 */
 	protected function get_description(): string {
-		return __( 'Removes a Mermaid diagram block from a post. It fails when the diagram changed since it was read, as its hash tells. The post is saved, with a revision to restore it from.', 'mermaid-blocks' );
+		return __( 'Removes a Mermaid diagram block from a post. It fails when the diagram changed since it was read, as its hash tells. The post is saved, with a revision to restore it from.', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**

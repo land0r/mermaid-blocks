@@ -9,7 +9,7 @@
  */
 import { AUTO_THEME, THEMES } from '../utils/themes';
 
-const settings = window.mermaidBlocksEditorSettings || {};
+const settings = window.graphDrawEditorSettings || {};
 
 const hasOwn = ( object, key ) =>
 	Object.prototype.hasOwnProperty.call( object, key );

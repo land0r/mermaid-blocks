@@ -2,20 +2,20 @@
 /**
  * Tests of the schemas the abilities share.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Abilities\Schemas;
-use MermaidBlocks\Options;
-use MermaidBlocks\Posts\PostDiagrams;
+use GraphDraw\Abilities\Schemas;
+use GraphDraw\Options;
+use GraphDraw\Posts\PostDiagrams;
 use WP_UnitTestCase;
 
 /**
  * The schema of the attributes of a diagram, made from the one list of them.
  *
- * @covers \MermaidBlocks\Abilities\Schemas
+ * @covers \GraphDraw\Abilities\Schemas
  */
 class SchemasTest extends WP_UnitTestCase {
 
@@ -32,7 +32,7 @@ class SchemasTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->schemas = mermaid_blocks()->get( Schemas::class );
+		$this->schemas = graphdraw()->get( Schemas::class );
 	}
 
 	/**
@@ -59,7 +59,7 @@ class SchemasTest extends WP_UnitTestCase {
 	public function test_limits_the_theme_and_the_alignment(): void {
 		$properties = $this->schemas->get_attributes()['properties'];
 
-		$this->assertSame( array_merge( array( '' ), array_keys( mermaid_blocks()->themes()->get_all() ) ), $properties['theme']['enum'] );
+		$this->assertSame( array_merge( array( '' ), array_keys( graphdraw()->themes()->get_all() ) ), $properties['theme']['enum'] );
 		$this->assertSame( array( '', 'center', 'wide', 'full' ), $properties['align']['enum'] );
 	}
 
@@ -85,7 +85,7 @@ class SchemasTest extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'Pele, which draws every theme as light or dark', $theme );
 
-		foreach ( array_keys( mermaid_blocks()->themes()->get_offered() ) as $name ) {
+		foreach ( array_keys( graphdraw()->themes()->get_offered() ) as $name ) {
 			$this->assertMatchesRegularExpression( '/\b' . $name . '\b/', $theme, $name );
 		}
 
@@ -101,7 +101,7 @@ class SchemasTest extends WP_UnitTestCase {
 
 		$schema = $this->schemas->get_attributes();
 
-		$this->assertSame( array_merge( array( '' ), array_keys( mermaid_blocks()->themes()->get_all() ) ), $schema['properties']['theme']['enum'] );
+		$this->assertSame( array_merge( array( '' ), array_keys( graphdraw()->themes()->get_all() ) ), $schema['properties']['theme']['enum'] );
 		$this->assertTrue( rest_validate_value_from_schema( array( 'theme' => 'forest' ), $schema ) );
 	}
 
@@ -143,7 +143,7 @@ class SchemasTest extends WP_UnitTestCase {
 	public function test_describes_a_diagram_as_it_is_returned(): void {
 		$post = self::factory()->post->create_and_get();
 
-		$diagrams  = mermaid_blocks()->get( PostDiagrams::class );
+		$diagrams  = graphdraw()->get( PostDiagrams::class );
 		$described = $diagrams->describe( $post, 0, $diagrams->create_block( 'pie' ) );
 
 		$this->assertSame( array_keys( $described ), array_keys( $this->schemas->get_diagram()['properties'] ) );

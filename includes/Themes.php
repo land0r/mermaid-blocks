@@ -2,10 +2,10 @@
 /**
  * The themes a diagram can be drawn in.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -60,18 +60,18 @@ final class Themes {
 	 */
 	public function get_all(): array {
 		return array(
-			'auto'             => __( 'Automatic', 'mermaid-blocks' ),
-			'default'          => __( 'Default', 'mermaid-blocks' ),
-			'neutral'          => __( 'Neutral', 'mermaid-blocks' ),
-			'dark'             => __( 'Dark', 'mermaid-blocks' ),
-			'forest'           => __( 'Forest', 'mermaid-blocks' ),
-			'base'             => __( 'Base', 'mermaid-blocks' ),
-			'neo'              => __( 'Neo', 'mermaid-blocks' ),
-			'neo-dark'         => __( 'Neo Dark', 'mermaid-blocks' ),
-			'redux'            => __( 'Redux', 'mermaid-blocks' ),
-			'redux-dark'       => __( 'Redux Dark', 'mermaid-blocks' ),
-			'redux-color'      => __( 'Redux Color', 'mermaid-blocks' ),
-			'redux-dark-color' => __( 'Redux Dark Color', 'mermaid-blocks' ),
+			'auto'             => __( 'Automatic', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'default'          => __( 'Default', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'neutral'          => __( 'Neutral', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'dark'             => __( 'Dark', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'forest'           => __( 'Forest', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'base'             => __( 'Base', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'neo'              => __( 'Neo', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'neo-dark'         => __( 'Neo Dark', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'redux'            => __( 'Redux', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'redux-dark'       => __( 'Redux Dark', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'redux-color'      => __( 'Redux Color', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'redux-dark-color' => __( 'Redux Dark Color', 'graphdraw-mermaid-diagrams-flowcharts' ),
 		);
 	}
 
@@ -94,8 +94,8 @@ final class Themes {
 
 		return array(
 			self::AUTO => $themes[ self::AUTO ],
-			'default'  => __( 'Light', 'mermaid-blocks' ),
-			'dark'     => __( 'Dark', 'mermaid-blocks' ),
+			'default'  => __( 'Light', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'dark'     => __( 'Dark', 'graphdraw-mermaid-diagrams-flowcharts' ),
 		);
 	}
 
@@ -145,7 +145,7 @@ final class Themes {
 
 	/**
 	 * Returns the site's theme, which diagrams without a theme of their own
-	 * are drawn in. It is set under Settings > Mermaid Blocks.
+	 * are drawn in. It is set under Settings > GraphDraw.
 	 *
 	 * @return string A name from get_all().
 	 */

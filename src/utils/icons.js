@@ -123,7 +123,7 @@ export function loadPack( url ) {
 				.catch( ( error ) => {
 					// eslint-disable-next-line no-console
 					console.error(
-						`Mermaid Blocks: failed to load the icon pack ${ url }.`,
+						`GraphDraw: failed to load the icon pack ${ url }.`,
 						error
 					);
 

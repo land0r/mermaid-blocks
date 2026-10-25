@@ -125,7 +125,7 @@ const transforms = {
 					.replace( /```mermaid/, '' ) // Remove the starting "```mermaid"
 					.replace( /```$/, '' ); // Remove the ending "```"
 
-				return createBlock( 'mermaid-blocks/diagram', {
+				return createBlock( 'graphdraw/diagram', {
 					code: mergedContent.trim(),
 				} );
 			},
@@ -155,7 +155,7 @@ const transforms = {
 			 * @return {Object} The new MermaidJS block.
 			 */
 			transform: ( attributes ) =>
-				createBlock( 'mermaid-blocks/diagram', {
+				createBlock( 'graphdraw/diagram', {
 					code: getCode( getContent( attributes ) || '' ),
 				} ),
 		},

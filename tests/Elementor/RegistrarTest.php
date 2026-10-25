@@ -2,22 +2,22 @@
 /**
  * Tests of the widget's registration with Elementor.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests\Elementor;
+namespace GraphDraw\Tests\Elementor;
 
 use Elementor\Plugin as Elementor;
-use MermaidBlocks\Integrations\Elementor\DiagramWidget;
-use MermaidBlocks\Integrations\Elementor\Registrar;
-use MermaidBlocks\Options;
-use MermaidBlocks\Plugin;
+use GraphDraw\Integrations\Elementor\DiagramWidget;
+use GraphDraw\Integrations\Elementor\Registrar;
+use GraphDraw\Options;
+use GraphDraw\Plugin;
 use WP_UnitTestCase;
 
 /**
  * How Elementor gets the widget and its script. Elementor is active.
  *
- * @covers \MermaidBlocks\Integrations\Elementor\Registrar
+ * @covers \GraphDraw\Integrations\Elementor\Registrar
  */
 class RegistrarTest extends WP_UnitTestCase {
 
@@ -35,7 +35,7 @@ class RegistrarTest extends WP_UnitTestCase {
 	 * It waits for Elementor's actions, and adds itself to them.
 	 */
 	public function test_waits_for_elementor(): void {
-		$registrar = mermaid_blocks()->get( Registrar::class );
+		$registrar = graphdraw()->get( Registrar::class );
 
 		$this->assertSame(
 			array( 'elementor/widgets/register', 'elementor/frontend/after_register_scripts', 'elementor/editor/after_enqueue_scripts' ),
@@ -83,7 +83,7 @@ class RegistrarTest extends WP_UnitTestCase {
 	public function test_enqueues_the_editor_script_with_pele(): void {
 		update_option( Options::RENDERER, 'pele' );
 
-		mermaid_blocks()->get( Registrar::class )->enqueue_editor_script();
+		graphdraw()->get( Registrar::class )->enqueue_editor_script();
 
 		$script = wp_scripts()->query( Registrar::EDITOR_SCRIPT );
 
@@ -93,7 +93,7 @@ class RegistrarTest extends WP_UnitTestCase {
 		$before = (array) wp_scripts()->get_data( Registrar::EDITOR_SCRIPT, 'before' );
 
 		$this->assertSame(
-			'var mermaidBlocksThemeAliases = ' . wp_json_encode( mermaid_blocks()->themes()->get_aliases() ) . ';',
+			'var graphDrawThemeAliases = ' . wp_json_encode( graphdraw()->themes()->get_aliases() ) . ';',
 			end( $before )
 		);
 	}
@@ -104,7 +104,7 @@ class RegistrarTest extends WP_UnitTestCase {
 	public function test_leaves_the_editor_script_out_with_mermaid(): void {
 		update_option( Options::RENDERER, 'mermaid' );
 
-		mermaid_blocks()->get( Registrar::class )->enqueue_editor_script();
+		graphdraw()->get( Registrar::class )->enqueue_editor_script();
 
 		$this->assertFalse( wp_script_is( Registrar::EDITOR_SCRIPT, 'registered' ) );
 	}

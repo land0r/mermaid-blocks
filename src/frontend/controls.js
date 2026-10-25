@@ -12,11 +12,11 @@ import { downloadDiagram } from '../utils/export-diagram';
 import { createFullLayout } from '../utils/full-layout';
 import { REDRAWN_EVENT } from '../utils/redrawn-event';
 
-const CANVAS_SELECTOR = '.mermaid-blocks-diagram__canvas';
-const SOURCE_SELECTOR = '.mermaid-blocks-diagram__source';
-const TOOLBAR_CLASS = 'mermaid-blocks-diagram__toolbar';
-const BUTTON_CLASS = 'mermaid-blocks-diagram__button';
-const STATUS_CLASS = 'mermaid-blocks-diagram__status';
+const CANVAS_SELECTOR = '.graphdraw-diagram__canvas';
+const SOURCE_SELECTOR = '.graphdraw-diagram__source';
+const TOOLBAR_CLASS = 'graphdraw-diagram__toolbar';
+const BUTTON_CLASS = 'graphdraw-diagram__button';
+const STATUS_CLASS = 'graphdraw-diagram__status';
 
 // Pele's zoom of each canvas: it is enabled once for a canvas, however often
 // the diagram gets its controls, and again for a canvas that took its place.
@@ -240,10 +240,7 @@ function createDownloadButtons( doc, svg, status, text, full ) {
 			.catch( ( error ) => {
 				status.show( text.downloadError );
 				// eslint-disable-next-line no-console
-				console.error(
-					'Mermaid Blocks: failed to create the file.',
-					error
-				);
+				console.error( 'GraphDraw: failed to create the file.', error );
 			} )
 			.then( () => {
 				busy = false;
@@ -299,7 +296,7 @@ function createCopyButton( doc, diagram, status, text ) {
 					status.show( text.copyError );
 					// eslint-disable-next-line no-console
 					console.error(
-						'Mermaid Blocks: failed to copy the code.',
+						'GraphDraw: failed to copy the code.',
 						error
 					);
 				}

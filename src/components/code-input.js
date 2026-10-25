@@ -82,7 +82,7 @@ export default function CodeInput( {
 	errorLine = null,
 	errorId,
 } ) {
-	const id = useInstanceId( CodeInput, 'mermaid-blocks-code-input' );
+	const id = useInstanceId( CodeInput, 'graphdraw-code-input' );
 	const wrapperRef = useRef( null );
 
 	// Set by Escape: the next Tab moves focus instead of indenting.
@@ -132,7 +132,7 @@ export default function CodeInput( {
 	// The line numbers and the error line follow the textarea's scrolling.
 	const onScroll = ( event ) => {
 		wrapperRef.current.style.setProperty(
-			'--mermaid-blocks-code-scroll',
+			'--graphdraw-code-scroll',
 			`${ event.target.scrollTop }px`
 		);
 	};
@@ -149,16 +149,12 @@ export default function CodeInput( {
 			help={ help }
 			__nextHasNoMarginBottom
 		>
-			<div
-				ref={ wrapperRef }
-				className="mermaid-blocks-code-input"
-				dir="ltr"
-			>
+			<div ref={ wrapperRef } className="graphdraw-code-input" dir="ltr">
 				<div
-					className="mermaid-blocks-code-input__gutter"
+					className="graphdraw-code-input__gutter"
 					aria-hidden="true"
 				>
-					<div className="mermaid-blocks-code-input__line-numbers">
+					<div className="graphdraw-code-input__line-numbers">
 						{ Array.from( { length: lineCount }, ( _, index ) => (
 							<div
 								key={ index }
@@ -173,18 +169,18 @@ export default function CodeInput( {
 						) ) }
 					</div>
 				</div>
-				<div className="mermaid-blocks-code-input__field">
+				<div className="graphdraw-code-input__field">
 					{ markedLine !== null && (
 						<div
-							className="mermaid-blocks-code-input__error-line"
+							className="graphdraw-code-input__error-line"
 							style={ {
-								'--mermaid-blocks-code-error-line': markedLine,
+								'--graphdraw-code-error-line': markedLine,
 							} }
 						/>
 					) }
 					<textarea
 						id={ id }
-						className="mermaid-blocks-code-input__textarea"
+						className="graphdraw-code-input__textarea"
 						rows={ 10 }
 						wrap="off"
 						spellCheck={ false }

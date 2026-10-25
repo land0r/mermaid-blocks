@@ -2,15 +2,15 @@
 /**
  * The schemas the abilities share.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
-use MermaidBlocks\Options;
-use MermaidBlocks\Posts\PostDiagrams;
-use MermaidBlocks\Renderers;
-use MermaidBlocks\Themes;
+use GraphDraw\Options;
+use GraphDraw\Posts\PostDiagrams;
+use GraphDraw\Renderers;
+use GraphDraw\Themes;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -69,7 +69,7 @@ final class Schemas {
 		return array(
 			'type'        => 'integer',
 			'minimum'     => 1,
-			'description' => __( 'The ID of the post.', 'mermaid-blocks' ),
+			'description' => __( 'The ID of the post.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 		);
 	}
 
@@ -82,7 +82,7 @@ final class Schemas {
 		return array(
 			'type'        => 'integer',
 			'minimum'     => 0,
-			'description' => __( 'The index of the diagram: its position among the diagrams of the post, in document order, nested blocks included, counting from 0.', 'mermaid-blocks' ),
+			'description' => __( 'The index of the diagram: its position among the diagrams of the post, in document order, nested blocks included, counting from 0.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 		);
 	}
 
@@ -95,7 +95,7 @@ final class Schemas {
 		return array(
 			'type'        => 'string',
 			'pattern'     => '^[0-9a-f]{32}$',
-			'description' => __( 'The hash of the diagram, as the last read of it returned. The change fails when the diagram changed since then.', 'mermaid-blocks' ),
+			'description' => __( 'The hash of the diagram, as the last read of it returned. The change fails when the diagram changed since then.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 		);
 	}
 
@@ -105,10 +105,10 @@ final class Schemas {
 	 * @return array The schema.
 	 */
 	public function get_code(): array {
-		$description = __( 'The Mermaid source of the diagram. It is not validated: use the mermaid-blocks/validate-diagram ability in the block editor for that.', 'mermaid-blocks' );
+		$description = __( 'The Mermaid source of the diagram. It is not validated: use the graphdraw/validate-diagram ability in the block editor for that.', 'graphdraw-mermaid-diagrams-flowcharts' );
 
 		if ( $this->is_pele() ) {
-			$description .= ' ' . __( 'The site draws diagrams with Pele, which ignores colours set in the code, such as themeVariables, and draws a theme set in it as light or dark.', 'mermaid-blocks' );
+			$description .= ' ' . __( 'The site draws diagrams with Pele, which ignores colours set in the code, such as themeVariables, and draws a theme set in it as light or dark.', 'graphdraw-mermaid-diagrams-flowcharts' );
 		}
 
 		return array(
@@ -135,7 +135,7 @@ final class Schemas {
 
 		return array(
 			'type'                 => 'object',
-			'description'          => __( 'Attributes of the diagram block besides its code. An empty string or false removes an attribute.', 'mermaid-blocks' ),
+			'description'          => __( 'Attributes of the diagram block besides its code. An empty string or false removes an attribute.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			'properties'           => $properties,
 			'additionalProperties' => false,
 		);
@@ -153,31 +153,31 @@ final class Schemas {
 			'properties' => array(
 				'post_id'    => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the post the diagram is in.', 'mermaid-blocks' ),
+					'description' => __( 'The ID of the post the diagram is in.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'index'      => array(
 					'type'        => 'integer',
-					'description' => __( 'The index of the diagram in the post, counting from 0.', 'mermaid-blocks' ),
+					'description' => __( 'The index of the diagram in the post, counting from 0.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'hash'       => array(
 					'type'        => 'string',
-					'description' => __( 'The hash of the diagram. Pass it to change or delete the diagram.', 'mermaid-blocks' ),
+					'description' => __( 'The hash of the diagram. Pass it to change or delete the diagram.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'code'       => array(
 					'type'        => 'string',
-					'description' => __( 'The Mermaid source.', 'mermaid-blocks' ),
+					'description' => __( 'The Mermaid source.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'type'       => array(
 					'type'        => 'string',
-					'description' => __( 'The keyword the source starts with, such as flowchart or sequenceDiagram. Empty when there is none.', 'mermaid-blocks' ),
+					'description' => __( 'The keyword the source starts with, such as flowchart or sequenceDiagram. Empty when there is none.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'validated'  => array(
 					'type'        => 'boolean',
-					'description' => __( 'Always false: the server cannot parse Mermaid.', 'mermaid-blocks' ),
+					'description' => __( 'Always false: the server cannot parse Mermaid.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'attributes' => array(
 					'type'        => 'object',
-					'description' => __( 'The other attributes of the diagram block.', 'mermaid-blocks' ),
+					'description' => __( 'The other attributes of the diagram block.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 			),
 		);
@@ -192,11 +192,11 @@ final class Schemas {
 	 *                 one, by name.
 	 */
 	private function get_attribute_details(): array {
-		$theme = __( 'The theme of the diagram. Without one, the theme set for the site.', 'mermaid-blocks' );
+		$theme = __( 'The theme of the diagram. Without one, the theme set for the site.', 'graphdraw-mermaid-diagrams-flowcharts' );
 
 		// Every theme is still taken: a diagram that has another one, from before the site switched to Pele, keeps it.
 		if ( $this->is_pele() ) {
-			$theme .= ' ' . __( 'The site draws diagrams with Pele, which draws every theme as light or dark: use auto, which follows the page, default for light, or dark.', 'mermaid-blocks' );
+			$theme .= ' ' . __( 'The site draws diagrams with Pele, which draws every theme as light or dark: use auto, which follows the page, default for light, or dark.', 'graphdraw-mermaid-diagrams-flowcharts' );
 		}
 
 		return array(
@@ -205,29 +205,29 @@ final class Schemas {
 				'description' => $theme,
 			),
 			'caption'    => array(
-				'description' => __( 'A caption shown under the diagram. It may hold the HTML allowed in posts.', 'mermaid-blocks' ),
+				'description' => __( 'A caption shown under the diagram. It may hold the HTML allowed in posts.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 			'zoom'       => array(
-				'description' => __( 'Whether visitors get zoom controls.', 'mermaid-blocks' ),
+				'description' => __( 'Whether visitors get zoom controls.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 			'download'   => array(
-				'description' => __( 'Whether visitors get buttons that download the diagram as an SVG or PNG file.', 'mermaid-blocks' ),
+				'description' => __( 'Whether visitors get buttons that download the diagram as an SVG or PNG file.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 			'copy'       => array(
-				'description' => __( 'Whether visitors get a button that copies the code of the diagram.', 'mermaid-blocks' ),
+				'description' => __( 'Whether visitors get a button that copies the code of the diagram.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 			'fullscreen' => array(
-				'description' => __( 'Whether visitors get a button that shows the diagram over the whole screen.', 'mermaid-blocks' ),
+				'description' => __( 'Whether visitors get a button that shows the diagram over the whole screen.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 			'accTitle'   => array(
-				'description' => __( 'A title of the diagram for screen readers.', 'mermaid-blocks' ),
+				'description' => __( 'A title of the diagram for screen readers.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 			'accDescr'   => array(
-				'description' => __( 'A description of the diagram for screen readers.', 'mermaid-blocks' ),
+				'description' => __( 'A description of the diagram for screen readers.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 			'align'      => array(
 				'enum'        => array( '', 'center', 'wide', 'full' ),
-				'description' => __( 'The alignment of the diagram.', 'mermaid-blocks' ),
+				'description' => __( 'The alignment of the diagram.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 		);
 	}

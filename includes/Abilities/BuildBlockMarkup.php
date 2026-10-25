@@ -1,11 +1,11 @@
 <?php
 /**
- * The `mermaid-blocks/build-block-markup` ability.
+ * The `graphdraw/build-block-markup` ability.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,7 +23,7 @@ final class BuildBlockMarkup extends DiagramAbility {
 	 * @return string The name.
 	 */
 	public function get_name(): string {
-		return 'mermaid-blocks/build-block-markup';
+		return 'graphdraw/build-block-markup';
 	}
 
 	/**
@@ -32,7 +32,7 @@ final class BuildBlockMarkup extends DiagramAbility {
 	 * @return string The label.
 	 */
 	protected function get_label(): string {
-		return __( 'Build diagram block markup', 'mermaid-blocks' );
+		return __( 'Build diagram block markup', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -41,7 +41,7 @@ final class BuildBlockMarkup extends DiagramAbility {
 	 * @return string The description.
 	 */
 	protected function get_description(): string {
-		return __( 'Returns the block markup of a Mermaid diagram, to put in the content of a post written by other means. Saves nothing.', 'mermaid-blocks' );
+		return __( 'Returns the block markup of a Mermaid diagram, to put in the content of a post written by other means. Saves nothing.', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -74,7 +74,7 @@ final class BuildBlockMarkup extends DiagramAbility {
 			'properties' => array(
 				'markup'    => array(
 					'type'        => 'string',
-					'description' => __( 'The block markup.', 'mermaid-blocks' ),
+					'description' => __( 'The block markup.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'type'      => $diagram['type'],
 				'validated' => $diagram['validated'],

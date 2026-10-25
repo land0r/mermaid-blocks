@@ -6,7 +6,7 @@
  * WP_TESTS_DB_USER, WP_TESTS_DB_PASSWORD and WP_TESTS_DB_HOST. The tests drop
  * and create its tables: give them a database of their own.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
 /**
@@ -17,7 +17,7 @@
  *
  * @return string The value.
  */
-function mermaid_blocks_tests_env( $name, $default_value ) {
+function graphdraw_tests_env( $name, $default_value ) {
 	$value = getenv( $name );
 
 	return false === $value ? $default_value : $value;
@@ -26,10 +26,10 @@ function mermaid_blocks_tests_env( $name, $default_value ) {
 // WordPress, as Composer installs it.
 define( 'ABSPATH', dirname( __DIR__ ) . '/vendor/roots/wordpress-no-content/' );
 
-define( 'DB_NAME', mermaid_blocks_tests_env( 'WP_TESTS_DB_NAME', 'wordpress_tests' ) );
-define( 'DB_USER', mermaid_blocks_tests_env( 'WP_TESTS_DB_USER', 'root' ) );
-define( 'DB_PASSWORD', mermaid_blocks_tests_env( 'WP_TESTS_DB_PASSWORD', '' ) );
-define( 'DB_HOST', mermaid_blocks_tests_env( 'WP_TESTS_DB_HOST', '127.0.0.1' ) );
+define( 'DB_NAME', graphdraw_tests_env( 'WP_TESTS_DB_NAME', 'wordpress_tests' ) );
+define( 'DB_USER', graphdraw_tests_env( 'WP_TESTS_DB_USER', 'root' ) );
+define( 'DB_PASSWORD', graphdraw_tests_env( 'WP_TESTS_DB_PASSWORD', '' ) );
+define( 'DB_HOST', graphdraw_tests_env( 'WP_TESTS_DB_HOST', '127.0.0.1' ) );
 define( 'DB_CHARSET', 'utf8mb4' );
 define( 'DB_COLLATE', '' );
 

@@ -2,19 +2,19 @@
 /**
  * Tests of the icon packs a site registers.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\IconPacks;
-use MermaidBlocks\Options;
+use GraphDraw\IconPacks;
+use GraphDraw\Options;
 use WP_UnitTestCase;
 
 /**
- * What the `mermaid_blocks_icon_packs` filter may register, and who is told.
+ * What the `graphdraw_icon_packs` filter may register, and who is told.
  *
- * @covers \MermaidBlocks\IconPacks
+ * @covers \GraphDraw\IconPacks
  */
 class IconPacksTest extends WP_UnitTestCase {
 
@@ -30,9 +30,9 @@ class IconPacksTest extends WP_UnitTestCase {
 			return $packs;
 		};
 
-		add_filter( 'mermaid_blocks_icon_packs', $filter );
-		$result = mermaid_blocks()->get( IconPacks::class )->get_settings();
-		remove_filter( 'mermaid_blocks_icon_packs', $filter );
+		add_filter( 'graphdraw_icon_packs', $filter );
+		$result = graphdraw()->get( IconPacks::class )->get_settings();
+		remove_filter( 'graphdraw_icon_packs', $filter );
 
 		return $result;
 	}
@@ -41,8 +41,8 @@ class IconPacksTest extends WP_UnitTestCase {
 	 * Nothing is told without a filter.
 	 */
 	public function test_is_empty_without_a_filter(): void {
-		$this->assertSame( array(), mermaid_blocks()->get( IconPacks::class )->get_settings() );
-		$this->assertSame( array( 'a' => 1 ), mermaid_blocks()->get( IconPacks::class )->add_to( array( 'a' => 1 ) ) );
+		$this->assertSame( array(), graphdraw()->get( IconPacks::class )->get_settings() );
+		$this->assertSame( array( 'a' => 1 ), graphdraw()->get( IconPacks::class )->add_to( array( 'a' => 1 ) ) );
 	}
 
 	/**
@@ -110,9 +110,9 @@ class IconPacksTest extends WP_UnitTestCase {
 			return array( 'fa' => 'https://example.com/fa.json' );
 		};
 
-		add_filter( 'mermaid_blocks_icon_packs', $filter );
-		$settings = mermaid_blocks()->get( IconPacks::class )->add_to( array() );
-		remove_filter( 'mermaid_blocks_icon_packs', $filter );
+		add_filter( 'graphdraw_icon_packs', $filter );
+		$settings = graphdraw()->get( IconPacks::class )->add_to( array() );
+		remove_filter( 'graphdraw_icon_packs', $filter );
 
 		$this->assertSame( '{"iconPacks":{"fa":"https:\/\/example.com\/fa.json"}}', wp_json_encode( $settings ) );
 	}

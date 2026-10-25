@@ -2,10 +2,10 @@
 /**
  * The posts diagrams can be in, for those who may edit them.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Posts;
+namespace GraphDraw\Posts;
 
 use WP_Error;
 use WP_Post;
@@ -57,8 +57,8 @@ final class EditablePosts {
 
 		if ( ! $post ) {
 			return new WP_Error(
-				'mermaid_blocks_post_not_found',
-				__( 'There is no post with this ID.', 'mermaid-blocks' ),
+				'graphdraw_post_not_found',
+				__( 'There is no post with this ID.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -83,8 +83,8 @@ final class EditablePosts {
 
 		if ( ! in_array( $post->post_type, $this->get_types(), true ) ) {
 			return new WP_Error(
-				'mermaid_blocks_invalid_post_type',
-				__( 'Posts of this type are not edited in the block editor, so they hold no diagrams.', 'mermaid-blocks' ),
+				'graphdraw_invalid_post_type',
+				__( 'Posts of this type are not edited in the block editor, so they hold no diagrams.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -92,8 +92,8 @@ final class EditablePosts {
 		// As in the editor, which doesn't open posts in the trash.
 		if ( 'trash' === $post->post_status ) {
 			return new WP_Error(
-				'mermaid_blocks_post_in_trash',
-				__( 'The post is in the trash. Restore it first.', 'mermaid-blocks' ),
+				'graphdraw_post_in_trash',
+				__( 'The post is in the trash. Restore it first.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 410 )
 			);
 		}

@@ -2,14 +2,14 @@
 /**
  * The REST routes of the saved images of a post.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Images;
+namespace GraphDraw\Images;
 
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Posts\EditablePosts;
-use MermaidBlocks\Renderers;
+use GraphDraw\Hookable;
+use GraphDraw\Posts\EditablePosts;
+use GraphDraw\Renderers;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -24,8 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * post: it asks which diagrams have none, and sends each image back (see
  * ImageSync, and src/editor/saved-images.js).
  *
- *     GET  /mermaid-blocks/v1/posts/<id>/images        The diagrams to draw.
- *     POST /mermaid-blocks/v1/posts/<id>/images/<key>  The PNG of one of them.
+ *     GET  /graphdraw/v1/posts/<id>/images        The diagrams to draw.
+ *     POST /graphdraw/v1/posts/<id>/images/<key>  The PNG of one of them.
  *
  * Both are open to those who may edit the post, and exist only while the
  * setting is on. An image is taken only for a diagram the post has at that
@@ -36,7 +36,7 @@ final class ImagesController implements Hookable {
 	/**
 	 * The namespace of the routes.
 	 */
-	const REST_NAMESPACE = 'mermaid-blocks/v1';
+	const REST_NAMESPACE = 'graphdraw/v1';
 
 	/**
 	 * What tells which diagrams of a post need an image.
@@ -88,14 +88,14 @@ final class ImagesController implements Hookable {
 		}
 
 		$post_id = array(
-			'description' => __( 'The ID of the post.', 'mermaid-blocks' ),
+			'description' => __( 'The ID of the post.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			'type'        => 'integer',
 			'required'    => true,
 		);
 
 		// The editor says which renderer it draws with: a filter may give the request another one.
 		$renderer = array(
-			'description' => __( 'The renderer the images are drawn with. Default: the one of the request.', 'mermaid-blocks' ),
+			'description' => __( 'The renderer the images are drawn with. Default: the one of the request.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			'type'        => 'string',
 			'enum'        => Renderers::ALL,
 		);
@@ -125,7 +125,7 @@ final class ImagesController implements Hookable {
 					'id'       => $post_id,
 					'renderer' => $renderer,
 					'key'      => array(
-						'description' => __( 'The key of the diagram, as the list of diagrams to draw gives it.', 'mermaid-blocks' ),
+						'description' => __( 'The key of the diagram, as the list of diagrams to draw gives it.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 						'type'        => 'string',
 						'required'    => true,
 					),
@@ -152,8 +152,8 @@ final class ImagesController implements Hookable {
 
 		if ( ! current_user_can( 'edit_post', $post->ID ) ) {
 			return new WP_Error(
-				'mermaid_blocks_cannot_edit_post',
-				__( 'You are not allowed to edit this post.', 'mermaid-blocks' ),
+				'graphdraw_cannot_edit_post',
+				__( 'You are not allowed to edit this post.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
@@ -194,8 +194,8 @@ final class ImagesController implements Hookable {
 
 		if ( ! isset( $diagrams[ $key ] ) ) {
 			return new WP_Error(
-				'mermaid_blocks_image_not_wanted',
-				__( 'The post has no diagram this image is of. The post may have changed in the meantime.', 'mermaid-blocks' ),
+				'graphdraw_image_not_wanted',
+				__( 'The post has no diagram this image is of. The post may have changed in the meantime.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 409 )
 			);
 		}

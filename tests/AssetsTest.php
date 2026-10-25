@@ -2,20 +2,20 @@
 /**
  * Tests of the scripts and styles of diagrams.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Assets;
-use MermaidBlocks\Files;
-use MermaidBlocks\Options;
+use GraphDraw\Assets;
+use GraphDraw\Files;
+use GraphDraw\Options;
 use WP_UnitTestCase;
 
 /**
  * What a page with a diagram loads, and what its script is told to load later.
  *
- * @covers \MermaidBlocks\Assets
+ * @covers \GraphDraw\Assets
  */
 class AssetsTest extends WP_UnitTestCase {
 
@@ -34,7 +34,7 @@ class AssetsTest extends WP_UnitTestCase {
 
 		delete_option( Options::RENDERER );
 
-		$this->files = mermaid_blocks()->get( Files::class );
+		$this->files = graphdraw()->get( Files::class );
 	}
 
 	/**
@@ -45,12 +45,12 @@ class AssetsTest extends WP_UnitTestCase {
 	private function get_settings(): array {
 		// Told when the page's scripts are enqueued, once the query ran.
 		wp_scripts()->add_data( Assets::DIAGRAM, 'before', array() );
-		mermaid_blocks()->get( Assets::class )->add_settings();
+		graphdraw()->get( Assets::class )->add_settings();
 
 		$before = array_filter( (array) wp_scripts()->get_data( Assets::DIAGRAM, 'before' ) );
 		$script = implode( "\n", $before );
 
-		$this->assertSame( 1, preg_match( '/^var mermaidBlocksSettings = (\{.*\});$/s', $script, $matches ) );
+		$this->assertSame( 1, preg_match( '/^var graphDrawSettings = (\{.*\});$/s', $script, $matches ) );
 
 		return json_decode( $matches[1], true );
 	}
@@ -107,13 +107,13 @@ class AssetsTest extends WP_UnitTestCase {
 		update_option( Options::RENDERER, 'pele' );
 		$this->assertArrayNotHasKey( 'peleOptions', $this->get_settings() );
 
-		add_filter( 'mermaid_blocks_pele_options', $filter );
+		add_filter( 'graphdraw_pele_options', $filter );
 		$this->assertSame( array( 'links' => true ), $this->get_settings()['peleOptions'] );
 
 		update_option( Options::RENDERER, 'mermaid' );
 		$this->assertArrayNotHasKey( 'peleOptions', $this->get_settings() );
 
-		remove_filter( 'mermaid_blocks_pele_options', $filter );
+		remove_filter( 'graphdraw_pele_options', $filter );
 	}
 
 	/**
@@ -130,14 +130,14 @@ class AssetsTest extends WP_UnitTestCase {
 
 		$this->assertArrayNotHasKey( 'iconPacks', $this->get_settings() );
 
-		add_filter( 'mermaid_blocks_icon_packs', $filter );
+		add_filter( 'graphdraw_icon_packs', $filter );
 
 		foreach ( array( 'mermaid', 'pele' ) as $renderer ) {
 			update_option( Options::RENDERER, $renderer );
 			$this->assertSame( array( 'fa' => 'https://example.com/fa.json' ), $this->get_settings()['iconPacks'], $renderer );
 		}
 
-		remove_filter( 'mermaid_blocks_icon_packs', $filter );
+		remove_filter( 'graphdraw_icon_packs', $filter );
 	}
 
 	/**
@@ -148,11 +148,11 @@ class AssetsTest extends WP_UnitTestCase {
 		$filter = static function () {
 			return 'pele';
 		};
-		add_filter( 'mermaid_blocks_renderer', $filter );
+		add_filter( 'graphdraw_renderer', $filter );
 
 		$this->assertSame( 'pele', $this->get_settings()['renderer'] );
 
-		remove_filter( 'mermaid_blocks_renderer', $filter );
+		remove_filter( 'graphdraw_renderer', $filter );
 	}
 
 	/**
@@ -164,7 +164,7 @@ class AssetsTest extends WP_UnitTestCase {
 		do_action( 'wp_enqueue_scripts' );
 
 		$before = array_filter( (array) wp_scripts()->get_data( Assets::DIAGRAM, 'before' ) );
-		$this->assertStringContainsString( 'var mermaidBlocksSettings = ', implode( "\n", $before ) );
+		$this->assertStringContainsString( 'var graphDrawSettings = ', implode( "\n", $before ) );
 	}
 
 	/**
@@ -181,7 +181,7 @@ class AssetsTest extends WP_UnitTestCase {
 
 		$before = array_filter( (array) wp_scripts()->get_data( Assets::DIAGRAM, 'before' ) );
 
-		$this->assertSame( 1, substr_count( implode( "\n", $before ), 'var mermaidBlocksSettings = ' ) );
+		$this->assertSame( 1, substr_count( implode( "\n", $before ), 'var graphDrawSettings = ' ) );
 
 		set_current_screen( 'front' );
 	}
@@ -269,7 +269,7 @@ class AssetsTest extends WP_UnitTestCase {
 		wp_dequeue_script( Assets::DIAGRAM );
 		wp_dequeue_style( Assets::DIAGRAM );
 
-		mermaid_blocks()->get( Assets::class )->enqueue_diagram();
+		graphdraw()->get( Assets::class )->enqueue_diagram();
 
 		$this->assertTrue( wp_script_is( Assets::DIAGRAM ) );
 		$this->assertTrue( wp_style_is( Assets::DIAGRAM ) );

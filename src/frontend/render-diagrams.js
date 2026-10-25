@@ -2,10 +2,10 @@ import { resolveTheme } from '../utils/themes';
 import { setAccessibleText } from '../utils/accessible-text';
 import { REDRAWN_EVENT } from '../utils/redrawn-event';
 
-const DIAGRAM_SELECTOR = '.mermaid-blocks-diagram';
-const SOURCE_SELECTOR = '.mermaid-blocks-diagram__source';
-const CANVAS_SELECTOR = '.mermaid-blocks-diagram__canvas';
-const TOOLBAR_SELECTOR = '.mermaid-blocks-diagram__toolbar';
+const DIAGRAM_SELECTOR = '.graphdraw-diagram';
+const SOURCE_SELECTOR = '.graphdraw-diagram__source';
+const CANVAS_SELECTOR = '.graphdraw-diagram__canvas';
+const TOOLBAR_SELECTOR = '.graphdraw-diagram__toolbar';
 
 let counter = 0;
 
@@ -89,7 +89,7 @@ async function createCanvas( renderer, diagram, source ) {
 		source.textContent,
 		theme,
 		diagram,
-		`mermaid-blocks-diagram-${ counter }`
+		`graphdraw-diagram-${ counter }`
 	);
 
 	if ( result.error ) {
@@ -97,7 +97,7 @@ async function createCanvas( renderer, diagram, source ) {
 
 		// eslint-disable-next-line no-console
 		console.error(
-			'Mermaid Blocks: failed to render diagram.',
+			'GraphDraw: failed to render diagram.',
 			line === null ? message : `Line ${ line }: ${ message }`
 		);
 
@@ -105,7 +105,7 @@ async function createCanvas( renderer, diagram, source ) {
 	}
 
 	const canvas = diagram.ownerDocument.createElement( 'div' );
-	canvas.className = 'mermaid-blocks-diagram__canvas';
+	canvas.className = 'graphdraw-diagram__canvas';
 	canvas.dataset.mermaidTheme = theme;
 	canvas.innerHTML = result.svg;
 	setStyle( renderer, diagram, canvas, theme );

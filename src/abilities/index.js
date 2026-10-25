@@ -1,6 +1,6 @@
 /**
  * Registers the abilities that run in the browser, in the block editor:
- * `mermaid-blocks/validate-diagram`, which parses a diagram with the editor's
+ * `graphdraw/validate-diagram`, which parses a diagram with the editor's
  * renderer, Mermaid.js or Pele. The server can't parse Mermaid, so its
  * abilities only detect a diagram's type.
  *
@@ -36,7 +36,7 @@ import {
  */
 function getData() {
 	const element = document.getElementById(
-		'wp-script-module-data-mermaid-blocks/abilities'
+		'wp-script-module-data-graphdraw/abilities'
 	);
 
 	try {

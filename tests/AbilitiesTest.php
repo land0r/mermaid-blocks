@@ -2,13 +2,13 @@
 /**
  * Tests of the abilities.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Abilities\Ability;
-use MermaidBlocks\Abilities\Registrar;
+use GraphDraw\Abilities\Ability;
+use GraphDraw\Abilities\Registrar;
 use WP_Ability;
 use WP_UnitTestCase;
 
@@ -16,17 +16,17 @@ use WP_UnitTestCase;
  * The abilities, run as WordPress runs them: input validated against the
  * schema, permission checked, output validated.
  *
- * @covers \MermaidBlocks\Abilities\Registrar
- * @covers \MermaidBlocks\Abilities\Ability
- * @covers \MermaidBlocks\Abilities\DiagramAbility
- * @covers \MermaidBlocks\Abilities\PostAbility
- * @covers \MermaidBlocks\Abilities\ListDiagramTypes
- * @covers \MermaidBlocks\Abilities\ListDiagrams
- * @covers \MermaidBlocks\Abilities\GetDiagram
- * @covers \MermaidBlocks\Abilities\BuildBlockMarkup
- * @covers \MermaidBlocks\Abilities\InsertDiagram
- * @covers \MermaidBlocks\Abilities\UpdateDiagram
- * @covers \MermaidBlocks\Abilities\DeleteDiagram
+ * @covers \GraphDraw\Abilities\Registrar
+ * @covers \GraphDraw\Abilities\Ability
+ * @covers \GraphDraw\Abilities\DiagramAbility
+ * @covers \GraphDraw\Abilities\PostAbility
+ * @covers \GraphDraw\Abilities\ListDiagramTypes
+ * @covers \GraphDraw\Abilities\ListDiagrams
+ * @covers \GraphDraw\Abilities\GetDiagram
+ * @covers \GraphDraw\Abilities\BuildBlockMarkup
+ * @covers \GraphDraw\Abilities\InsertDiagram
+ * @covers \GraphDraw\Abilities\UpdateDiagram
+ * @covers \GraphDraw\Abilities\DeleteDiagram
  */
 class AbilitiesTest extends WP_UnitTestCase {
 
@@ -60,7 +60,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 	private function run_ability( string $name, $input = null, string $role = 'editor' ) {
 		wp_set_current_user( 'visitor' === $role ? 0 : self::$users[ $role ] );
 
-		return wp_get_ability( 'mermaid-blocks/' . $name )->execute( $input );
+		return wp_get_ability( 'graphdraw/' . $name )->execute( $input );
 	}
 
 	/**
@@ -81,7 +81,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 				'post_status'  => $status,
 				'post_content' => wp_slash(
 					"<!-- wp:paragraph -->\n<p>Intro</p>\n<!-- /wp:paragraph -->\n\n"
-					. '<!-- wp:mermaid-blocks/diagram {"code":"graph TD\nA --> B","zoom":true} /-->'
+					. '<!-- wp:graphdraw/diagram {"code":"graph TD\nA --> B","zoom":true} /-->'
 				),
 			)
 		);
@@ -110,10 +110,10 @@ class AbilitiesTest extends WP_UnitTestCase {
 	 * @param bool   $is_idempotent  Whether running it again changes nothing more.
 	 */
 	public function test_registers_the_ability( string $name, bool $is_readonly, bool $is_destructive, bool $is_idempotent ): void {
-		$ability = wp_get_ability( 'mermaid-blocks/' . $name );
+		$ability = wp_get_ability( 'graphdraw/' . $name );
 
 		$this->assertInstanceOf( WP_Ability::class, $ability );
-		$this->assertSame( 'mermaid-blocks', $ability->get_category() );
+		$this->assertSame( 'graphdraw', $ability->get_category() );
 		$this->assertNotEmpty( $ability->get_label() );
 		$this->assertNotEmpty( $ability->get_description() );
 		$this->assertNotEmpty( $ability->get_output_schema() );
@@ -150,10 +150,10 @@ class AbilitiesTest extends WP_UnitTestCase {
 	 * those are what WordPress has.
 	 */
 	public function test_creates_the_abilities_it_lists(): void {
-		$registrar = mermaid_blocks()->get( Registrar::class );
+		$registrar = graphdraw()->get( Registrar::class );
 		$abilities = $registrar->get_abilities();
 
-		$this->assertSame( array_column( $this->data_annotations(), 0 ), str_replace( 'mermaid-blocks/', '', array_keys( $abilities ) ) );
+		$this->assertSame( array_column( $this->data_annotations(), 0 ), str_replace( 'graphdraw/', '', array_keys( $abilities ) ) );
 		$this->assertSame( Registrar::ABILITIES, array_values( array_map( 'get_class', $abilities ) ) );
 		$this->assertSame( $abilities, $registrar->get_abilities() );
 
@@ -168,7 +168,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 	 * The category is registered.
 	 */
 	public function test_registers_the_category(): void {
-		$this->assertTrue( wp_has_ability_category( 'mermaid-blocks' ) );
+		$this->assertTrue( wp_has_ability_category( 'graphdraw' ) );
 	}
 
 	/**
@@ -302,7 +302,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 		$post_id = $this->create_post();
 
 		$this->assertErrorCode(
-			'mermaid_blocks_diagram_not_found',
+			'graphdraw_diagram_not_found',
 			$this->run_ability(
 				'get-diagram',
 				array(
@@ -312,7 +312,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 			)
 		);
 		$this->assertErrorCode(
-			'mermaid_blocks_post_not_found',
+			'graphdraw_post_not_found',
 			$this->run_ability(
 				'get-diagram',
 				array(
@@ -407,7 +407,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 	 */
 	public function test_does_not_insert_blank_code(): void {
 		$this->assertErrorCode(
-			'mermaid_blocks_empty_code',
+			'graphdraw_empty_code',
 			$this->run_ability(
 				'insert-diagram',
 				array(
@@ -519,7 +519,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 		);
 
 		$this->assertIsArray( $this->run_ability( 'update-diagram', $input ) );
-		$this->assertErrorCode( 'mermaid_blocks_diagram_changed', $this->run_ability( 'update-diagram', $input ) );
+		$this->assertErrorCode( 'graphdraw_diagram_changed', $this->run_ability( 'update-diagram', $input ) );
 	}
 
 	/**
@@ -536,7 +536,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 		)['hash'];
 
 		$this->assertErrorCode(
-			'mermaid_blocks_nothing_to_update',
+			'graphdraw_nothing_to_update',
 			$this->run_ability(
 				'update-diagram',
 				array(
@@ -579,8 +579,8 @@ class AbilitiesTest extends WP_UnitTestCase {
 		);
 		$revisions = array_values( wp_get_post_revisions( $post_id ) );
 
-		$this->assertStringNotContainsString( 'mermaid-blocks/diagram', get_post( $post_id )->post_content );
-		$this->assertStringContainsString( 'mermaid-blocks/diagram', $revisions[1]->post_content );
+		$this->assertStringNotContainsString( 'graphdraw/diagram', get_post( $post_id )->post_content );
+		$this->assertStringContainsString( 'graphdraw/diagram', $revisions[1]->post_content );
 	}
 
 	/**
@@ -590,7 +590,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 		$attachment_id = self::factory()->attachment->create();
 
 		$this->assertErrorCode(
-			'mermaid_blocks_invalid_post_type',
+			'graphdraw_invalid_post_type',
 			$this->run_ability(
 				'get-diagram',
 				array(
@@ -613,7 +613,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 		// Read as an editor, who reaches every post.
 		wp_set_current_user( self::$users['editor'] );
 
-		$hash = wp_get_ability( 'mermaid-blocks/get-diagram' )->execute(
+		$hash = wp_get_ability( 'graphdraw/get-diagram' )->execute(
 			array(
 				'post_id' => $post_id,
 				'index'   => 0,
@@ -726,7 +726,7 @@ class AbilitiesTest extends WP_UnitTestCase {
 
 		wp_trash_post( $post_id );
 
-		$this->assertErrorCode( 'mermaid_blocks_post_in_trash', $this->run_ability( 'update-diagram', $input ) );
+		$this->assertErrorCode( 'graphdraw_post_in_trash', $this->run_ability( 'update-diagram', $input ) );
 	}
 
 	/**
@@ -747,8 +747,8 @@ class AbilitiesTest extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
 		$this->assertErrorCode(
-			'mermaid_blocks_invalid_post_type',
-			wp_get_ability( 'mermaid-blocks/insert-diagram' )->execute(
+			'graphdraw_invalid_post_type',
+			wp_get_ability( 'graphdraw/insert-diagram' )->execute(
 				array(
 					'post_id' => $post_id,
 					'code'    => 'pie',

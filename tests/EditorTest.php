@@ -2,17 +2,17 @@
 /**
  * Tests of what the block editor gets.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Admin\Editor;
-use MermaidBlocks\Admin\SettingsPage;
-use MermaidBlocks\Assets;
-use MermaidBlocks\Files;
-use MermaidBlocks\Integrations\Block;
-use MermaidBlocks\Options;
+use GraphDraw\Admin\Editor;
+use GraphDraw\Admin\SettingsPage;
+use GraphDraw\Assets;
+use GraphDraw\Files;
+use GraphDraw\Integrations\Block;
+use GraphDraw\Options;
 use WP_Block_Type_Registry;
 use WP_UnitTestCase;
 
@@ -20,7 +20,7 @@ use WP_UnitTestCase;
  * Mermaid in the editor canvas, and what the editor is told about the themes
  * and the settings.
  *
- * @covers \MermaidBlocks\Admin\Editor
+ * @covers \GraphDraw\Admin\Editor
  */
 class EditorTest extends WP_UnitTestCase {
 
@@ -37,7 +37,7 @@ class EditorTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->editor = mermaid_blocks()->get( Editor::class );
+		$this->editor = graphdraw()->get( Editor::class );
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		delete_option( Options::RENDERER );
@@ -67,7 +67,7 @@ class EditorTest extends WP_UnitTestCase {
 		$handles = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME )->editor_script_handles;
 		$before  = (array) wp_scripts()->get_data( end( $handles ), 'before' );
 
-		$this->assertSame( 1, preg_match( '/^var mermaidBlocksEditorSettings = (\{.*\});$/s', (string) end( $before ), $matches ) );
+		$this->assertSame( 1, preg_match( '/^var graphDrawEditorSettings = (\{.*\});$/s', (string) end( $before ), $matches ) );
 
 		return json_decode( $matches[1], true );
 	}
@@ -77,7 +77,7 @@ class EditorTest extends WP_UnitTestCase {
 	 * diagrams, with the version of the file. Whatever the renderer is.
 	 */
 	public function test_tells_the_editor_where_the_math_module_is(): void {
-		$files = mermaid_blocks()->get( Files::class );
+		$files = graphdraw()->get( Files::class );
 		$asset = $files->get_build_asset( 'math' );
 
 		$this->assertNotEmpty( $asset['version'] );
@@ -95,9 +95,9 @@ class EditorTest extends WP_UnitTestCase {
 
 		$settings = $this->get_editor_settings();
 
-		$this->assertSame( mermaid_blocks()->themes()->get_all(), $settings['themes'] );
+		$this->assertSame( graphdraw()->themes()->get_all(), $settings['themes'] );
 		$this->assertSame( 'forest', $settings['theme'] );
-		$this->assertSame( mermaid_blocks()->get( SettingsPage::class )->get_url(), $settings['settingsUrl'] );
+		$this->assertSame( graphdraw()->get( SettingsPage::class )->get_url(), $settings['settingsUrl'] );
 	}
 
 	/**
@@ -110,13 +110,13 @@ class EditorTest extends WP_UnitTestCase {
 
 		update_option( Options::RENDERER, 'mermaid' );
 		$settings = $this->get_editor_settings();
-		$this->assertSame( mermaid_blocks()->themes()->get_all(), $settings['themes'] );
+		$this->assertSame( graphdraw()->themes()->get_all(), $settings['themes'] );
 		$this->assertSame( array(), $settings['themeAliases'] );
 
 		update_option( Options::RENDERER, 'pele' );
 		$settings = $this->get_editor_settings();
 		$this->assertSame( array( 'auto', 'default', 'dark' ), array_keys( $settings['themes'] ) );
-		$this->assertSame( mermaid_blocks()->themes()->get_aliases(), $settings['themeAliases'] );
+		$this->assertSame( graphdraw()->themes()->get_aliases(), $settings['themeAliases'] );
 		$this->assertSame( 'default', $settings['themeAliases']['forest'] );
 		$this->assertSame( 'forest', $settings['theme'] );
 		$this->assertArrayNotHasKey( 'rendererHelp', $settings );
@@ -173,13 +173,13 @@ class EditorTest extends WP_UnitTestCase {
 		update_option( Options::RENDERER, 'pele' );
 		$this->assertArrayNotHasKey( 'peleOptions', $this->get_editor_settings() );
 
-		add_filter( 'mermaid_blocks_pele_options', $filter );
+		add_filter( 'graphdraw_pele_options', $filter );
 		$this->assertSame( array( 'padding' => 12 ), $this->get_editor_settings()['peleOptions'] );
 
 		update_option( Options::RENDERER, 'mermaid' );
 		$this->assertArrayNotHasKey( 'peleOptions', $this->get_editor_settings() );
 
-		remove_filter( 'mermaid_blocks_pele_options', $filter );
+		remove_filter( 'graphdraw_pele_options', $filter );
 	}
 
 	/**
@@ -193,14 +193,14 @@ class EditorTest extends WP_UnitTestCase {
 
 		$this->assertArrayNotHasKey( 'iconPacks', $this->get_editor_settings() );
 
-		add_filter( 'mermaid_blocks_icon_packs', $filter );
+		add_filter( 'graphdraw_icon_packs', $filter );
 
 		foreach ( array( 'mermaid', 'pele' ) as $renderer ) {
 			update_option( Options::RENDERER, $renderer );
 			$this->assertSame( array( 'logos' => 'https://example.com/logos.json' ), $this->get_editor_settings()['iconPacks'], $renderer );
 		}
 
-		remove_filter( 'mermaid_blocks_icon_packs', $filter );
+		remove_filter( 'graphdraw_icon_packs', $filter );
 	}
 
 	/**
@@ -225,7 +225,7 @@ class EditorTest extends WP_UnitTestCase {
 	 */
 	public function test_the_block_loads_only_the_chosen_renderer_in_the_editor(): void {
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
-		$metadata   = wp_json_file_decode( mermaid_blocks()->get( Files::class )->get_build_path( 'block.json' ), array( 'associative' => true ) );
+		$metadata   = wp_json_file_decode( graphdraw()->get( Files::class )->get_build_path( 'block.json' ), array( 'associative' => true ) );
 
 		$this->assertNotContains( Assets::MERMAID, (array) $metadata['editorScript'] );
 		$this->assertNotContains( Assets::PELE, (array) $metadata['editorScript'] );
@@ -252,7 +252,7 @@ class EditorTest extends WP_UnitTestCase {
 		$filter = static function () {
 			return 'pele';
 		};
-		add_filter( 'mermaid_blocks_renderer', $filter );
+		add_filter( 'graphdraw_renderer', $filter );
 
 		$this->editor->add_renderer_to_block();
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( Block::NAME );
@@ -260,7 +260,7 @@ class EditorTest extends WP_UnitTestCase {
 		$this->assertContains( Assets::PELE, $block_type->editor_script_handles );
 		$this->assertNotContains( Assets::MERMAID, $block_type->editor_script_handles );
 
-		remove_filter( 'mermaid_blocks_renderer', $filter );
+		remove_filter( 'graphdraw_renderer', $filter );
 	}
 
 	/**

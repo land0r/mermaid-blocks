@@ -2,14 +2,14 @@
 /**
  * Code marked as Mermaid, shown as diagrams.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Integrations;
+namespace GraphDraw\Integrations;
 
-use MermaidBlocks\Diagram;
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Options;
+use GraphDraw\Diagram;
+use GraphDraw\Hookable;
+use GraphDraw\Options;
 use WP_HTML_Tag_Processor;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -165,7 +165,7 @@ final class CodeBlocks implements Hookable {
 		 * @param string $code The Mermaid source.
 		 * @param string $html The `<pre>` element the code is in.
 		 */
-		if ( ! apply_filters( 'mermaid_blocks_show_code_as_diagram', true, $code, $html ) ) {
+		if ( ! apply_filters( 'graphdraw_show_code_as_diagram', true, $code, $html ) ) {
 			return null;
 		}
 

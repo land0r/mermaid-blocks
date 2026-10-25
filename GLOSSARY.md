@@ -1,4 +1,4 @@
-# Mermaid Blocks
+# GraphDraw
 
 Diagrams written in Mermaid, shown on WordPress pages: in posts through the block, and through the other integrations.
 

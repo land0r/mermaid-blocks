@@ -2,17 +2,17 @@
 /**
  * What the block editor needs for the diagram block.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Admin;
+namespace GraphDraw\Admin;
 
-use MermaidBlocks\Assets;
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Integrations\Block;
-use MermaidBlocks\Options;
-use MermaidBlocks\RendererSettings;
-use MermaidBlocks\Themes;
+use GraphDraw\Assets;
+use GraphDraw\Hookable;
+use GraphDraw\Integrations\Block;
+use GraphDraw\Options;
+use GraphDraw\RendererSettings;
+use GraphDraw\Themes;
 use WP_Block_Type_Registry;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -155,7 +155,7 @@ final class Editor implements Hookable {
 		foreach ( array_diff( $block_type->editor_script_handles, Assets::LIBRARIES ) as $handle ) {
 			wp_add_inline_script(
 				$handle,
-				'var mermaidBlocksEditorSettings = ' . wp_json_encode( $settings ) . ';',
+				'var graphDrawEditorSettings = ' . wp_json_encode( $settings ) . ';',
 				'before'
 			);
 		}

@@ -43,7 +43,7 @@ let draw;
 let getPngBlob;
 
 const SVG = '<svg viewBox="0 0 300 150"><g></g></svg>';
-const PATH = '/mermaid-blocks/v1/posts/7/images';
+const PATH = '/graphdraw/v1/posts/7/images';
 // The editor says which renderer it draws with.
 const QUERY = '?renderer=mermaid';
 const LIST = PATH + QUERY;
@@ -176,7 +176,7 @@ describe( 'drawImage', () => {
 			'graph TD',
 			'dark',
 			expect.any( window.HTMLElement ),
-			expect.stringMatching( /^mermaid-blocks-image-\d+$/ )
+			expect.stringMatching( /^graphdraw-image-\d+$/ )
 		);
 		expect( blob ).toEqual( { png: SVG, background: '#333' } );
 	} );
@@ -478,7 +478,7 @@ describe( 'watchPost', () => {
 
 		expect( requests.map( ( request ) => request.path ) ).toEqual( [
 			LIST,
-			`/mermaid-blocks/v1/posts/8/images${ QUERY }`,
+			`/graphdraw/v1/posts/8/images${ QUERY }`,
 		] );
 	} );
 

@@ -2,16 +2,16 @@
 /**
  * The Mermaid Diagram block.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Integrations;
+namespace GraphDraw\Integrations;
 
-use MermaidBlocks\Diagram;
-use MermaidBlocks\DiagramTypes;
-use MermaidBlocks\Files;
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Images\SavedImages;
+use GraphDraw\Diagram;
+use GraphDraw\DiagramTypes;
+use GraphDraw\Files;
+use GraphDraw\Hookable;
+use GraphDraw\Images\SavedImages;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -27,7 +27,7 @@ final class Block implements Hookable {
 	/**
 	 * The name of the block.
 	 */
-	const NAME = 'mermaid-blocks/diagram';
+	const NAME = 'graphdraw/diagram';
 
 	/**
 	 * The plugin's files, to find the block's metadata.
@@ -121,7 +121,7 @@ final class Block implements Hookable {
 		$image = $this->images->find( get_the_ID(), $code, $theme );
 
 		$wrapper = array(
-			'class'              => $image ? 'mermaid-blocks-diagram has-image' : 'mermaid-blocks-diagram',
+			'class'              => $image ? 'graphdraw-diagram has-image' : 'graphdraw-diagram',
 			// The block's own theme, or else the site's.
 			'data-mermaid-theme' => $this->diagram->get_theme( $theme ),
 		);

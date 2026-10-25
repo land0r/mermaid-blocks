@@ -2,10 +2,10 @@
 /**
  * The scripts and styles of diagrams, from `build/`.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,11 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * - `mermaid-js` and `pele-js`: the Mermaid and Pele libraries, for the
  *   editor, which loads the site's renderer and not the other.
- * - `mermaid-blocks-diagram` (script): renders each diagram on the page when
+ * - `graphdraw-diagram` (script): renders each diagram on the page when
  *   it scrolls into view, and adds its controls. It loads Mermaid's ES module
  *   build from `build/mermaid/` on demand, so Mermaid isn't one of its
  *   dependencies.
- * - `mermaid-blocks-diagram` (style): hides the source until it renders, and
+ * - `graphdraw-diagram` (style): hides the source until it renders, and
  *   styles the controls.
  */
 final class Assets implements Hookable {
@@ -47,7 +47,7 @@ final class Assets implements Hookable {
 	/**
 	 * The handle of the script, and of the style, that render diagrams.
 	 */
-	const DIAGRAM = 'mermaid-blocks-diagram';
+	const DIAGRAM = 'graphdraw-diagram';
 
 	/**
 	 * The plugin's files, to find those of the build.
@@ -160,7 +160,7 @@ final class Assets implements Hookable {
 	public function add_settings(): void {
 		// Once: the script is enqueued by one action or the other, on most requests by both.
 		foreach ( array_filter( (array) wp_scripts()->get_data( self::DIAGRAM, 'before' ) ) as $before ) {
-			if ( 0 === strpos( (string) $before, 'var mermaidBlocksSettings = ' ) ) {
+			if ( 0 === strpos( (string) $before, 'var graphDrawSettings = ' ) ) {
 				return;
 			}
 		}
@@ -176,24 +176,24 @@ final class Assets implements Hookable {
 			'peleUrl'     => add_query_arg( 'ver', $pele['version'], $this->files->get_build_url( 'pele/lazy.js' ) ),
 			'controlsUrl' => add_query_arg( 'ver', $controls['version'], $this->files->get_build_url( 'controls.js' ) ),
 			'i18n'        => array(
-				'controls'       => __( 'Diagram controls', 'mermaid-blocks' ),
-				'zoomIn'         => __( 'Zoom in', 'mermaid-blocks' ),
-				'zoomOut'        => __( 'Zoom out', 'mermaid-blocks' ),
-				'resetZoom'      => __( 'Reset zoom', 'mermaid-blocks' ),
-				'downloadSvg'    => __( 'Download as SVG', 'mermaid-blocks' ),
-				'downloadPng'    => __( 'Download as PNG', 'mermaid-blocks' ),
-				'downloadError'  => __( 'The file could not be created.', 'mermaid-blocks' ),
-				'copyCode'       => __( 'Copy code', 'mermaid-blocks' ),
-				'copied'         => __( 'Copied.', 'mermaid-blocks' ),
-				'copyError'      => __( 'The code could not be copied.', 'mermaid-blocks' ),
-				'fullscreen'     => __( 'View fullscreen', 'mermaid-blocks' ),
-				'exitFullscreen' => __( 'Exit fullscreen', 'mermaid-blocks' ),
+				'controls'       => __( 'Diagram controls', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'zoomIn'         => __( 'Zoom in', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'zoomOut'        => __( 'Zoom out', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'resetZoom'      => __( 'Reset zoom', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'downloadSvg'    => __( 'Download as SVG', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'downloadPng'    => __( 'Download as PNG', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'downloadError'  => __( 'The file could not be created.', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'copyCode'       => __( 'Copy code', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'copied'         => __( 'Copied.', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'copyError'      => __( 'The code could not be copied.', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'fullscreen'     => __( 'View fullscreen', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'exitFullscreen' => __( 'Exit fullscreen', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			),
 		);
 
 		wp_add_inline_script(
 			self::DIAGRAM,
-			'var mermaidBlocksSettings = ' . wp_json_encode( $this->renderer_settings->add_to( $settings ) ) . ';',
+			'var graphDrawSettings = ' . wp_json_encode( $this->renderer_settings->add_to( $settings ) ) . ';',
 			'before'
 		);
 	}

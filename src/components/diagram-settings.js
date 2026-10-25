@@ -26,7 +26,7 @@ const THEME_OPTIONS = [
 		value: '',
 		label: sprintf(
 			/* translators: %s: name of the theme set for the whole site, such as "Automatic" or "Forest". */
-			__( 'Site default (%s)', 'mermaid-blocks' ),
+			__( 'Site default (%s)', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			THEME_LABELS[ getShownTheme( SITE_THEME ) ] || SITE_THEME
 		),
 	},
@@ -38,15 +38,30 @@ const THEME_OPTIONS = [
 
 // The controls visitors may get, by the attribute that turns each one on.
 const VISITOR_CONTROLS = [
-	{ attribute: 'zoom', label: __( 'Zoom controls', 'mermaid-blocks' ) },
+	{
+		attribute: 'zoom',
+		label: __( 'Zoom controls', 'graphdraw-mermaid-diagrams-flowcharts' ),
+	},
 	{
 		attribute: 'download',
-		label: __( 'Download buttons', 'mermaid-blocks' ),
+		label: __(
+			'Download buttons',
+			'graphdraw-mermaid-diagrams-flowcharts'
+		),
 	},
-	{ attribute: 'copy', label: __( 'Copy code button', 'mermaid-blocks' ) },
+	{
+		attribute: 'copy',
+		label: __(
+			'Copy code button',
+			'graphdraw-mermaid-diagrams-flowcharts'
+		),
+	},
 	{
 		attribute: 'fullscreen',
-		label: __( 'Fullscreen button', 'mermaid-blocks' ),
+		label: __(
+			'Fullscreen button',
+			'graphdraw-mermaid-diagrams-flowcharts'
+		),
 	},
 ];
 
@@ -64,16 +79,24 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 
 	return (
 		<InspectorControls>
-			<PanelBody title={ __( 'Settings', 'mermaid-blocks' ) }>
+			<PanelBody
+				title={ __(
+					'Settings',
+					'graphdraw-mermaid-diagrams-flowcharts'
+				) }
+			>
 				<SelectControl
 					__nextHasNoMarginBottom
 					__next40pxDefaultSize
-					label={ __( 'Theme', 'mermaid-blocks' ) }
+					label={ __(
+						'Theme',
+						'graphdraw-mermaid-diagrams-flowcharts'
+					) }
 					help={
 						<>
 							{ __(
 								'Automatic turns dark on dark backgrounds. A theme set in the code overrides this.',
-								'mermaid-blocks'
+								'graphdraw-mermaid-diagrams-flowcharts'
 							) }
 							{ SETTINGS_URL && (
 								<>
@@ -81,7 +104,7 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 									<ExternalLink href={ SETTINGS_URL }>
 										{ __(
 											'Change the site default',
-											'mermaid-blocks'
+											'graphdraw-mermaid-diagrams-flowcharts'
 										) }
 									</ExternalLink>
 								</>
@@ -95,11 +118,16 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 					}
 				/>
 			</PanelBody>
-			<PanelBody title={ __( 'Visitor controls', 'mermaid-blocks' ) }>
-				<p className="mermaid-blocks-panel-help">
+			<PanelBody
+				title={ __(
+					'Visitor controls',
+					'graphdraw-mermaid-diagrams-flowcharts'
+				) }
+			>
+				<p className="graphdraw-panel-help">
 					{ __(
 						'Buttons on the published diagram.',
-						'mermaid-blocks'
+						'graphdraw-mermaid-diagrams-flowcharts'
 					) }
 				</p>
 				{ VISITOR_CONTROLS.map( ( { attribute, label } ) => (
@@ -114,14 +142,22 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 					/>
 				) ) }
 			</PanelBody>
-			<PanelBody title={ __( 'Accessibility', 'mermaid-blocks' ) }>
+			<PanelBody
+				title={ __(
+					'Accessibility',
+					'graphdraw-mermaid-diagrams-flowcharts'
+				) }
+			>
 				<TextControl
 					__nextHasNoMarginBottom
 					__next40pxDefaultSize
-					label={ __( 'Title', 'mermaid-blocks' ) }
+					label={ __(
+						'Title',
+						'graphdraw-mermaid-diagrams-flowcharts'
+					) }
 					help={ __(
 						'A short name, read by screen readers.',
-						'mermaid-blocks'
+						'graphdraw-mermaid-diagrams-flowcharts'
 					) }
 					value={ accTitle || '' }
 					onChange={ ( value ) =>
@@ -130,10 +166,13 @@ export default function DiagramSettings( { attributes, setAttributes } ) {
 				/>
 				<TextareaControl
 					__nextHasNoMarginBottom
-					label={ __( 'Description', 'mermaid-blocks' ) }
+					label={ __(
+						'Description',
+						'graphdraw-mermaid-diagrams-flowcharts'
+					) }
 					help={ __(
 						'What the diagram shows, read by screen readers.',
-						'mermaid-blocks'
+						'graphdraw-mermaid-diagrams-flowcharts'
 					) }
 					value={ accDescr || '' }
 					onChange={ ( value ) =>

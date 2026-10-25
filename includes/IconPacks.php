@@ -2,17 +2,17 @@
 /**
  * The icon packs a site registers.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Reads the `mermaid_blocks_icon_packs` filter, and keeps the packs that have
+ * Reads the `graphdraw_icon_packs` filter, and keeps the packs that have
  * a valid name and URL. The front end and the editor are told the result, with
  * either renderer: both draw the icons of these packs, and only these. Diagram
  * authors never register a pack.
@@ -40,7 +40,7 @@ final class IconPacks {
 		 * Example:
 		 *
 		 *     add_filter(
-		 *         'mermaid_blocks_icon_packs',
+		 *         'graphdraw_icon_packs',
 		 *         function ( $packs ) {
 		 *             $packs['logos'] = 'https://cdn.jsdelivr.net/npm/@iconify-json/logos@1.2.10/icons.json';
 		 *
@@ -50,7 +50,7 @@ final class IconPacks {
 		 *
 		 * @param array $packs The URL of each pack's file, by name. Empty by default.
 		 */
-		$filtered = apply_filters( 'mermaid_blocks_icon_packs', array() );
+		$filtered = apply_filters( 'graphdraw_icon_packs', array() );
 
 		return is_array( $filtered ) ? $this->sanitize( $filtered ) : array();
 	}

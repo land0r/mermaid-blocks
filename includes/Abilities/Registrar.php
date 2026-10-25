@@ -2,13 +2,13 @@
 /**
  * Registers the plugin's abilities.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
-use MermaidBlocks\Container;
-use MermaidBlocks\Hookable;
+use GraphDraw\Container;
+use GraphDraw\Hookable;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -27,7 +27,7 @@ final class Registrar implements Hookable {
 	/**
 	 * The slug of the abilities' category.
 	 */
-	const CATEGORY = 'mermaid-blocks';
+	const CATEGORY = 'graphdraw';
 
 	/**
 	 * The classes of the abilities, in the order they are registered. A new
@@ -114,8 +114,8 @@ final class Registrar implements Hookable {
 	 */
 	public function get_category_args(): array {
 		return array(
-			'label'       => __( 'Mermaid diagrams', 'mermaid-blocks' ),
-			'description' => __( 'Read, create, change and delete the Mermaid diagrams in posts.', 'mermaid-blocks' ),
+			'label'       => __( 'Mermaid diagrams', 'graphdraw-mermaid-diagrams-flowcharts' ),
+			'description' => __( 'Read, create, change and delete the Mermaid diagrams in posts.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 		);
 	}
 }

@@ -177,7 +177,7 @@ export function createPeleRenderer(
 				.catch( ( error ) => {
 					// eslint-disable-next-line no-console
 					console.error(
-						'Mermaid Blocks: failed to load the math module.',
+						'GraphDraw: failed to load the math module.',
 						error
 					);
 

@@ -188,7 +188,7 @@ function render( attributes, isSelected = false ) {
 }
 
 const codeField = () =>
-	container.querySelector( '.mermaid-blocks-code-input__textarea' );
+	container.querySelector( '.graphdraw-code-input__textarea' );
 
 /**
  * Types in a field the way the browser reports it to React.
@@ -262,7 +262,7 @@ describe( 'the code', () => {
 	it( 'links to the syntax of Mermaid in its help', () => {
 		render( { code: CODE }, true );
 
-		expect( container.querySelector( '.mermaid-blocks-code a' ).href ).toBe(
+		expect( container.querySelector( '.graphdraw-code a' ).href ).toBe(
 			'https://mermaid.js.org/intro/syntax-reference.html'
 		);
 	} );
@@ -270,20 +270,18 @@ describe( 'the code', () => {
 	it( 'comes after the preview, so the diagram that was clicked stays put', () => {
 		render( { code: CODE }, true );
 
-		const preview = container.querySelector( '.mermaid-blocks-preview' );
+		const preview = container.querySelector( '.graphdraw-preview' );
 
-		expect( preview.nextElementSibling.className ).toBe(
-			'mermaid-blocks-code'
-		);
+		expect( preview.nextElementSibling.className ).toBe( 'graphdraw-code' );
 	} );
 
 	it( 'shows when there is no code yet', () => {
 		render( {} );
 
 		expect( codeField() ).not.toBeNull();
-		expect(
-			container.querySelector( '.mermaid-blocks-preview' ).hidden
-		).toBe( true );
+		expect( container.querySelector( '.graphdraw-preview' ).hidden ).toBe(
+			true
+		);
 	} );
 
 	it( 'shows when it has an error', () => {

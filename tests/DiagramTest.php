@@ -2,26 +2,26 @@
 /**
  * Tests of the diagram markup.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Diagram;
-use MermaidBlocks\Integrations\Shortcode;
+use GraphDraw\Diagram;
+use GraphDraw\Integrations\Shortcode;
 use WP_UnitTestCase;
 
 /**
  * The markup of a diagram, with and without a saved image.
  *
- * @covers \MermaidBlocks\Diagram
+ * @covers \GraphDraw\Diagram
  */
 class DiagramTest extends WP_UnitTestCase {
 
 	/**
 	 * The source of a diagram, as it is output.
 	 */
-	const SOURCE = '<pre class="mermaid-blocks-diagram__source">A&#91;x&#93; --&gt; B</pre>';
+	const SOURCE = '<pre class="graphdraw-diagram__source">A&#91;x&#93; --&gt; B</pre>';
 
 	/**
 	 * The diagram markup.
@@ -36,7 +36,7 @@ class DiagramTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->diagram = mermaid_blocks()->diagram();
+		$this->diagram = graphdraw()->diagram();
 	}
 
 	/**
@@ -45,12 +45,12 @@ class DiagramTest extends WP_UnitTestCase {
 	 */
 	public function test_wraps_the_source(): void {
 		$this->assertSame(
-			'<div class="mermaid-blocks-diagram">' . self::SOURCE . '</div>',
-			$this->diagram->wrap( 'class="mermaid-blocks-diagram"', 'A[x] --> B' )
+			'<div class="graphdraw-diagram">' . self::SOURCE . '</div>',
+			$this->diagram->wrap( 'class="graphdraw-diagram"', 'A[x] --> B' )
 		);
 		$this->assertSame(
-			'<figure class="mermaid-blocks-diagram">' . self::SOURCE . '<figcaption class="mermaid-blocks-diagram__caption wp-element-caption">A caption</figcaption></figure>',
-			$this->diagram->wrap( 'class="mermaid-blocks-diagram"', 'A[x] --> B', 'A caption', '', true )
+			'<figure class="graphdraw-diagram">' . self::SOURCE . '<figcaption class="graphdraw-diagram__caption wp-element-caption">A caption</figcaption></figure>',
+			$this->diagram->wrap( 'class="graphdraw-diagram"', 'A[x] --> B', 'A caption', '', true )
 		);
 	}
 
@@ -62,12 +62,12 @@ class DiagramTest extends WP_UnitTestCase {
 		$image = '<img src="https://example.org/a.png" alt="Diagram" />';
 
 		$this->assertSame(
-			'<div class="mermaid-blocks-diagram has-image"><noscript>' . $image . '</noscript>' . self::SOURCE . '</div>',
-			$this->diagram->wrap( 'class="mermaid-blocks-diagram has-image"', 'A[x] --> B', '', $image )
+			'<div class="graphdraw-diagram has-image"><noscript>' . $image . '</noscript>' . self::SOURCE . '</div>',
+			$this->diagram->wrap( 'class="graphdraw-diagram has-image"', 'A[x] --> B', '', $image )
 		);
 		$this->assertSame(
-			'<figure class="mermaid-blocks-diagram has-image">' . $image . '<figcaption class="mermaid-blocks-diagram__caption wp-element-caption">A caption</figcaption></figure>',
-			$this->diagram->wrap( 'class="mermaid-blocks-diagram has-image"', 'A[x] --> B', 'A caption', $image, true )
+			'<figure class="graphdraw-diagram has-image">' . $image . '<figcaption class="graphdraw-diagram__caption wp-element-caption">A caption</figcaption></figure>',
+			$this->diagram->wrap( 'class="graphdraw-diagram has-image"', 'A[x] --> B', 'A caption', $image, true )
 		);
 	}
 
@@ -77,13 +77,13 @@ class DiagramTest extends WP_UnitTestCase {
 	 */
 	public function test_builds_the_image(): void {
 		$image = array(
-			'url'    => 'https://example.org/uploads/mermaid-blocks/a b"><script>.png',
+			'url'    => 'https://example.org/uploads/graphdraw/a b"><script>.png',
 			'width'  => '300',
 			'height' => 150.7,
 		);
 
 		$this->assertSame(
-			'<img class="mermaid-blocks-diagram__image" src="https://example.org/uploads/mermaid-blocks/a%20bscript.png" alt="Diagram" width="300" height="150" loading="lazy" decoding="async" />',
+			'<img class="graphdraw-diagram__image" src="https://example.org/uploads/graphdraw/a%20bscript.png" alt="Diagram" width="300" height="150" loading="lazy" decoding="async" />',
 			$this->diagram->get_image_markup( $image, '  ' )
 		);
 		$this->assertStringContainsString( ' alt="&quot;&gt;&lt;script&gt; [gallery] &amp; more" ', $this->diagram->get_image_markup( $image, '"><script> [gallery] & more' ) );
@@ -102,7 +102,7 @@ class DiagramTest extends WP_UnitTestCase {
 			),
 			'The [gallery] step'
 		);
-		$markup = do_shortcode( $this->diagram->wrap( 'class="mermaid-blocks-diagram has-image"', 'A --> B', '', $image ) );
+		$markup = do_shortcode( $this->diagram->wrap( 'class="graphdraw-diagram has-image"', 'A --> B', '', $image ) );
 
 		$this->assertStringContainsString( ' alt="The &#91;gallery&#93; step" ', $markup );
 	}
@@ -141,7 +141,7 @@ class DiagramTest extends WP_UnitTestCase {
 		$attributes = array( 'class' => 'alignwide' ) + $this->diagram->get_data_attributes( array( 'zoom', 'fullscreen' ), 'A "title"' );
 
 		$this->assertSame(
-			'<div class="mermaid-blocks-diagram alignwide" data-mermaid-controls="zoom fullscreen" data-mermaid-title="A &quot;title&quot;" data-mermaid-theme="auto">' . self::SOURCE . '</div>',
+			'<div class="graphdraw-diagram alignwide" data-mermaid-controls="zoom fullscreen" data-mermaid-title="A &quot;title&quot;" data-mermaid-theme="auto">' . self::SOURCE . '</div>',
 			$this->diagram->get_markup( 'A[x] --> B', $attributes )
 		);
 	}
@@ -181,7 +181,7 @@ class DiagramTest extends WP_UnitTestCase {
 	 */
 	public function test_renders_settings_as_the_shortcode_does(): void {
 		$code      = "flowchart LR\nA[\"Tom & Jerry\"] --> B{x < y}\nB --> C[gallery]";
-		$shortcode = mermaid_blocks()->get( Shortcode::class );
+		$shortcode = graphdraw()->get( Shortcode::class );
 
 		// As WordPress calls it, with the code as the editors store it. Not through do_shortcode(), which decodes the brackets of its output.
 		$this->assertSame(
@@ -229,7 +229,7 @@ class DiagramTest extends WP_UnitTestCase {
 		);
 
 		$this->assertSame(
-			'<figure class="mermaid-blocks-diagram alignwide" data-mermaid-theme="dark" data-mermaid-controls="copy fullscreen">' . self::SOURCE . '<figcaption class="mermaid-blocks-diagram__caption wp-element-caption">Checkout</figcaption></figure>',
+			'<figure class="graphdraw-diagram alignwide" data-mermaid-theme="dark" data-mermaid-controls="copy fullscreen">' . self::SOURCE . '<figcaption class="graphdraw-diagram__caption wp-element-caption">Checkout</figcaption></figure>',
 			$markup
 		);
 	}
@@ -242,7 +242,7 @@ class DiagramTest extends WP_UnitTestCase {
 		$this->assertSame( '', $this->diagram->render( array() ) );
 		$this->assertSame( '', $this->diagram->render( array( 'code' => " \n " ) ) );
 		$this->assertSame(
-			'<div data-mermaid-theme="auto" class="mermaid-blocks-diagram">' . self::SOURCE . '</div>',
+			'<div data-mermaid-theme="auto" class="graphdraw-diagram">' . self::SOURCE . '</div>',
 			$this->diagram->render(
 				array(
 					'code'  => 'A[x] --> B',

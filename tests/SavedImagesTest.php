@@ -2,14 +2,14 @@
 /**
  * Tests of the saved images.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Admin\SettingsPage;
-use MermaidBlocks\Images\SavedImages;
-use MermaidBlocks\Options;
+use GraphDraw\Admin\SettingsPage;
+use GraphDraw\Images\SavedImages;
+use GraphDraw\Options;
 use WP_Error;
 use WP_UnitTestCase;
 
@@ -19,7 +19,7 @@ require_once __DIR__ . '/ImageHelpers.php';
  * The images of diagrams: what is accepted as one, where it is kept, and
  * when it is found again.
  *
- * @covers \MermaidBlocks\Images\SavedImages
+ * @covers \GraphDraw\Images\SavedImages
  */
 class SavedImagesTest extends WP_UnitTestCase {
 
@@ -43,7 +43,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->images = mermaid_blocks()->get( SavedImages::class );
+		$this->images = graphdraw()->get( SavedImages::class );
 
 		update_option( Options::SAVE_IMAGES, 1 );
 	}
@@ -136,7 +136,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 		$key   = $this->images->get_key( self::CODE );
 		$image = $this->images->save( $post, $key, 'auto', $this->png() );
 
-		$this->assertSame( sprintf( 'mermaid-blocks/%d-%s-pele-auto.png', $post->ID, $key ), $image['file'] );
+		$this->assertSame( sprintf( 'graphdraw/%d-%s-pele-auto.png', $post->ID, $key ), $image['file'] );
 		$this->assertSame( 'pele', $image['renderer'] );
 		$this->assertSame( 'pele', $this->images->get_all( $post->ID )[ $key ]['renderer'] );
 		$this->assertFileExists( $this->get_upload_path( $image['file'] ) );
@@ -214,7 +214,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 		$post = $this->create_post( array( $this->diagram_block( self::CODE ) ) );
 		$key  = $this->images->get_key( self::CODE );
 		$png  = $this->png( 600, 300 );
-		$file = sprintf( 'mermaid-blocks/%d-%s-auto.png', $post->ID, $key );
+		$file = sprintf( 'graphdraw/%d-%s-auto.png', $post->ID, $key );
 
 		$image = $this->images->save( $post, $key, 'auto', $png );
 
@@ -245,7 +245,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 
 		$this->assertSame(
 			array(
-				'url'    => sprintf( '%s/mermaid-blocks/%d-%s-auto.png', $uploads['baseurl'], $post->ID, $this->images->get_key( self::CODE ) ),
+				'url'    => sprintf( '%s/graphdraw/%d-%s-auto.png', $uploads['baseurl'], $post->ID, $this->images->get_key( self::CODE ) ),
 				'width'  => 301,
 				'height' => 150,
 			),
@@ -339,10 +339,10 @@ class SavedImagesTest extends WP_UnitTestCase {
 		$result = $this->images->save( $post, $this->images->get_key( self::CODE ), 'auto', $content );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'mermaid_blocks_image_invalid', $result->get_error_code() );
+		$this->assertSame( 'graphdraw_image_invalid', $result->get_error_code() );
 		$this->assertSame( 400, $result->get_error_data()['status'] );
 		$this->assertSame( array(), $this->images->get_all( $post->ID ) );
-		$this->assertSame( array(), glob( $this->get_upload_path( 'mermaid-blocks/*' ) ) );
+		$this->assertSame( array(), glob( $this->get_upload_path( 'graphdraw/*' ) ) );
 	}
 
 	/**
@@ -363,7 +363,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 			$result = $this->images->save( $post, $key, 'auto', $png );
 
 			$this->assertInstanceOf( WP_Error::class, $result, $name );
-			$this->assertSame( 'mermaid_blocks_image_too_large', $result->get_error_code(), $name );
+			$this->assertSame( 'graphdraw_image_too_large', $result->get_error_code(), $name );
 			$this->assertSame( 413, $result->get_error_data()['status'], $name );
 		}
 
@@ -382,12 +382,12 @@ class SavedImagesTest extends WP_UnitTestCase {
 			$result = $this->images->save( $post, $bad_key, 'auto', $this->png() );
 
 			$this->assertInstanceOf( WP_Error::class, $result );
-			$this->assertSame( 'mermaid_blocks_image_invalid', $result->get_error_code() );
+			$this->assertSame( 'graphdraw_image_invalid', $result->get_error_code() );
 		}
 
 		$image = $this->images->save( $post, $key, '../../Evil theme.php', $this->png() );
 
-		$this->assertSame( sprintf( 'mermaid-blocks/%d-%s-evilthemephp.png', $post->ID, $key ), $image['file'] );
+		$this->assertSame( sprintf( 'graphdraw/%d-%s-evilthemephp.png', $post->ID, $key ), $image['file'] );
 		$this->assertFileExists( $this->get_upload_path( $image['file'] ) );
 	}
 
@@ -456,8 +456,8 @@ class SavedImagesTest extends WP_UnitTestCase {
 		$post = $this->create_post( array( $this->diagram_block( self::CODE ) ) );
 		$key  = $this->images->get_key( self::CODE );
 
-		wp_mkdir_p( $this->get_upload_path( 'mermaid-blocks/deeper' ) );
-		$files = array( 'outside.png', 'mermaid-blocks/deeper/inside.png', 'mermaid-blocks/notes.txt' );
+		wp_mkdir_p( $this->get_upload_path( 'graphdraw/deeper' ) );
+		$files = array( 'outside.png', 'graphdraw/deeper/inside.png', 'graphdraw/notes.txt' );
 		foreach ( $files as $file ) {
 			file_put_contents( $this->get_upload_path( $file ), 'kept' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- A file of the test.
 		}
@@ -473,28 +473,28 @@ class SavedImagesTest extends WP_UnitTestCase {
 
 		// The file of another key, of another post, and one with a second extension.
 		$others = array(
-			sprintf( 'mermaid-blocks/%d-%s-auto.png', $post->ID, $key ),
-			sprintf( 'mermaid-blocks/%d-%s-auto.png', $post->ID + 1, $this->images->get_key( 'i' ) ),
-			sprintf( 'mermaid-blocks/%d-%s-auto.php.png', $post->ID, $this->images->get_key( 'j' ) ),
+			sprintf( 'graphdraw/%d-%s-auto.png', $post->ID, $key ),
+			sprintf( 'graphdraw/%d-%s-auto.png', $post->ID + 1, $this->images->get_key( 'i' ) ),
+			sprintf( 'graphdraw/%d-%s-auto.php.png', $post->ID, $this->images->get_key( 'j' ) ),
 		);
 
 		update_post_meta(
 			$post->ID,
 			SavedImages::META_KEY,
 			array(
-				$key                          => $entry( 'mermaid-blocks/../outside.png' ),
+				$key                          => $entry( 'graphdraw/../outside.png' ),
 				$this->images->get_key( 'h' ) => $entry( $others[0] ),
 				$this->images->get_key( 'i' ) => $entry( $others[1] ),
 				$this->images->get_key( 'j' ) => $entry( $others[2] ),
 				$this->images->get_key( 'a' ) => $entry( 'outside.png' ),
-				$this->images->get_key( 'b' ) => $entry( 'mermaid-blocks/deeper/inside.png' ),
-				$this->images->get_key( 'c' ) => $entry( 'mermaid-blocks/notes.txt' ),
-				$this->images->get_key( 'd' ) => $entry( 'https://example.com/mermaid-blocks/x.png' ),
-				$this->images->get_key( 'e' ) => $entry( array( 'mermaid-blocks/x.png' ) ),
-				$this->images->get_key( 'f' ) => 'mermaid-blocks/x.png',
-				$this->images->get_key( 'g' ) => array( 'file' => 'mermaid-blocks/x.png' ),
-				'not-a-key'                   => $entry( 'mermaid-blocks/x.png' ),
-				7                             => $entry( 'mermaid-blocks/x.png' ),
+				$this->images->get_key( 'b' ) => $entry( 'graphdraw/deeper/inside.png' ),
+				$this->images->get_key( 'c' ) => $entry( 'graphdraw/notes.txt' ),
+				$this->images->get_key( 'd' ) => $entry( 'https://example.com/graphdraw/x.png' ),
+				$this->images->get_key( 'e' ) => $entry( array( 'graphdraw/x.png' ) ),
+				$this->images->get_key( 'f' ) => 'graphdraw/x.png',
+				$this->images->get_key( 'g' ) => array( 'file' => 'graphdraw/x.png' ),
+				'not-a-key'                   => $entry( 'graphdraw/x.png' ),
+				7                             => $entry( 'graphdraw/x.png' ),
 			)
 		);
 
@@ -508,12 +508,12 @@ class SavedImagesTest extends WP_UnitTestCase {
 			$this->assertFileExists( $this->get_upload_path( $file ), $file );
 		}
 
-		update_post_meta( $post->ID, SavedImages::META_KEY, 'mermaid-blocks/x.png' );
+		update_post_meta( $post->ID, SavedImages::META_KEY, 'graphdraw/x.png' );
 		$this->assertSame( array(), $this->images->get_all( $post->ID ) );
 
 		// Files are removed after each test, directories are not.
-		wp_delete_file( $this->get_upload_path( 'mermaid-blocks/deeper/inside.png' ) );
-		rmdir( $this->get_upload_path( 'mermaid-blocks/deeper' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- A directory of the test.
+		wp_delete_file( $this->get_upload_path( 'graphdraw/deeper/inside.png' ) );
+		rmdir( $this->get_upload_path( 'graphdraw/deeper' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- A directory of the test.
 	}
 
 	/**
@@ -575,7 +575,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 		$this->assertTrue( is_feed() );
 		$this->assertTrue( $this->images->replaces_source() );
 
-		add_filter( 'mermaid_blocks_image_replaces_source', '__return_false' );
+		add_filter( 'graphdraw_image_replaces_source', '__return_false' );
 		$this->assertFalse( $this->images->replaces_source() );
 	}
 
@@ -588,7 +588,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 
 		delete_option( Options::SAVE_IMAGES );
-		mermaid_blocks()->get( SettingsPage::class )->register();
+		graphdraw()->get( SettingsPage::class )->register();
 
 		$this->assertArrayHasKey( Options::SAVE_IMAGES, get_registered_settings() );
 		$this->assertArrayHasKey( Options::SAVE_IMAGES, $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] );
@@ -613,7 +613,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 		file_put_contents( $this->get_upload_path( 'outside.png' ), 'kept' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- A file of the test.
 
 		if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-			define( 'WP_UNINSTALL_PLUGIN', 'mermaid-blocks/mermaid-blocks.php' );
+			define( 'WP_UNINSTALL_PLUGIN', 'graphdraw-mermaid-diagrams-flowcharts/graphdraw-mermaid-diagrams-flowcharts.php' );
 		}
 
 		require dirname( __DIR__ ) . '/uninstall.php';
@@ -621,7 +621,7 @@ class SavedImagesTest extends WP_UnitTestCase {
 		$this->assertFalse( get_option( Options::SAVE_IMAGES ) );
 		$this->assertFalse( metadata_exists( 'post', $post->ID, SavedImages::META_KEY ) );
 		$this->assertFileDoesNotExist( $this->get_upload_path( $image['file'] ) );
-		$this->assertDirectoryDoesNotExist( $this->get_upload_path( 'mermaid-blocks' ) );
+		$this->assertDirectoryDoesNotExist( $this->get_upload_path( 'graphdraw' ) );
 		$this->assertFileExists( $this->get_upload_path( 'outside.png' ) );
 	}
 }

@@ -2,15 +2,15 @@
 /**
  * Tests of the sync of the saved images.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Images\ImageSync;
-use MermaidBlocks\Images\SavedImages;
-use MermaidBlocks\Options;
-use MermaidBlocks\Posts\PostDiagrams;
+use GraphDraw\Images\ImageSync;
+use GraphDraw\Images\SavedImages;
+use GraphDraw\Options;
+use GraphDraw\Posts\PostDiagrams;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/ImageHelpers.php';
@@ -19,7 +19,7 @@ require_once __DIR__ . '/ImageHelpers.php';
  * Which diagrams of a post the editor is asked to draw, and what happens to
  * an image when its diagram goes.
  *
- * @covers \MermaidBlocks\Images\ImageSync
+ * @covers \GraphDraw\Images\ImageSync
  */
 class ImageSyncTest extends WP_UnitTestCase {
 
@@ -51,8 +51,8 @@ class ImageSyncTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->images = mermaid_blocks()->get( SavedImages::class );
-		$this->sync   = mermaid_blocks()->get( ImageSync::class );
+		$this->images = graphdraw()->get( SavedImages::class );
+		$this->sync   = graphdraw()->get( ImageSync::class );
 
 		update_option( Options::SAVE_IMAGES, 1 );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
@@ -284,7 +284,7 @@ class ImageSyncTest extends WP_UnitTestCase {
 		$flow = $this->images->save( $post, $this->images->get_key( self::FLOW ), 'auto', $this->png() );
 		$pie  = $this->images->save( $post, $this->images->get_key( self::PIE ), 'auto', $this->png() );
 
-		$diagrams = mermaid_blocks()->get( PostDiagrams::class );
+		$diagrams = graphdraw()->get( PostDiagrams::class );
 		$changed  = self::FLOW . "\nB --> C";
 		$diagrams->replace( $post, 0, $diagrams->get_hash( $diagrams->get( $post, 0 ) ), $this->diagram_block( $changed ) );
 

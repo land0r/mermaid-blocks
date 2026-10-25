@@ -2,10 +2,10 @@
 /**
  * The container, which creates the plugin's objects.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 use LogicException;
 use ReflectionClass;
@@ -108,7 +108,7 @@ final class Container {
 	 *                        constructor parameter that isn't a class.
 	 */
 	private function create( string $name ): object {
-		// Only the plugin's own classes: get() is reachable through mermaid_blocks().
+		// Only the plugin's own classes: get() is reachable through graphdraw().
 		if ( 0 !== strpos( $name, __NAMESPACE__ . '\\' ) || ! class_exists( $name ) ) {
 			throw new LogicException( esc_html( "$name is not a class of the plugin." ) );
 		}

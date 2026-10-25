@@ -10,11 +10,11 @@ import { AUTO_THEME, THEMES } from '../../utils/themes';
 function loadSettings( printed ) {
 	let settings;
 
-	window.mermaidBlocksEditorSettings = printed;
+	window.graphDrawEditorSettings = printed;
 	jest.isolateModules( () => {
 		settings = require( '../settings' );
 	} );
-	delete window.mermaidBlocksEditorSettings;
+	delete window.graphDrawEditorSettings;
 
 	return settings;
 }
