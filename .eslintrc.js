@@ -6,7 +6,7 @@ module.exports = {
 		...defaultConfig.rules,
 		'@wordpress/i18n-text-domain': [
 			'error',
-			{ allowedTextDomain: 'mermaid-blocks' },
+			{ allowedTextDomain: 'graphdraw-mermaid-diagrams-flowcharts' },
 		],
 	},
 };

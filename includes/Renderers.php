@@ -2,10 +2,10 @@
 /**
  * The renderers a site can draw its diagrams with.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

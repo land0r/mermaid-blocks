@@ -9,12 +9,12 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="mermaid-blocks"/>
+				<element value="graphdraw-mermaid-diagrams-flowcharts"/>
 			</property>
 		</properties>
 	</rule>
 
-	<!-- Keep in sync with "Requires at least" and "Requires PHP" in mermaid-blocks.php. -->
+	<!-- Keep in sync with "Requires at least" and "Requires PHP" in graphdraw-mermaid-diagrams-flowcharts.php. -->
 	<config name="minimum_wp_version" value="6.6"/>
 	<config name="testVersion" value="7.4-"/>
 	<rule ref="PHPCompatibilityWP"/>

@@ -3,10 +3,10 @@
  * Diagram markup, shared by the block and any other integration, such as a
  * shortcode or a page builder widget.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -19,11 +19,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * An integration whose settings are named as the block's attributes, such as
  * a page builder widget, outputs render(). Others output get_markup(), and
  * make sure the
- * `mermaid-blocks-diagram` script and style are loaded: the method enqueues
+ * `graphdraw-diagram` script and style are loaded: the method enqueues
  * them, and an integration that renders outside a normal page load declares
  * both handles as its dependencies instead. Diagrams added to the page later,
  * such as a widget a page builder re-renders in its preview, are rendered by
- * calling `window.mermaidBlocks.render( element )`.
+ * calling `window.graphDraw.render( element )`.
  *
  * A diagram whose wrapper has a `data-mermaid-controls` attribute gets
  * controls for visitors: any of CONTROLS, separated by spaces.
@@ -80,7 +80,7 @@ final class Diagram {
 
 	/**
 	 * Returns the theme a diagram is drawn in: its own, or else the site's,
-	 * set under Settings > Mermaid Blocks.
+	 * set under Settings > GraphDraw.
 	 *
 	 * @param mixed $theme Optional. The theme chosen for the diagram.
 	 *
@@ -169,7 +169,7 @@ final class Diagram {
 	/**
 	 * Returns the diagram source, escaped for the page.
 	 *
-	 * Output it as the content of an element with the `mermaid-blocks-diagram`
+	 * Output it as the content of an element with the `graphdraw-diagram`
 	 * class. get_markup() and wrap() do both.
 	 *
 	 * - The source stays inside a <pre>: wptexturize and convert_smilies run
@@ -191,14 +191,14 @@ final class Diagram {
 	public function get_source_markup( $code ): string {
 		$source = $this->encode_brackets( esc_textarea( (string) $code ) );
 
-		return '<pre class="mermaid-blocks-diagram__source">' . $source . '</pre>';
+		return '<pre class="graphdraw-diagram__source">' . $source . '</pre>';
 	}
 
 	/**
 	 * Returns the caption of a diagram.
 	 *
 	 * Output it after the source, in a `<figure>` with the
-	 * `mermaid-blocks-diagram` class. get_markup() and wrap() do both.
+	 * `graphdraw-diagram` class. get_markup() and wrap() do both.
 	 *
 	 * @param string $caption The caption. It may contain the HTML allowed in
 	 *                        post content.
@@ -213,7 +213,7 @@ final class Diagram {
 			return '';
 		}
 
-		return '<figcaption class="mermaid-blocks-diagram__caption wp-element-caption">' . wp_kses_post( $caption ) . '</figcaption>';
+		return '<figcaption class="graphdraw-diagram__caption wp-element-caption">' . wp_kses_post( $caption ) . '</figcaption>';
 	}
 
 	/**
@@ -233,9 +233,9 @@ final class Diagram {
 		$alt = trim( (string) $alt );
 
 		return sprintf(
-			'<img class="mermaid-blocks-diagram__image" src="%s" alt="%s" width="%d" height="%d" loading="lazy" decoding="async" />',
+			'<img class="graphdraw-diagram__image" src="%s" alt="%s" width="%d" height="%d" loading="lazy" decoding="async" />',
 			esc_url( $image['url'] ),
-			esc_attr( '' === $alt ? __( 'Diagram', 'mermaid-blocks' ) : $alt ),
+			esc_attr( '' === $alt ? __( 'Diagram', 'graphdraw-mermaid-diagrams-flowcharts' ) : $alt ),
 			(int) $image['width'],
 			(int) $image['height']
 		);
@@ -252,7 +252,7 @@ final class Diagram {
 	 *
 	 * @param string $attributes The wrapper's attributes, escaped, such as
 	 *                           get_block_wrapper_attributes() returns them.
-	 *                           They include the `mermaid-blocks-diagram` class,
+	 *                           They include the `graphdraw-diagram` class,
 	 *                           and the `has-image` class for a diagram given an
 	 *                           image.
 	 * @param string $code       Mermaid source.
@@ -296,7 +296,7 @@ final class Diagram {
 	 * @param string $code       Mermaid source.
 	 * @param array  $attributes Optional. Extra attributes for the wrapper
 	 *                           element, as name => value. A `class` is added to
-	 *                           the `mermaid-blocks-diagram` class.
+	 *                           the `graphdraw-diagram` class.
 	 *                           `data-mermaid-controls` lists the controls visitors
 	 *                           get: any of CONTROLS, separated by spaces, such
 	 *                           as `zoom download`.
@@ -322,7 +322,7 @@ final class Diagram {
 		$attributes = (array) $attributes;
 
 		$class               = isset( $attributes['class'] ) ? $attributes['class'] : '';
-		$attributes['class'] = trim( 'mermaid-blocks-diagram ' . $class );
+		$attributes['class'] = trim( 'graphdraw-diagram ' . $class );
 
 		$theme                            = isset( $attributes['data-mermaid-theme'] ) ? $attributes['data-mermaid-theme'] : '';
 		$attributes['data-mermaid-theme'] = $this->get_theme( $theme );

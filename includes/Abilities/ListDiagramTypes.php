@@ -1,13 +1,13 @@
 <?php
 /**
- * The `mermaid-blocks/list-diagram-types` ability.
+ * The `graphdraw/list-diagram-types` ability.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
-use MermaidBlocks\DiagramTypes;
+use GraphDraw\DiagramTypes;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -41,7 +41,7 @@ final class ListDiagramTypes extends Ability {
 	 * @return string The name.
 	 */
 	public function get_name(): string {
-		return 'mermaid-blocks/list-diagram-types';
+		return 'graphdraw/list-diagram-types';
 	}
 
 	/**
@@ -50,7 +50,7 @@ final class ListDiagramTypes extends Ability {
 	 * @return string The label.
 	 */
 	protected function get_label(): string {
-		return __( 'List diagram types', 'mermaid-blocks' );
+		return __( 'List diagram types', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -59,7 +59,7 @@ final class ListDiagramTypes extends Ability {
 	 * @return string The description.
 	 */
 	protected function get_description(): string {
-		return __( 'Lists the types of Mermaid diagram with starter code, and the code. A diagram can be of any other type Mermaid supports too.', 'mermaid-blocks' );
+		return __( 'Lists the types of Mermaid diagram with starter code, and the code. A diagram can be of any other type Mermaid supports too.', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -75,17 +75,17 @@ final class ListDiagramTypes extends Ability {
 				'properties' => array(
 					'name'        => array(
 						'type'        => 'string',
-						'description' => __( 'The name of the type.', 'mermaid-blocks' ),
+						'description' => __( 'The name of the type.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 					),
 					'title'       => array( 'type' => 'string' ),
 					'description' => array( 'type' => 'string' ),
 					'keyword'     => array(
 						'type'        => 'string',
-						'description' => __( 'The keyword the code of a diagram of this type starts with.', 'mermaid-blocks' ),
+						'description' => __( 'The keyword the code of a diagram of this type starts with.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 					),
 					'code'        => array(
 						'type'        => 'string',
-						'description' => __( 'Starter code for a diagram of this type.', 'mermaid-blocks' ),
+						'description' => __( 'Starter code for a diagram of this type.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 					),
 				),
 			),

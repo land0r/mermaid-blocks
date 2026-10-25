@@ -2,12 +2,12 @@
 /**
  * What the tests that look at every class of the plugin share.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Integrations\Elementor\DiagramWidget;
+use GraphDraw\Integrations\Elementor\DiagramWidget;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -38,7 +38,7 @@ trait PluginClasses {
 				continue;
 			}
 
-			$class = 'MermaidBlocks\\' . str_replace( '/', '\\', substr( $file->getPathname(), strlen( $directory ), -4 ) );
+			$class = 'GraphDraw\\' . str_replace( '/', '\\', substr( $file->getPathname(), strlen( $directory ), -4 ) );
 
 			if ( isset( $parents[ $class ] ) && ! class_exists( $parents[ $class ] ) ) {
 				continue;

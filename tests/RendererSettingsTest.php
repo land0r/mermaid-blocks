@@ -2,20 +2,20 @@
 /**
  * Tests of what a script needs to build its renderer.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Files;
-use MermaidBlocks\Options;
-use MermaidBlocks\RendererSettings;
+use GraphDraw\Files;
+use GraphDraw\Options;
+use GraphDraw\RendererSettings;
 use WP_UnitTestCase;
 
 /**
  * What the front end and the editor are told for their renderer.
  *
- * @covers \MermaidBlocks\RendererSettings
+ * @covers \GraphDraw\RendererSettings
  */
 class RendererSettingsTest extends WP_UnitTestCase {
 
@@ -27,14 +27,14 @@ class RendererSettingsTest extends WP_UnitTestCase {
 	 * @return array The settings.
 	 */
 	private function add_to( array $settings = array() ): array {
-		return mermaid_blocks()->get( RendererSettings::class )->add_to( $settings );
+		return graphdraw()->get( RendererSettings::class )->add_to( $settings );
 	}
 
 	/**
 	 * The math module is always told, with the version of its build.
 	 */
 	public function test_tells_where_the_math_module_is(): void {
-		$files = mermaid_blocks()->get( Files::class );
+		$files = graphdraw()->get( Files::class );
 		$asset = $files->get_build_asset( 'math' );
 
 		$this->assertNotEmpty( $asset['version'] );
@@ -56,7 +56,7 @@ class RendererSettingsTest extends WP_UnitTestCase {
 	 */
 	public function test_tells_the_options_of_pele_only_with_pele(): void {
 		add_filter(
-			'mermaid_blocks_pele_options',
+			'graphdraw_pele_options',
 			static function () {
 				return array( 'links' => true );
 			}
@@ -76,7 +76,7 @@ class RendererSettingsTest extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'iconPacks', $this->add_to() );
 
 		add_filter(
-			'mermaid_blocks_icon_packs',
+			'graphdraw_icon_packs',
 			static function () {
 				return array( 'fa' => 'https://example.com/fa.json' );
 			}

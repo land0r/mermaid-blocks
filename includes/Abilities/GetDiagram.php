@@ -1,11 +1,11 @@
 <?php
 /**
- * The `mermaid-blocks/get-diagram` ability.
+ * The `graphdraw/get-diagram` ability.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
 use WP_Post;
 
@@ -24,7 +24,7 @@ final class GetDiagram extends PostAbility {
 	 * @return string The name.
 	 */
 	public function get_name(): string {
-		return 'mermaid-blocks/get-diagram';
+		return 'graphdraw/get-diagram';
 	}
 
 	/**
@@ -33,7 +33,7 @@ final class GetDiagram extends PostAbility {
 	 * @return string The label.
 	 */
 	protected function get_label(): string {
-		return __( 'Get a diagram', 'mermaid-blocks' );
+		return __( 'Get a diagram', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -42,7 +42,7 @@ final class GetDiagram extends PostAbility {
 	 * @return string The description.
 	 */
 	protected function get_description(): string {
-		return __( 'Returns one Mermaid diagram of a post: its code, its attributes, and the hash to pass when changing it.', 'mermaid-blocks' );
+		return __( 'Returns one Mermaid diagram of a post: its code, its attributes, and the hash to pass when changing it.', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**

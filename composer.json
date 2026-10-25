@@ -1,11 +1,11 @@
 {
-	"name": "land0r/mermaid-blocks",
+	"name": "land0r/graphdraw",
 	"description": "Mermaid diagrams in the WordPress block editor.",
 	"type": "wordpress-plugin",
 	"license": "GPL-3.0-or-later",
 	"autoload": {
 		"psr-4": {
-			"MermaidBlocks\\": "includes/"
+			"GraphDraw\\": "includes/"
 		}
 	},
 	"repositories": [

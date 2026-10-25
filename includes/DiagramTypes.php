@@ -2,10 +2,10 @@
 /**
  * The types of diagram the plugin offers starter code for.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The diagram types with starter code, and the detection of a diagram's type.
  *
  * The one source of the starter code: the block's variations and the
- * `mermaid-blocks/list-diagram-types` ability both read it.
+ * `graphdraw/list-diagram-types` ability both read it.
  */
 final class DiagramTypes {
 
@@ -31,8 +31,8 @@ final class DiagramTypes {
 	public function get_all(): array {
 		return array(
 			'class-diagram'    => array(
-				'title'       => __( 'Class Diagram', 'mermaid-blocks' ),
-				'description' => __( 'A class diagram to start from.', 'mermaid-blocks' ),
+				'title'       => __( 'Class Diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'description' => __( 'A class diagram to start from.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'keyword'     => 'classDiagram',
 				'code'        => implode(
 					"\n",
@@ -56,15 +56,15 @@ final class DiagramTypes {
 					)
 				),
 				'keywords'    => array(
-					__( 'class', 'mermaid-blocks' ),
-					__( 'diagram', 'mermaid-blocks' ),
-					__( 'mermaid', 'mermaid-blocks' ),
+					__( 'class', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'mermaid', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'icon'        => 'database',
 			),
 			'flowchart'        => array(
-				'title'       => __( 'Flowchart', 'mermaid-blocks' ),
-				'description' => __( 'A flowchart to start from.', 'mermaid-blocks' ),
+				'title'       => __( 'Flowchart', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'description' => __( 'A flowchart to start from.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'keyword'     => 'flowchart',
 				'code'        => implode(
 					"\n",
@@ -78,14 +78,14 @@ final class DiagramTypes {
 					)
 				),
 				'keywords'    => array(
-					__( 'flowchart', 'mermaid-blocks' ),
-					__( 'diagram', 'mermaid-blocks' ),
+					__( 'flowchart', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'icon'        => 'chart-bar',
 			),
 			'mindmap'          => array(
-				'title'       => __( 'Mind Map', 'mermaid-blocks' ),
-				'description' => __( 'A mind map to start from.', 'mermaid-blocks' ),
+				'title'       => __( 'Mind Map', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'description' => __( 'A mind map to start from.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'keyword'     => 'mindmap',
 				'code'        => implode(
 					"\n",
@@ -108,15 +108,15 @@ final class DiagramTypes {
 					)
 				),
 				'keywords'    => array(
-					__( 'mindmap', 'mermaid-blocks' ),
-					__( 'diagram', 'mermaid-blocks' ),
-					__( 'mermaid', 'mermaid-blocks' ),
+					__( 'mindmap', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'mermaid', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'icon'        => 'admin-users',
 			),
 			'sequence-diagram' => array(
-				'title'       => __( 'Sequence Diagram', 'mermaid-blocks' ),
-				'description' => __( 'A sequence diagram to start from.', 'mermaid-blocks' ),
+				'title'       => __( 'Sequence Diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'description' => __( 'A sequence diagram to start from.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'keyword'     => 'sequenceDiagram',
 				'code'        => implode(
 					"\n",
@@ -133,15 +133,15 @@ final class DiagramTypes {
 					)
 				),
 				'keywords'    => array(
-					__( 'sequence', 'mermaid-blocks' ),
-					__( 'diagram', 'mermaid-blocks' ),
-					__( 'mermaid', 'mermaid-blocks' ),
+					__( 'sequence', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'mermaid', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'icon'        => 'networking',
 			),
 			'state-diagram'    => array(
-				'title'       => __( 'State Diagram', 'mermaid-blocks' ),
-				'description' => __( 'A state diagram to start from.', 'mermaid-blocks' ),
+				'title'       => __( 'State Diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
+				'description' => __( 'A state diagram to start from.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				'keyword'     => 'stateDiagram-v2',
 				'code'        => implode(
 					"\n",
@@ -156,9 +156,9 @@ final class DiagramTypes {
 					)
 				),
 				'keywords'    => array(
-					__( 'state', 'mermaid-blocks' ),
-					__( 'diagram', 'mermaid-blocks' ),
-					__( 'mermaid', 'mermaid-blocks' ),
+					__( 'state', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
+					__( 'mermaid', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 				'icon'        => 'controls-play',
 			),

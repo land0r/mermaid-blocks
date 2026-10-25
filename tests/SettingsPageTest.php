@@ -2,29 +2,29 @@
 /**
  * Tests of the settings page.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Admin\SettingsPage;
-use MermaidBlocks\Files;
-use MermaidBlocks\Options;
-use MermaidBlocks\Themes;
+use GraphDraw\Admin\SettingsPage;
+use GraphDraw\Files;
+use GraphDraw\Options;
+use GraphDraw\Themes;
 use WP_UnitTestCase;
 
 /**
  * The settings page: its theme setting, the switches of the optional parts
  * of the plugin, and those other code adds.
  *
- * @covers \MermaidBlocks\Admin\SettingsPage
+ * @covers \GraphDraw\Admin\SettingsPage
  */
 class SettingsPageTest extends WP_UnitTestCase {
 
 	/**
 	 * The option of the switch the tests add.
 	 */
-	const OPTION = 'mermaid_blocks_test_switch';
+	const OPTION = 'graphdraw_test_switch';
 
 	/**
 	 * The settings page.
@@ -49,8 +49,8 @@ class SettingsPageTest extends WP_UnitTestCase {
 
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 
-		$this->settings = mermaid_blocks()->get( SettingsPage::class );
-		$this->options  = mermaid_blocks()->get( Options::class );
+		$this->settings = graphdraw()->get( SettingsPage::class );
+		$this->options  = graphdraw()->get( Options::class );
 	}
 
 	/**
@@ -170,7 +170,7 @@ class SettingsPageTest extends WP_UnitTestCase {
 		$markup = get_echo( array( $this->settings, 'render_renderer_field' ) );
 
 		$this->assertSame( 2, substr_count( $markup, 'type="radio"' ) );
-		$this->assertStringContainsString( 'name="mermaid_blocks_renderer" value="mermaid"', $markup );
+		$this->assertStringContainsString( 'name="graphdraw_renderer" value="mermaid"', $markup );
 		$this->assertMatchesRegularExpression( '/value="pele"\s+checked=\'checked\'/', $markup );
 		$this->assertDoesNotMatchRegularExpression( '/value="mermaid"\s+checked/', $markup );
 		$this->assertStringContainsString( 'Mermaid.js', $markup );
@@ -191,7 +191,7 @@ class SettingsPageTest extends WP_UnitTestCase {
 
 		$given = null;
 		add_action(
-			'mermaid_blocks_register_settings',
+			'graphdraw_register_settings',
 			function ( $settings ) use ( &$given ) {
 				$given = $settings;
 				$this->add_switch();
@@ -331,7 +331,7 @@ class SettingsPageTest extends WP_UnitTestCase {
 
 		$markup = get_echo( array( $this->settings, 'render_theme_field' ) );
 
-		foreach ( mermaid_blocks()->themes()->get_all() as $name => $label ) {
+		foreach ( graphdraw()->themes()->get_all() as $name => $label ) {
 			$this->assertStringContainsString( '<option value="' . $name . '" ' . ( 'forest' === $name ? " selected='selected'" : '' ) . '>' . $label . '</option>', $markup );
 		}
 	}
@@ -386,11 +386,11 @@ class SettingsPageTest extends WP_UnitTestCase {
 		$this->assertSame( 10, has_action( 'admin_init', array( $this->settings, 'register' ) ) );
 		$this->assertSame( 10, has_action( 'admin_menu', array( $this->settings, 'add_page' ) ) );
 
-		$basename = mermaid_blocks()->get( Files::class )->get_basename();
+		$basename = graphdraw()->get( Files::class )->get_basename();
 		$links    = apply_filters( 'plugin_action_links_' . $basename, array( 'deactivate' => '<a>Deactivate</a>' ) ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- A hook of WordPress.
 
 		$this->assertSame( '<a href="' . esc_url( $this->settings->get_url() ) . '">Settings</a>', reset( $links ) );
-		$this->assertSame( admin_url( 'options-general.php?page=mermaid-blocks' ), $this->settings->get_url() );
+		$this->assertSame( admin_url( 'options-general.php?page=graphdraw' ), $this->settings->get_url() );
 		$this->assertCount( 2, $links );
 	}
 }

@@ -2,13 +2,13 @@
 /**
  * The base of the abilities that work on a diagram of a post.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
-use MermaidBlocks\Posts\EditablePosts;
-use MermaidBlocks\Posts\PostDiagrams;
+use GraphDraw\Posts\EditablePosts;
+use GraphDraw\Posts\PostDiagrams;
 use WP_Error;
 use WP_Post;
 

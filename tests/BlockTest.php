@@ -2,15 +2,15 @@
 /**
  * Tests of the block.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Images\SavedImages;
-use MermaidBlocks\Integrations\Block;
-use MermaidBlocks\Options;
-use MermaidBlocks\Posts\PostDiagrams;
+use GraphDraw\Images\SavedImages;
+use GraphDraw\Integrations\Block;
+use GraphDraw\Options;
+use GraphDraw\Posts\PostDiagrams;
 use WP_Post;
 use WP_UnitTestCase;
 
@@ -19,7 +19,7 @@ require_once __DIR__ . '/ImageHelpers.php';
 /**
  * The markup the block renders on the server.
  *
- * @covers \MermaidBlocks\Integrations\Block
+ * @covers \GraphDraw\Integrations\Block
  */
 class BlockTest extends WP_UnitTestCase {
 
@@ -98,7 +98,7 @@ class BlockTest extends WP_UnitTestCase {
 	public function test_asks_for_the_controls( array $attributes, ?string $controls ): void {
 		$markup = $this->render( $attributes );
 
-		$this->assertStringContainsString( 'mermaid-blocks-diagram__source', $markup );
+		$this->assertStringContainsString( 'graphdraw-diagram__source', $markup );
 
 		if ( null === $controls ) {
 			$this->assertStringNotContainsString( 'data-mermaid-controls', $markup );
@@ -142,7 +142,7 @@ class BlockTest extends WP_UnitTestCase {
 		// Someone whose posts are saved as written: kses changes the code of others.
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
-		$images = mermaid_blocks()->get( SavedImages::class );
+		$images = graphdraw()->get( SavedImages::class );
 		$theme  = isset( $attributes['theme'] ) ? $attributes['theme'] : '';
 		$post   = $this->create_post( array( $this->diagram_block( "graph TD\nA --> B", $attributes ) ) );
 
@@ -166,10 +166,10 @@ class BlockTest extends WP_UnitTestCase {
 		$uploads = wp_get_upload_dir();
 
 		return sprintf(
-			'<img class="mermaid-blocks-diagram__image" src="%s/mermaid-blocks/%d-%s-%s.png" alt="%s" width="300" height="150" loading="lazy" decoding="async" />',
+			'<img class="graphdraw-diagram__image" src="%s/graphdraw/%d-%s-%s.png" alt="%s" width="300" height="150" loading="lazy" decoding="async" />',
 			$uploads['baseurl'],
 			$post->ID,
-			mermaid_blocks()->get( SavedImages::class )->get_key( "graph TD\nA --> B", 'auto' === $theme ? '' : $theme ),
+			graphdraw()->get( SavedImages::class )->get_key( "graph TD\nA --> B", 'auto' === $theme ? '' : $theme ),
 			$theme,
 			$alt
 		);
@@ -184,9 +184,9 @@ class BlockTest extends WP_UnitTestCase {
 		$post   = $this->enter_post_with_image();
 		$markup = $this->render();
 
-		$this->assertStringStartsWith( '<div class="mermaid-blocks-diagram has-image wp-block-mermaid-blocks-diagram" data-mermaid-theme="auto">', $markup );
+		$this->assertStringStartsWith( '<div class="graphdraw-diagram has-image wp-block-graphdraw-diagram" data-mermaid-theme="auto">', $markup );
 		$this->assertStringContainsString(
-			'<noscript>' . $this->get_image_markup( $post ) . '</noscript><pre class="mermaid-blocks-diagram__source">graph TD',
+			'<noscript>' . $this->get_image_markup( $post ) . '</noscript><pre class="graphdraw-diagram__source">graph TD',
 			$markup
 		);
 	}
@@ -204,7 +204,7 @@ class BlockTest extends WP_UnitTestCase {
 		$this->assertStringContainsString( '<noscript>' . $image . '</noscript>', $this->render() );
 
 		// In a feed it is the diagram.
-		add_filter( 'mermaid_blocks_image_replaces_source', '__return_true' );
+		add_filter( 'graphdraw_image_replaces_source', '__return_true' );
 		$markup = $this->render();
 
 		$this->assertStringContainsString( $image, $markup );
@@ -247,12 +247,12 @@ class BlockTest extends WP_UnitTestCase {
 	public function test_shows_the_image_in_place_of_the_source(): void {
 		$post = $this->enter_post_with_image();
 
-		add_filter( 'mermaid_blocks_image_replaces_source', '__return_true' );
+		add_filter( 'graphdraw_image_replaces_source', '__return_true' );
 
 		$this->assertSame(
-			'<figure class="mermaid-blocks-diagram has-image wp-block-mermaid-blocks-diagram" data-mermaid-theme="auto">'
+			'<figure class="graphdraw-diagram has-image wp-block-graphdraw-diagram" data-mermaid-theme="auto">'
 			. $this->get_image_markup( $post )
-			. '<figcaption class="mermaid-blocks-diagram__caption wp-element-caption">How it <em>works</em></figcaption></figure>',
+			. '<figcaption class="graphdraw-diagram__caption wp-element-caption">How it <em>works</em></figcaption></figure>',
 			$this->render( array( 'caption' => 'How it <em>works</em>' ) )
 		);
 	}
@@ -283,7 +283,7 @@ class BlockTest extends WP_UnitTestCase {
 		$post    = $this->enter_post_with_image();
 		$content = apply_filters( 'the_content', $post->post_content ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The filter of WordPress.
 
-		$this->assertStringContainsString( '<noscript>' . $this->get_image_markup( $post ) . '</noscript><pre class="mermaid-blocks-diagram__source">graph TD', $content );
+		$this->assertStringContainsString( '<noscript>' . $this->get_image_markup( $post ) . '</noscript><pre class="graphdraw-diagram__source">graph TD', $content );
 	}
 
 	/**
@@ -292,20 +292,20 @@ class BlockTest extends WP_UnitTestCase {
 	 */
 	public function test_falls_back_to_the_source_when_the_diagram_changed(): void {
 		$post    = $this->enter_post_with_image();
-		$without = '<div class="mermaid-blocks-diagram wp-block-mermaid-blocks-diagram" data-mermaid-theme="auto"><pre class="mermaid-blocks-diagram__source">graph TD' . "\n" . 'A --&gt; C</pre></div>';
+		$without = '<div class="graphdraw-diagram wp-block-graphdraw-diagram" data-mermaid-theme="auto"><pre class="graphdraw-diagram__source">graph TD' . "\n" . 'A --&gt; C</pre></div>';
 
 		$changed = render_block( $this->diagram_block( "graph TD\nA --> C" ) );
 
 		$this->assertSame( $without, $changed );
 
 		// As the abilities change a diagram: on the server, with no editor to draw it again.
-		$diagrams = mermaid_blocks()->get( PostDiagrams::class );
+		$diagrams = graphdraw()->get( PostDiagrams::class );
 		$diagrams->replace( $post, 0, $diagrams->get_hash( $diagrams->get( $post, 0 ) ), $this->diagram_block( "graph TD\nA --> C" ) );
 		$this->enter_post( get_post( $post->ID ) );
 
 		$this->assertSame( "\n" . $without . "\n", "\n" . trim( apply_filters( 'the_content', get_post( $post->ID )->post_content ) ) . "\n" ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The filter of WordPress.
 
-		add_filter( 'mermaid_blocks_image_replaces_source', '__return_true' );
+		add_filter( 'graphdraw_image_replaces_source', '__return_true' );
 
 		$this->assertSame( $without, render_block( $this->diagram_block( "graph TD\nA --> C" ) ) );
 	}

@@ -13,7 +13,7 @@ import { getSurface } from '../utils/surface';
 
 const ACTIVE_CLASS = 'is-fullscreen';
 const OVERLAY_CLASS = 'is-fullscreen-overlay';
-const SURFACE_PROPERTY = '--mermaid-blocks-surface';
+const SURFACE_PROPERTY = '--graphdraw-surface';
 
 // The background of a diagram whose page tells no colour: see getSurface().
 const LIGHT_SURFACE = '#fff';

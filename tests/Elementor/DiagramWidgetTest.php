@@ -2,21 +2,21 @@
 /**
  * Tests of the Elementor widget.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests\Elementor;
+namespace GraphDraw\Tests\Elementor;
 
 use Elementor\Controls_Manager;
 use Elementor\Core\Frontend\Performance;
 use Elementor\Plugin as Elementor;
-use MermaidBlocks\Admin\SettingsPage;
-use MermaidBlocks\Assets;
-use MermaidBlocks\Diagram;
-use MermaidBlocks\DiagramTypes;
-use MermaidBlocks\Integrations\Elementor\DiagramWidget;
-use MermaidBlocks\Integrations\Elementor\Registrar;
-use MermaidBlocks\Integrations\Shortcode;
+use GraphDraw\Admin\SettingsPage;
+use GraphDraw\Assets;
+use GraphDraw\Diagram;
+use GraphDraw\DiagramTypes;
+use GraphDraw\Integrations\Elementor\DiagramWidget;
+use GraphDraw\Integrations\Elementor\Registrar;
+use GraphDraw\Integrations\Shortcode;
 use ReflectionProperty;
 use WP_UnitTestCase;
 
@@ -24,7 +24,7 @@ use WP_UnitTestCase;
  * The widget: its place in Elementor's panel, its controls, and what it
  * outputs. Elementor is active.
  *
- * @covers \MermaidBlocks\Integrations\Elementor\DiagramWidget
+ * @covers \GraphDraw\Integrations\Elementor\DiagramWidget
  */
 class DiagramWidgetTest extends WP_UnitTestCase {
 
@@ -135,7 +135,7 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 		}
 
 		$this->assertSame( Controls_Manager::CODE, $controls['code']['type'] );
-		$this->assertSame( mermaid_blocks()->get( DiagramTypes::class )->get_all()['flowchart']['code'], $controls['code']['default'] );
+		$this->assertSame( graphdraw()->get( DiagramTypes::class )->get_all()['flowchart']['code'], $controls['code']['default'] );
 		$this->assertSame( '', $controls['theme']['default'] );
 		$this->assertSame( 'center', $controls['align']['return_value'] );
 
@@ -149,10 +149,10 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	 * The themes are the block's: the site's first, then each one by name.
 	 */
 	public function test_offers_the_themes(): void {
-		update_option( 'mermaid_blocks_theme', 'forest' );
+		update_option( 'graphdraw_theme', 'forest' );
 
 		$options = $this->get_controls()['theme']['options'];
-		$themes  = mermaid_blocks()->themes()->get_all();
+		$themes  = graphdraw()->themes()->get_all();
 
 		$this->assertSame( array_merge( array( '' ), array_keys( $themes ) ), array_keys( $options ) );
 		$this->assertSame( 'Site default (Forest)', $options[''] );
@@ -163,8 +163,8 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	 * site's theme that isn't offered is named as the one it is drawn as.
 	 */
 	public function test_offers_light_and_dark_with_pele(): void {
-		update_option( 'mermaid_blocks_renderer', 'pele' );
-		update_option( 'mermaid_blocks_theme', 'forest' );
+		update_option( 'graphdraw_renderer', 'pele' );
+		update_option( 'graphdraw_theme', 'forest' );
 
 		$options = $this->get_controls()['theme']['options'];
 
@@ -178,7 +178,7 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 			$options
 		);
 
-		update_option( 'mermaid_blocks_theme', 'neo-dark' );
+		update_option( 'graphdraw_theme', 'neo-dark' );
 		$this->assertSame( 'Site default (Dark)', $this->get_controls()['theme']['options'][''] );
 	}
 
@@ -186,10 +186,10 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	 * The theme's help says nothing of the renderer: the themes offered do.
 	 */
 	public function test_the_theme_help_is_the_same_with_pele(): void {
-		update_option( 'mermaid_blocks_renderer', 'mermaid' );
+		update_option( 'graphdraw_renderer', 'mermaid' );
 		$help = $this->get_controls()['theme']['description'];
 
-		update_option( 'mermaid_blocks_renderer', 'pele' );
+		update_option( 'graphdraw_renderer', 'pele' );
 		$this->assertSame( $help, $this->get_controls()['theme']['description'] );
 	}
 
@@ -197,7 +197,7 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	 * A widget keeps a theme the renderer doesn't offer, and is drawn in it.
 	 */
 	public function test_keeps_a_theme_that_is_not_offered(): void {
-		update_option( 'mermaid_blocks_renderer', 'pele' );
+		update_option( 'graphdraw_renderer', 'pele' );
 
 		$markup = $this->render_widget(
 			array(
@@ -214,7 +214,7 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	 * it, and only in the editor: the front end builds the controls too.
 	 */
 	public function test_links_to_the_settings_in_the_editor(): void {
-		$url = mermaid_blocks()->get( SettingsPage::class )->get_url();
+		$url = graphdraw()->get( SettingsPage::class )->get_url();
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		$this->assertStringNotContainsString( $url, $this->get_controls()['theme']['description'] );
@@ -247,7 +247,7 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 		);
 
 		$this->assertSame(
-			mermaid_blocks()->get( Shortcode::class )->render(
+			graphdraw()->get( Shortcode::class )->render(
 				array(
 					'theme'       => 'dark',
 					'zoom'        => 'true',
@@ -301,6 +301,6 @@ class DiagramWidgetTest extends WP_UnitTestCase {
 	public function test_has_no_inner_wrapper(): void {
 		$markup = $this->render_widget( array( 'code' => 'A --> B' ) );
 
-		$this->assertStringStartsWith( '<div class="mermaid-blocks-diagram"', $markup );
+		$this->assertStringStartsWith( '<div class="graphdraw-diagram"', $markup );
 	}
 }

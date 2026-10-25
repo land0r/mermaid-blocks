@@ -32,16 +32,16 @@ function fakeElementor( started ) {
 
 describe( 'renderWidget', () => {
 	afterEach( () => {
-		delete window.mermaidBlocks;
+		delete window.graphDraw;
 	} );
 
 	it( 'draws the diagram of the widget Elementor shows', () => {
 		const element = document.createElement( 'div' );
-		window.mermaidBlocks = { render: jest.fn() };
+		window.graphDraw = { render: jest.fn() };
 
 		renderWidget( [ element ] );
 
-		expect( window.mermaidBlocks.render ).toHaveBeenCalledWith( element );
+		expect( window.graphDraw.render ).toHaveBeenCalledWith( element );
 	} );
 
 	it( 'does nothing before the diagram script loaded, or without an element', () => {
@@ -49,11 +49,11 @@ describe( 'renderWidget', () => {
 			renderWidget( [ document.createElement( 'div' ) ] )
 		).not.toThrow();
 
-		window.mermaidBlocks = { render: jest.fn() };
+		window.graphDraw = { render: jest.fn() };
 		renderWidget( [] );
 		renderWidget( undefined );
 
-		expect( window.mermaidBlocks.render ).not.toHaveBeenCalled();
+		expect( window.graphDraw.render ).not.toHaveBeenCalled();
 	} );
 } );
 

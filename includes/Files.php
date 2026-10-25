@@ -2,10 +2,10 @@
 /**
  * Where the plugin's files are.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -36,7 +36,7 @@ final class Files {
 	/**
 	 * Returns what WordPress calls the plugin: its folder and main file.
 	 *
-	 * @return string The basename, such as `mermaid-blocks/mermaid-blocks.php`.
+	 * @return string The basename, such as `graphdraw-mermaid-diagrams-flowcharts/graphdraw-mermaid-diagrams-flowcharts.php`.
 	 */
 	public function get_basename(): string {
 		return plugin_basename( $this->plugin_file );

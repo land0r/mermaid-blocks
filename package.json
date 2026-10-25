@@ -1,7 +1,7 @@
 {
-	"name": "mermaid-blocks",
-	"version": "1.1.0",
-	"description": "Mermaid Blocks: A Gutenberg block plugin that allows you to create, edit, and render diagrams using MermaidJS directly in the WordPress editor. Perfect for flowcharts, sequence diagrams, Gantt charts, and more.",
+	"name": "graphdraw-mermaid-diagrams-flowcharts",
+	"version": "1.0.0",
+	"description": "GraphDraw: A Gutenberg block plugin that allows you to create, edit, and render diagrams using MermaidJS directly in the WordPress editor. Perfect for flowcharts, sequence diagrams, Gantt charts, and more.",
 	"author": "Ivan Hryhorenko",
 	"license": "GPL-3.0-or-later",
 	"main": "build/index.js",
@@ -22,9 +22,10 @@
 	"files": [
 		"build",
 		"includes",
-		"mermaid-blocks.php",
+		"graphdraw-mermaid-diagrams-flowcharts.php",
 		"uninstall.php",
 		"vendor",
+		"composer.json",
 		"readme.txt",
 		"LICENSE.txt"
 	],

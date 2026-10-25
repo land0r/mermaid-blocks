@@ -106,18 +106,13 @@ export async function drawImage( renderer, code, theme ) {
 
 	// In full, whatever the width of the editor, in the fonts of the canvas.
 	const result = await inHiddenElement( renderer.document.body, ( probe ) =>
-		renderer.draw(
-			code,
-			drawnTheme,
-			probe,
-			`mermaid-blocks-image-${ counter }`
-		)
+		renderer.draw( code, drawnTheme, probe, `graphdraw-image-${ counter }` )
 	);
 
 	if ( result.error ) {
 		// eslint-disable-next-line no-console
 		console.warn(
-			'Mermaid Blocks: a diagram could not be drawn as an image.',
+			'GraphDraw: a diagram could not be drawn as an image.',
 			result.error.message
 		);
 
@@ -164,7 +159,7 @@ export async function saveImages( postId ) {
 		return 0;
 	}
 
-	const path = `/mermaid-blocks/v1/posts/${ postId }/images`;
+	const path = `/graphdraw/v1/posts/${ postId }/images`;
 	const query = `?renderer=${ renderer.name }`;
 	const { missing = [] } = await apiFetch( { path: path + query } );
 
@@ -205,7 +200,7 @@ function queueImages( postId ) {
 		.catch( ( error ) => {
 			// eslint-disable-next-line no-console
 			console.warn(
-				'Mermaid Blocks: the images of the diagrams could not be saved.',
+				'GraphDraw: the images of the diagrams could not be saved.',
 				error
 			);
 		} );

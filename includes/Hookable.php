@@ -2,10 +2,10 @@
 /**
  * What a part of the plugin that adds hooks to WordPress has.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

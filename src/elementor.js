@@ -1,7 +1,7 @@
 /**
  * Draws the diagram of an Elementor Mermaid Diagram widget that Elementor
  * shows after the page loaded: a widget its editor renders again after each
- * change, or one in a popup. Registered as the `mermaid-blocks-elementor`
+ * change, or one in a popup. Registered as the `graphdraw-elementor`
  * script, which the widget declares, so it loads only where the widget is
  * (see includes/Integrations/Elementor/).
  *
@@ -9,8 +9,7 @@
  */
 
 // What Elementor fires for each widget it shows: `DiagramWidget::NAME`, and its default skin.
-export const READY_HOOK =
-	'frontend/element_ready/mermaid-blocks-diagram.default';
+export const READY_HOOK = 'frontend/element_ready/graphdraw-diagram.default';
 
 /**
  * Draws the diagram of a widget Elementor shows. It is drawn when it scrolls
@@ -21,8 +20,8 @@ export const READY_HOOK =
 export function renderWidget( $scope ) {
 	const element = $scope && $scope[ 0 ];
 
-	if ( element && window.mermaidBlocks ) {
-		window.mermaidBlocks.render( element );
+	if ( element && window.graphDraw ) {
+		window.graphDraw.render( element );
 	}
 }
 

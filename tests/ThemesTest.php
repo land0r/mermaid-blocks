@@ -2,19 +2,19 @@
 /**
  * Tests of the themes.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Options;
-use MermaidBlocks\Themes;
+use GraphDraw\Options;
+use GraphDraw\Themes;
 use WP_UnitTestCase;
 
 /**
  * The themes a diagram can be drawn in, and the one a diagram gets.
  *
- * @covers \MermaidBlocks\Themes
+ * @covers \GraphDraw\Themes
  */
 class ThemesTest extends WP_UnitTestCase {
 
@@ -31,7 +31,7 @@ class ThemesTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->themes = mermaid_blocks()->themes();
+		$this->themes = graphdraw()->themes();
 	}
 
 	/**
@@ -93,9 +93,9 @@ class ThemesTest extends WP_UnitTestCase {
 		$filter = static function () {
 			return 'mermaid';
 		};
-		add_filter( 'mermaid_blocks_renderer', $filter );
+		add_filter( 'graphdraw_renderer', $filter );
 		$this->assertSame( $this->themes->get_all(), $this->themes->get_offered() );
-		remove_filter( 'mermaid_blocks_renderer', $filter );
+		remove_filter( 'graphdraw_renderer', $filter );
 
 		$this->assertCount( 3, $this->themes->get_offered() );
 	}
@@ -186,7 +186,7 @@ class ThemesTest extends WP_UnitTestCase {
 		$this->assertSame( 'forest', $this->themes->resolve( null ) );
 
 		// The markup class gives the same, for integrations.
-		$this->assertSame( 'dark', mermaid_blocks()->diagram()->get_theme( 'dark' ) );
-		$this->assertSame( 'forest', mermaid_blocks()->diagram()->get_theme() );
+		$this->assertSame( 'dark', graphdraw()->diagram()->get_theme( 'dark' ) );
+		$this->assertSame( 'forest', graphdraw()->diagram()->get_theme() );
 	}
 }

@@ -2,18 +2,18 @@
 /**
  * Tests of where the plugin's files are.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Files;
+use GraphDraw\Files;
 use WP_UnitTestCase;
 
 /**
  * The paths and the URLs of what the build generated.
  *
- * @covers \MermaidBlocks\Files
+ * @covers \GraphDraw\Files
  */
 class FilesTest extends WP_UnitTestCase {
 
@@ -30,24 +30,24 @@ class FilesTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->files = mermaid_blocks()->get( Files::class );
+		$this->files = graphdraw()->get( Files::class );
 	}
 
 	/**
 	 * The plugin is known to WordPress by its folder and main file.
 	 */
 	public function test_knows_the_name_of_the_plugin(): void {
-		$this->assertSame( plugin_basename( MERMAID_BLOCKS_PLUGIN_FILE ), $this->files->get_basename() );
-		$this->assertStringEndsWith( '/mermaid-blocks.php', $this->files->get_basename() );
+		$this->assertSame( plugin_basename( GRAPHDRAW_PLUGIN_FILE ), $this->files->get_basename() );
+		$this->assertStringEndsWith( '/graphdraw-mermaid-diagrams-flowcharts.php', $this->files->get_basename() );
 	}
 
 	/**
 	 * A file of the build has a path and a URL, and so has `build/` itself.
 	 */
 	public function test_finds_the_files_of_the_build(): void {
-		$this->assertSame( dirname( MERMAID_BLOCKS_PLUGIN_FILE ) . '/build/', $this->files->get_build_path() );
+		$this->assertSame( dirname( GRAPHDRAW_PLUGIN_FILE ) . '/build/', $this->files->get_build_path() );
 		$this->assertFileExists( $this->files->get_build_path( 'block.json' ) );
-		$this->assertSame( plugins_url( 'build/view.js', MERMAID_BLOCKS_PLUGIN_FILE ), $this->files->get_build_url( 'view.js' ) );
+		$this->assertSame( plugins_url( 'build/view.js', GRAPHDRAW_PLUGIN_FILE ), $this->files->get_build_url( 'view.js' ) );
 		$this->assertStringEndsWith( '/build/', $this->files->get_build_url() );
 	}
 

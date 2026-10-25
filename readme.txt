@@ -1,29 +1,30 @@
-=== Mermaid Blocks ===
-Contributors:      IvanHryhorenko
-Tags:              block, diagrams, mermaidjs, flowchart, gantt, sequence
+=== GraphDraw – Mermaid Diagrams & Flowcharts ===
+Contributors:      land0r
+Tags:              diagrams, mermaid, flowchart, chart, block
+Requires at least: 6.6
 Tested up to:      7.1
-Stable tag:        1.1.0
+Stable tag:        1.0.0
 Requires PHP:      7.4
 License:           GPL-3.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
-Mermaid Blocks allows you to add and render diagrams using MermaidJS directly in the WordPress editor.
+Draw Mermaid diagrams in the block editor, with a live preview: flowcharts, sequence, class and Gantt diagrams, mind maps and more.
 
 == Description ==
 
-Mermaid Blocks is a Gutenberg plugin that integrates [MermaidJS](https://mermaid-js.github.io/) diagrams into your WordPress posts and pages. It supports popular diagram types such as flowcharts, sequence diagrams, Gantt charts, class diagrams, and more.
+GraphDraw adds [Mermaid](https://mermaid.js.org/) diagrams to your WordPress posts and pages. You write a diagram as text, in Mermaid's syntax, and the plugin draws it: flowcharts, sequence, class, state and Gantt diagrams, mind maps, timelines, Git graphs, architecture diagrams and every other type Mermaid has.
 
-This makes it easy to include **text-based diagrams** using MermaidJS syntax in the Gutenberg editor without additional tools or complex setups.
+This makes it easy to include **text-based diagrams** in the block editor without additional tools or complex setups.
 
-[Playground Demo](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/land0r/mermaid-blocks/main/blueprint.json)
+[Playground Demo](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/land0r/graphdraw/main/blueprint.json)
 
 
 ### Features:
-- Add MermaidJS diagrams via a dedicated Gutenberg block.
-- **Supported diagram types:** Flowcharts, Sequence Diagrams, Gantt Charts, Class Diagrams.
-- Real-time preview of MermaidJS diagrams in the editor.
+- Add Mermaid diagrams with a dedicated block.
+- **Every diagram type of Mermaid 12**, with starter code for flowcharts, sequence, class and state diagrams and mind maps.
+- Real-time preview of diagrams in the editor, and the line of an error marked in the code.
 - Optional controls for visitors: zoom for large diagrams, a fullscreen view, buttons to download a diagram as an SVG or PNG file, and a button that copies its code.
-- Every Mermaid theme: one for the whole site under Settings → Mermaid Blocks, and one per diagram where you need it. The automatic theme follows the page, dark mode included.
+- Every Mermaid theme: one for the whole site under Settings → GraphDraw, and one per diagram where you need it. The automatic theme follows the page, dark mode included.
 - Alignment (centre, wide and full width), spacing, and an optional caption.
 - A title and a description of each diagram for screen readers.
 - Optionally, a saved image of each diagram, for feeds and for browsers that run no JavaScript, which otherwise show its Mermaid code.
@@ -35,7 +36,7 @@ This makes it easy to include **text-based diagrams** using MermaidJS syntax in 
 - A choice of renderer: Mermaid.js, or Pele, which draws the same Mermaid code with less to download and faster.
 
 ### Pele, a lighter renderer:
-Under Settings → Mermaid Blocks, **Renderer** sets what draws the diagrams of the whole site, in the editor and on your pages: **Mermaid.js**, the default, or **Pele**. Nothing in your posts changes, so you can switch back at any time.
+Under Settings → GraphDraw, **Renderer** sets what draws the diagrams of the whole site, in the editor and on your pages: **Mermaid.js**, the default, or **Pele**. Nothing in your posts changes, so you can switch back at any time.
 
 Pele draws the same Mermaid code, every diagram type of the Mermaid version the plugin has, and loads much less: a page with a flowchart downloads 149 KB of JavaScript (62 KB compressed) where Mermaid.js takes 884 KB (242 KB compressed), and a diagram is drawn in a few milliseconds. In the editor it is 3 MB less. A page loads one renderer, never both.
 
@@ -52,14 +53,14 @@ Pele draws in a plain look of its own, so a diagram looks different from the sam
 
 Downloads, copying, fullscreen, saved images and the accessible title and description work with both renderers, and so does zoom. A download or a saved image of a Pele diagram has the colours of the diagram as you see it.
 
-A developer can choose the renderer for a request, such as Pele only on some pages, with the `mermaid_blocks_renderer` filter. It gets the site's renderer, `mermaid` or `pele`, and returns one of them; anything else means Mermaid.js:
+A developer can choose the renderer for a request, such as Pele only on some pages, with the `graphdraw_renderer` filter. It gets the site's renderer, `mermaid` or `pele`, and returns one of them; anything else means Mermaid.js:
 
-    add_filter( 'mermaid_blocks_renderer', function ( $renderer ) {
+    add_filter( 'graphdraw_renderer', function ( $renderer ) {
         return is_page( 'landing' ) ? 'pele' : $renderer;
     } );
 
 #### Pele's options
-A developer can set what Pele may do with the `mermaid_blocks_pele_options` filter. It applies only when the renderer is Pele. People who write diagrams can't set these options: the site decides what a diagram may do, such as showing links and images.
+A developer can set what Pele may do with the `graphdraw_pele_options` filter. It applies only when the renderer is Pele. People who write diagrams can't set these options: the site decides what a diagram may do, such as showing links and images.
 
 - `links`, `images`: true or false, to allow links and images in diagrams.
 - `linkSchemes`, `imageSchemes`: lists of the URL schemes they may use, such as `https`. A list with anything but strings in it is ignored.
@@ -71,7 +72,7 @@ A developer can set what Pele may do with the `mermaid_blocks_pele_options` filt
 
 A key Pele doesn't know, or a value of the wrong type, is ignored. The plugin sets the font, the measuring, the ids and the responsive layout itself, and they win over the filter:
 
-    add_filter( 'mermaid_blocks_pele_options', function ( $options ) {
+    add_filter( 'graphdraw_pele_options', function ( $options ) {
         $options['links']    = false;
         $options['fontSize'] = 15;
         return $options;
@@ -85,19 +86,19 @@ Pele draws with CSS variables, so a theme can restyle its diagrams. CSS written 
 - **Weights and corners:** `--pele-title-weight`, `--pele-heading-weight`, `--pele-bold-weight` and `--pele-radius`.
 - **Classes:** `.pele` on the SVG, and `.pele-node`, `.pele-edge`, `.pele-edge-label`, `.pele-cluster`, `.pele-cluster-label`, `.pele-label`, `.pele-title`, `.pele-marker`, `.pele-icon` and `.pele-math` on its parts. A node also has a `data-id`, its id in the code, so `[data-id="start"]` picks one node. [Pele's page about theming](https://pele.run/theming) lists them all.
 
-The plugin puts the light or dark palette on the diagram's canvas, `.mermaid-blocks-diagram__canvas`, as inline variables, which beat a rule on the canvas or on an element above it. To change a colour, set the variable on the SVG inside it:
+The plugin puts the light or dark palette on the diagram's canvas, `.graphdraw-diagram__canvas`, as inline variables, which beat a rule on the canvas or on an element above it. To change a colour, set the variable on the SVG inside it:
 
-    .mermaid-blocks-diagram__canvas > svg {
+    .graphdraw-diagram__canvas > svg {
         --pele-accent: #c2410c;
         --pele-radius: 8px;
     }
 
-Fonts are different: labels are measured in the font before they are drawn. The plugin reads `--pele-font` and `--pele-font-mono` on the diagram, `.mermaid-blocks-diagram`, or else uses the diagram's own font, and writes the font it measured in into the SVG. So set them on `.mermaid-blocks-diagram`, not on the SVG. A download takes the values the diagram has on the page, so your CSS counts in it too.
+Fonts are different: labels are measured in the font before they are drawn. The plugin reads `--pele-font` and `--pele-font-mono` on the diagram, `.graphdraw-diagram`, or else uses the diagram's own font, and writes the font it measured in into the SVG. So set them on `.graphdraw-diagram`, not on the SVG. A download takes the values the diagram has on the page, so your CSS counts in it too.
 
 ### Icons:
-A developer can register icon packs with the `mermaid_blocks_icon_packs` filter, for diagrams drawn by either renderer. A pack is the URL of an [Iconify](https://iconify.design/) JSON file, by the name diagrams use before the colon:
+A developer can register icon packs with the `graphdraw_icon_packs` filter, for diagrams drawn by either renderer. A pack is the URL of an [Iconify](https://iconify.design/) JSON file, by the name diagrams use before the colon:
 
-    add_filter( 'mermaid_blocks_icon_packs', function ( $packs ) {
+    add_filter( 'graphdraw_icon_packs', function ( $packs ) {
         $packs['fa']    = 'https://cdn.jsdelivr.net/npm/@iconify-json/fa6-solid@1.2.4/icons.json';
         $packs['logos'] = 'https://cdn.jsdelivr.net/npm/@iconify-json/logos@1.2.17/icons.json';
         return $packs;
@@ -122,10 +123,10 @@ Its attributes are the settings of the block:
 - `title` and `description`: what screen readers read for the diagram.
 - `align`: `center`, `wide` or `full`.
 
-If another plugin already uses `[mermaid]`, write `[mermaid_blocks]` instead: it always belongs to this plugin.
+If another plugin already uses `[mermaid]`, write `[graphdraw]` instead: it always belongs to this plugin.
 
 ### Mermaid code in posts:
-Content that came from Markdown often holds its diagrams as code. Switch on "Show code marked as Mermaid as diagrams" under Settings → Mermaid Blocks, and visitors see that code as diagrams, without anyone converting it:
+Content that came from Markdown often holds its diagrams as code. Switch on "Show code marked as Mermaid as diagrams" under Settings → GraphDraw, and visitors see that code as diagrams, without anyone converting it:
 
 - a Code block with the additional CSS class `language-mermaid` (under Advanced, in the settings of the block),
 - a `<pre>` element with that class, or whose `<code>` element has it, as in `<pre><code class="language-mermaid">`.
@@ -135,45 +136,48 @@ The post and the editor keep the code. These diagrams have the theme set for the
 ### Abilities for AI agents:
 On WordPress 6.9 and later, the plugin registers abilities with the WordPress Abilities API, in the "Mermaid diagrams" category. AI agents and automation can use them to work with diagrams, for example through the MCP Adapter or the REST API under `wp-abilities/v1`:
 
-- `mermaid-blocks/list-diagram-types`: the diagram types with starter code.
-- `mermaid-blocks/list-diagrams`: the diagrams in one post, or in every post that has some.
-- `mermaid-blocks/get-diagram`: one diagram of a post.
-- `mermaid-blocks/build-block-markup`: the block markup of a diagram, for other abilities that write posts.
-- `mermaid-blocks/insert-diagram`: adds a diagram to a post.
-- `mermaid-blocks/update-diagram`: changes the code or the settings of a diagram.
-- `mermaid-blocks/delete-diagram`: removes a diagram from a post.
-- `mermaid-blocks/validate-diagram`: parses a diagram in the block editor and reports its errors (WordPress 7.0 and later). The server can't parse Mermaid, so the other abilities don't validate code.
+- `graphdraw/list-diagram-types`: the diagram types with starter code.
+- `graphdraw/list-diagrams`: the diagrams in one post, or in every post that has some.
+- `graphdraw/get-diagram`: one diagram of a post.
+- `graphdraw/build-block-markup`: the block markup of a diagram, for other abilities that write posts.
+- `graphdraw/insert-diagram`: adds a diagram to a post.
+- `graphdraw/update-diagram`: changes the code or the settings of a diagram.
+- `graphdraw/delete-diagram`: removes a diagram from a post.
+- `graphdraw/validate-diagram`: parses a diagram in the block editor and reports its errors (WordPress 7.0 and later). The server can't parse Mermaid, so the other abilities don't validate code.
 
 A diagram is addressed by the ID of its post and its index among the post's diagrams. Changes need the hash a read returned, so a diagram edited in the meantime is never overwritten, and every change leaves a revision. Each ability is open only to those who could make the same change in the editor: users work with the diagrams of the posts they can edit.
 
 ### Saved images:
-A diagram is drawn in the visitor's browser, so a feed reader, or a browser that runs no JavaScript, shows its Mermaid code instead. Switch on "Save an image of each diagram" under Settings → Mermaid Blocks to give those readers a picture:
+A diagram is drawn in the visitor's browser, so a feed reader, or a browser that runs no JavaScript, shows its Mermaid code instead. Switch on "Save an image of each diagram" under Settings → GraphDraw to give those readers a picture:
 
 - The block editor makes a PNG image of each diagram of a post when the post is opened or saved in it. A post written before gets its images the next time it is opened in the editor.
 - Feeds show the image in place of the code. On the site the image is in a `<noscript>` element, so browsers that run JavaScript never load it, and show the live diagram as before.
 - An image is of one version of a diagram. When the code or the theme of a diagram is changed anywhere else, through the abilities for example, its image is removed, and those readers see the code again until the post is opened in the editor.
 - The text of the image, for those who can't see it, is the description of the diagram, or else its title.
-- The images are files in `wp-content/uploads/mermaid-blocks/`. They are deleted with their post, and with the plugin.
+- The images are files in `wp-content/uploads/graphdraw/`. They are deleted with their post, and with the plugin.
 
 The diagrams of synced patterns, template parts, widgets and shortcodes get no image.
 
 ### Libraries:
-The diagrams are drawn by [Mermaid](https://mermaid.js.org/), by the Mermaid project (MIT licence), or by [Pele](https://pele.run/), by Obsidian (MIT licence). With Pele, formulas are typeset by [Temml](https://temml.org/), by Ron Kok (MIT licence). All three are included in the plugin.
+The diagrams are drawn by [Mermaid](https://mermaid.js.org/), by the Mermaid project (MIT licence), or by [Pele](https://pele.run/), by Obsidian (MIT licence). With Pele, formulas are typeset by [Temml](https://temml.org/), by Ron Kok (MIT licence). For a diagram that asks for the ELK layout, Mermaid uses [ELK](https://eclipse.dev/elk/), by the Eclipse Foundation, as elkjs (Eclipse Public License 2.0, which allows the GPL as a secondary licence). All four are included in the plugin.
+
+### Source code:
+The JavaScript in the plugin's `build/` folder is compiled. Its source, with the build scripts, is on GitHub: [land0r/graphdraw](https://github.com/land0r/graphdraw). Run `npm ci && composer install && npm run build` there to build it.
 
 == Installation ==
 
-1. Upload the plugin to the `/wp-content/plugins/mermaid-blocks` directory, or install it through the WordPress plugin screen.
+1. Upload the plugin to the `/wp-content/plugins/graphdraw` directory, or install it through the WordPress plugin screen.
 2. Activate the plugin through the 'Plugins' menu.
-3. Add the **Mermaid Diagram** block in the Gutenberg editor.
-4. Write MermaidJS code and preview your diagram instantly.
+3. Add the **Mermaid Diagram** block in the block editor.
+4. Write Mermaid code and preview your diagram instantly.
 
 == Frequently Asked Questions ==
 
 = What types of diagrams are supported? =
-The plugin supports popular MermaidJS diagrams: Flowcharts, Sequence Diagrams, Gantt Charts, and Class Diagrams.
+Every type of the Mermaid version the plugin has, Mermaid 12.1: flowcharts, sequence, class, state, entity relationship, user journey, Gantt, pie, quadrant, requirement, C4, Sankey, XY, block, packet, kanban, architecture, radar and treemap diagrams, mind maps, timelines and Git graphs among them. Pele draws them all too.
 
-= Can I edit MermaidJS code? =
-Yes, you can edit MermaidJS code directly in the block editor using plain text.
+= Can I edit Mermaid code? =
+Yes, you can edit Mermaid code directly in the block editor using plain text.
 
 = Is real-time rendering supported? =
 Yes, your diagrams are rendered in real-time as you edit the code.
@@ -187,13 +191,13 @@ A page with a diagram gets one script of 8 KB (3.5 KB compressed) and 3.5 KB of 
 Three things are loaded only for a diagram that uses them: formulas (80 KB compressed), the ELK layout (500 KB) and the controls for visitors (4 KB). A page without a diagram loads nothing from the plugin.
 
 = Should I use Pele? =
-If page weight and speed matter more to you than the look of Mermaid.js's themes, yes: choose it under Settings → Mermaid Blocks, look at your diagrams, and switch back if you prefer the old look. Pele draws every diagram type the plugin offers, but in a plainer look of its own, with a light and a dark palette in place of Mermaid's themes. The section "Pele, a lighter renderer" above says what is different.
+If page weight and speed matter more to you than the look of Mermaid.js's themes, yes: choose it under Settings → GraphDraw, look at your diagrams, and switch back if you prefer the old look. Pele draws every diagram type the plugin offers, but in a plainer look of its own, with a light and a dark palette in place of Mermaid's themes. The section "Pele, a lighter renderer" above says what is different.
 
 = Can diagrams show formulas? =
 Yes. Write the formula between `$$` in a label. Mermaid.js draws it with KaTeX, Pele with Temml. Either is loaded only on a page whose diagrams have a formula.
 
 = Can diagrams show icons? =
-Yes, once a developer has registered icon packs with the `mermaid_blocks_icon_packs` filter. The section "Icons" above shows how. A name that no registered pack has is drawn as before: with Pele, in its own symbol where it has one, such as `database` in an architecture diagram.
+Yes, once a developer has registered icon packs with the `graphdraw_icon_packs` filter. The section "Icons" above shows how. A name that no registered pack has is drawn as before: with Pele, in its own symbol where it has one, such as `database` in an architecture diagram.
 
 = Why does my theme look the same in Pele? =
 Pele has no named themes, so with Pele the theme settings offer Automatic, Light and Dark. A diagram that had another theme before keeps it, and shows it as Dark if it is Dark, Neo Dark, Redux Dark or Redux Dark Color, and as Light otherwise; switch back to Mermaid.js and it looks as it did. A theme written in the diagram's code counts the same way.
@@ -209,33 +213,38 @@ Yes, for one diagram at a time. Start its code with these lines:
 Without them, flowcharts and class, state, entity relationship and requirement diagrams get Mermaid's dagre layout. Use case diagrams always get ELK. ELK draws its lines with right angles and often keeps a large diagram tidier, but it is 1.6 MB of JavaScript, twice everything else a flowchart loads, so only the pages with a diagram that asks for it load it.
 
 = What do feed readers and browsers without JavaScript show? =
-The Mermaid code of the diagram, since it is the browser that draws it. To show them a picture instead, switch on "Save an image of each diagram" under Settings → Mermaid Blocks, then open your posts in the block editor, which makes the images.
+The Mermaid code of the diagram, since it is the browser that draws it. To show them a picture instead, switch on "Save an image of each diagram" under Settings → GraphDraw, then open your posts in the block editor, which makes the images.
 
 = Can I use it in the classic editor or a page builder? =
 In Elementor, add the Mermaid Diagram widget: it has the block's settings, and its preview shows the diagram as you edit it. Elsewhere, use the `[mermaid]` shortcode: put the Mermaid code between `[mermaid]` and `[/mermaid]`. If a page builder shows the code instead of the diagram, the code has a `<` that WordPress took for the start of a tag: write it as `&lt;`.
 
 = My posts already have Mermaid code in code blocks. Do I have to convert them? =
-No. Switch on "Show code marked as Mermaid as diagrams" under Settings → Mermaid Blocks. Code with the `language-mermaid` class is then shown as a diagram, and the posts stay as they are. The diagram replaces the code before the page is sent, so a script of another plugin that draws such code finds none: it is not drawn twice. To keep some code as code, return false from the `mermaid_blocks_show_code_as_diagram` filter.
+No. Switch on "Show code marked as Mermaid as diagrams" under Settings → GraphDraw. Code with the `language-mermaid` class is then shown as a diagram, and the posts stay as they are. The diagram replaces the code before the page is sent, so a script of another plugin that draws such code finds none: it is not drawn twice. To keep some code as code, return false from the `graphdraw_show_code_as_diagram` filter.
 
 == Screenshots ==
 
-1. **Adding a diagram block** – Inserting a Mermaid Diagram block in Gutenberg editor.
-2. **Example: Flowchart** – A rendered flowchart in the Gutenberg editor.
-3. **Example: Sequence Diagram** – MermaidJS sequence diagram rendered live.
+1. **Adding a diagram block** – Inserting a Mermaid Diagram block in the block editor.
+2. **Example: Flowchart** – A rendered flowchart in the block editor.
+3. **Example: Sequence Diagram** – A sequence diagram rendered live.
 4. **Frontend View** – A Mermaid diagram displayed on the published site.
 
 == Changelog ==
 
 = 1.0.0 =
-* Initial stable release.
-* Add MermaidJS block with support for flowcharts, sequence diagrams, Gantt charts, and class diagrams.
-* Real-time rendering of diagrams in the Gutenberg editor.
+* First release on WordPress.org, as GraphDraw.
+* Mermaid 12.1, with every diagram type it has.
+* A choice of renderer: Mermaid.js, or Pele, which draws the same code with much less JavaScript. With Pele: formulas, layouts for narrow screens, its own zoom, and options a site sets.
+* Icons in diagrams, from icon packs a site registers.
+* Themes: one for the site and one per diagram, and an automatic theme that follows the page, dark mode included.
+* Alignment, spacing, a caption, and an accessible title and description.
+* Controls for visitors: zoom, fullscreen, download as SVG or PNG, and copy the code.
+* The code field has line numbers, Tab indentation and the line of an error marked. Copy a diagram as PNG from the block's toolbar.
+* Saved images of diagrams, for feeds and browsers without JavaScript (off by default).
+* The `[mermaid]` shortcode, a Mermaid Diagram widget for Elementor, and code marked as Mermaid in posts shown as diagrams (off by default).
+* Abilities for AI agents, with the WordPress Abilities API (WordPress 6.9 and later).
+* Lighter pages: Mermaid loads only when a diagram scrolls into view, and only the parts that diagram needs.
 
-= 1.1.0 =
-* Instructions in the editor.
-* ObsidianMD markdown to Mermaid Blocks transformation.
+== Upgrade Notice ==
 
-== Future Plans ==
-
-* Add support for state diagrams, mindmaps, and other MermaidJS types.
-* Include pre-designed templates for faster diagram creation.
+= 1.0.0 =
+The first release on WordPress.org.

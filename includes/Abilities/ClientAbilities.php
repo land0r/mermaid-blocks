@@ -2,13 +2,13 @@
 /**
  * The abilities that run in the browser.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
-use MermaidBlocks\Files;
-use MermaidBlocks\Hookable;
+use GraphDraw\Files;
+use GraphDraw\Hookable;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Loads the abilities that run in the browser, in the block editor:
- * `mermaid-blocks/validate-diagram` parses a diagram with the editor's copy
+ * `graphdraw/validate-diagram` parses a diagram with the editor's copy
  * of Mermaid, which the server can't. They are a script module, built from
  * `src/abilities/`, and need the client-side Abilities API of WordPress 7.0.
  */
@@ -25,7 +25,7 @@ final class ClientAbilities implements Hookable {
 	/**
 	 * The script module that registers the abilities.
 	 */
-	const MODULE = 'mermaid-blocks/abilities';
+	const MODULE = 'graphdraw/abilities';
 
 	/**
 	 * The plugin's files, to find the module.
@@ -95,8 +95,8 @@ final class ClientAbilities implements Hookable {
 				'category'  => array( 'slug' => Registrar::CATEGORY ) + $this->registrar->get_category_args(),
 				'abilities' => array(
 					'validateDiagram' => array(
-						'label'       => __( 'Validate a diagram', 'mermaid-blocks' ),
-						'description' => __( 'Parses Mermaid source with the renderer of the editor, Mermaid.js or Pele as the site is set, and tells whether the site can draw it: its type, or the error and the line it is on. Changes nothing.', 'mermaid-blocks' ),
+						'label'       => __( 'Validate a diagram', 'graphdraw-mermaid-diagrams-flowcharts' ),
+						'description' => __( 'Parses Mermaid source with the renderer of the editor, Mermaid.js or Pele as the site is set, and tells whether the site can draw it: its type, or the error and the line it is on. Changes nothing.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 					),
 				),
 			)

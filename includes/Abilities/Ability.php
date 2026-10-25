@@ -2,10 +2,10 @@
 /**
  * The base of the plugin's abilities.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
 use WP_Error;
 
@@ -25,7 +25,7 @@ abstract class Ability {
 
 	/**
 	 * Returns the name of the ability, with the plugin's namespace, such as
-	 * `mermaid-blocks/get-diagram`.
+	 * `graphdraw/get-diagram`.
 	 *
 	 * @return string The name.
 	 */

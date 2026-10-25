@@ -2,20 +2,20 @@
 /**
  * Tests of the abilities that run in the browser.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Abilities\ClientAbilities;
-use MermaidBlocks\Abilities\Registrar;
-use MermaidBlocks\Files;
+use GraphDraw\Abilities\ClientAbilities;
+use GraphDraw\Abilities\Registrar;
+use GraphDraw\Files;
 use WP_UnitTestCase;
 
 /**
  * The script module of the abilities, and the texts it is given.
  *
- * @covers \MermaidBlocks\Abilities\ClientAbilities
+ * @covers \GraphDraw\Abilities\ClientAbilities
  */
 class ClientAbilitiesTest extends WP_UnitTestCase {
 
@@ -32,7 +32,7 @@ class ClientAbilitiesTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->abilities = mermaid_blocks()->get( ClientAbilities::class );
+		$this->abilities = graphdraw()->get( ClientAbilities::class );
 	}
 
 	/**
@@ -46,10 +46,10 @@ class ClientAbilitiesTest extends WP_UnitTestCase {
 
 		$this->assertTrue( $data['kept'] );
 		$this->assertSame(
-			array( 'slug' => Registrar::CATEGORY ) + mermaid_blocks()->get( Registrar::class )->get_category_args(),
+			array( 'slug' => Registrar::CATEGORY ) + graphdraw()->get( Registrar::class )->get_category_args(),
 			$data['category']
 		);
-		$this->assertSame( 'mermaid-blocks', $data['category']['slug'] );
+		$this->assertSame( 'graphdraw', $data['category']['slug'] );
 		$this->assertNotEmpty( $data['category']['label'] );
 		$this->assertNotEmpty( $data['abilities']['validateDiagram']['label'] );
 		$this->assertNotEmpty( $data['abilities']['validateDiagram']['description'] );
@@ -60,7 +60,7 @@ class ClientAbilitiesTest extends WP_UnitTestCase {
 	 * client-side Abilities API, and only there.
 	 */
 	public function test_loads_the_module_where_wordpress_has_the_api(): void {
-		$files = mermaid_blocks()->get( Files::class );
+		$files = graphdraw()->get( Files::class );
 
 		$this->assertFileExists( $files->get_build_path( 'abilities.js' ) );
 		$this->assertNotEmpty( $files->get_build_asset( 'abilities' )['version'] );

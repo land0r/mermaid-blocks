@@ -66,7 +66,7 @@ export async function withFullLayout( renderer, svg, code, theme, use ) {
 			code,
 			theme,
 			probe,
-			`${ svg.id || 'mermaid-blocks-diagram' }-full`
+			`${ svg.id || 'graphdraw-diagram' }-full`
 		);
 
 		if ( ! result.error ) {

@@ -1,11 +1,11 @@
 <?php
 /**
- * The `mermaid-blocks/insert-diagram` ability.
+ * The `graphdraw/insert-diagram` ability.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
 use WP_Post;
 
@@ -24,7 +24,7 @@ final class InsertDiagram extends PostAbility {
 	 * @return string The name.
 	 */
 	public function get_name(): string {
-		return 'mermaid-blocks/insert-diagram';
+		return 'graphdraw/insert-diagram';
 	}
 
 	/**
@@ -33,7 +33,7 @@ final class InsertDiagram extends PostAbility {
 	 * @return string The label.
 	 */
 	protected function get_label(): string {
-		return __( 'Insert a diagram', 'mermaid-blocks' );
+		return __( 'Insert a diagram', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -42,7 +42,7 @@ final class InsertDiagram extends PostAbility {
 	 * @return string The description.
 	 */
 	protected function get_description(): string {
-		return __( 'Adds a Mermaid diagram block to a post, at the end or before one of its top-level blocks. The post is saved, with a revision.', 'mermaid-blocks' );
+		return __( 'Adds a Mermaid diagram block to a post, at the end or before one of its top-level blocks. The post is saved, with a revision.', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -60,7 +60,7 @@ final class InsertDiagram extends PostAbility {
 				'position'   => array(
 					'type'        => 'integer',
 					'minimum'     => 0,
-					'description' => __( 'The position among the top-level blocks of the post to add the diagram at, counting from 0. Without one, or past the last block, the diagram goes at the end.', 'mermaid-blocks' ),
+					'description' => __( 'The position among the top-level blocks of the post to add the diagram at, counting from 0. Without one, or past the last block, the diagram goes at the end.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				),
 			),
 			'required'             => array( 'post_id', 'code' ),

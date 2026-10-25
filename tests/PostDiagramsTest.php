@@ -2,15 +2,15 @@
 /**
  * Tests of the diagrams in posts.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Diagram;
-use MermaidBlocks\DiagramTypes;
-use MermaidBlocks\Integrations\Block;
-use MermaidBlocks\Posts\PostDiagrams;
+use GraphDraw\Diagram;
+use GraphDraw\DiagramTypes;
+use GraphDraw\Integrations\Block;
+use GraphDraw\Posts\PostDiagrams;
 use WP_Block_Type_Registry;
 use WP_Post;
 use WP_UnitTestCase;
@@ -18,7 +18,7 @@ use WP_UnitTestCase;
 /**
  * Finding diagrams by index, and adding, changing and removing them.
  *
- * @covers \MermaidBlocks\Posts\PostDiagrams
+ * @covers \GraphDraw\Posts\PostDiagrams
  */
 class PostDiagramsTest extends WP_UnitTestCase {
 
@@ -252,7 +252,7 @@ class PostDiagramsTest extends WP_UnitTestCase {
 
 		foreach ( array( $replaced, $removed ) as $error ) {
 			$this->assertWPError( $error );
-			$this->assertSame( 'mermaid_blocks_diagram_changed', $error->get_error_code() );
+			$this->assertSame( 'graphdraw_diagram_changed', $error->get_error_code() );
 			$this->assertSame( 409, $error->get_error_data()['status'] );
 		}
 
@@ -267,7 +267,7 @@ class PostDiagramsTest extends WP_UnitTestCase {
 		$error = $this->diagrams->remove( $post, 5, str_repeat( '0', 32 ) );
 
 		$this->assertWPError( $error );
-		$this->assertSame( 'mermaid_blocks_diagram_not_found', $error->get_error_code() );
+		$this->assertSame( 'graphdraw_diagram_not_found', $error->get_error_code() );
 	}
 
 	/**

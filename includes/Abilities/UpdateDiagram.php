@@ -1,11 +1,11 @@
 <?php
 /**
- * The `mermaid-blocks/update-diagram` ability.
+ * The `graphdraw/update-diagram` ability.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Abilities;
+namespace GraphDraw\Abilities;
 
 use WP_Post;
 
@@ -24,7 +24,7 @@ final class UpdateDiagram extends PostAbility {
 	 * @return string The name.
 	 */
 	public function get_name(): string {
-		return 'mermaid-blocks/update-diagram';
+		return 'graphdraw/update-diagram';
 	}
 
 	/**
@@ -33,7 +33,7 @@ final class UpdateDiagram extends PostAbility {
 	 * @return string The label.
 	 */
 	protected function get_label(): string {
-		return __( 'Update a diagram', 'mermaid-blocks' );
+		return __( 'Update a diagram', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -42,7 +42,7 @@ final class UpdateDiagram extends PostAbility {
 	 * @return string The description.
 	 */
 	protected function get_description(): string {
-		return __( 'Changes the code or the attributes of a Mermaid diagram in a post. Attributes left out stay as they are. It fails when the diagram changed since it was read, as its hash tells. The post is saved, with a revision.', 'mermaid-blocks' );
+		return __( 'Changes the code or the attributes of a Mermaid diagram in a post. Attributes left out stay as they are. It fails when the diagram changed since it was read, as its hash tells. The post is saved, with a revision.', 'graphdraw-mermaid-diagrams-flowcharts' );
 	}
 
 	/**
@@ -95,7 +95,7 @@ final class UpdateDiagram extends PostAbility {
 	 */
 	protected function run( WP_Post $post, array $input ) {
 		if ( ! isset( $input['code'] ) && empty( $input['attributes'] ) ) {
-			return $this->error( 'mermaid_blocks_nothing_to_update', __( 'Give the diagram new code, or attributes to change.', 'mermaid-blocks' ) );
+			return $this->error( 'graphdraw_nothing_to_update', __( 'Give the diagram new code, or attributes to change.', 'graphdraw-mermaid-diagrams-flowcharts' ) );
 		}
 
 		$index = (int) $input['index'];

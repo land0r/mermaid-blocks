@@ -4,16 +4,16 @@
 
 /*
  * The code field: line numbers in a gutter, next to a textarea that does not
- * wrap, so every line is one row of `--mermaid-blocks-code-line-height`. The
- * script sets `--mermaid-blocks-code-scroll` to how far the textarea is
+ * wrap, so every line is one row of `--graphdraw-code-line-height`. The
+ * script sets `--graphdraw-code-scroll` to how far the textarea is
  * scrolled, and the line numbers and the error line move by as much.
  *
  * Code reads left to right in every language: the element has `dir="ltr"`,
  * because the build would flip a `direction` declared here.
  */
-.mermaid-blocks-code-input {
-	--mermaid-blocks-code-line-height: 20px;
-	--mermaid-blocks-code-padding: 8px;
+.graphdraw-code-input {
+	--graphdraw-code-line-height: 20px;
+	--graphdraw-code-padding: 8px;
 	display: flex;
 	border: 1px solid #949494;
 	border-radius: 2px;
@@ -21,7 +21,7 @@
 	background: #fff;
 	font-family: Menlo, Consolas, monaco, monospace;
 	font-size: 13px;
-	line-height: var(--mermaid-blocks-code-line-height);
+	line-height: var(--graphdraw-code-line-height);
 
 	&:focus-within {
 		border-color: var(--wp-admin-theme-color, #3858e9);
@@ -29,11 +29,11 @@
 	}
 }
 
-.mermaid-blocks-code-input__gutter {
+.graphdraw-code-input__gutter {
 	flex: none;
 	overflow: hidden;
 	min-width: 2ch;
-	padding: var(--mermaid-blocks-code-padding);
+	padding: var(--graphdraw-code-padding);
 	text-align: end;
 	color: #757575;
 	background: #f0f0f0;
@@ -46,12 +46,12 @@
 }
 
 /* No height of its own: the textarea alone decides how tall the field is. */
-.mermaid-blocks-code-input__line-numbers {
+.graphdraw-code-input__line-numbers {
 	height: 0;
-	transform: translateY(calc(-1 * var(--mermaid-blocks-code-scroll, 0px)));
+	transform: translateY(calc(-1 * var(--graphdraw-code-scroll, 0px)));
 }
 
-.mermaid-blocks-code-input__field {
+.graphdraw-code-input__field {
 	position: relative;
 	flex: 1;
 	min-width: 0;
@@ -59,26 +59,26 @@
 }
 
 /* A tint over the line the syntax error points at. */
-.mermaid-blocks-code-input__error-line {
-	--mermaid-blocks-code-error-offset: calc((var(--mermaid-blocks-code-error-line) - 1) * var(--mermaid-blocks-code-line-height));
+.graphdraw-code-input__error-line {
+	--graphdraw-code-error-offset: calc((var(--graphdraw-code-error-line) - 1) * var(--graphdraw-code-line-height));
 	position: absolute;
-	top: var(--mermaid-blocks-code-padding);
+	top: var(--graphdraw-code-padding);
 	right: 0;
 	left: 0;
-	height: var(--mermaid-blocks-code-line-height);
+	height: var(--graphdraw-code-line-height);
 	background: rgba(204, 24, 24, 0.12);
-	transform: translateY(calc(var(--mermaid-blocks-code-error-offset) - var(--mermaid-blocks-code-scroll, 0px)));
+	transform: translateY(calc(var(--graphdraw-code-error-offset) - var(--graphdraw-code-scroll, 0px)));
 	pointer-events: none;
 }
 
 /* Doubled class: themes style `textarea` in the editor canvas. */
-.mermaid-blocks-code-input .mermaid-blocks-code-input__textarea {
+.graphdraw-code-input .graphdraw-code-input__textarea {
 	display: block;
 	position: relative;
 	box-sizing: border-box;
 	width: 100%;
 	margin: 0;
-	padding: var(--mermaid-blocks-code-padding);
+	padding: var(--graphdraw-code-padding);
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
@@ -98,7 +98,7 @@
  * The preview: a figure, for its caption. Doubled class: themes style
  * `figure` in the editor canvas. The code field, while it shows, comes after.
  */
-.wp-block-mermaid-blocks-diagram .mermaid-blocks-preview {
+.wp-block-graphdraw-diagram .graphdraw-preview {
 	margin: 0;
 
 	&[hidden] {
@@ -106,7 +106,7 @@
 	}
 }
 
-.mermaid-blocks-preview:not([hidden]) + .mermaid-blocks-code {
+.graphdraw-preview:not([hidden]) + .graphdraw-code {
 	margin-top: 20px;
 }
 
@@ -114,10 +114,10 @@
  * Centre alignment, as on the front end. Where the editor doesn't know the
  * theme's layout, the alignment is on an element around the block.
  */
-.wp-block-mermaid-blocks-diagram.aligncenter .mermaid-container__diagram,
-.wp-block-mermaid-blocks-diagram.aligncenter .mermaid-blocks-diagram__caption,
-.wp-block[data-align="center"] > .wp-block-mermaid-blocks-diagram .mermaid-container__diagram,
-.wp-block[data-align="center"] > .wp-block-mermaid-blocks-diagram .mermaid-blocks-diagram__caption {
+.wp-block-graphdraw-diagram.aligncenter .mermaid-container__diagram,
+.wp-block-graphdraw-diagram.aligncenter .graphdraw-diagram__caption,
+.wp-block[data-align="center"] > .wp-block-graphdraw-diagram .mermaid-container__diagram,
+.wp-block[data-align="center"] > .wp-block-graphdraw-diagram .graphdraw-diagram__caption {
 	text-align: center;
 }
 
@@ -131,7 +131,7 @@
 }
 
 /* The line of help of a panel in the sidebar. */
-.mermaid-blocks-panel-help {
+.graphdraw-panel-help {
 	margin: 0 0 16px;
 	color: #757575;
 	font-size: 12px;

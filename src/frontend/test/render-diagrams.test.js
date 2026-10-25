@@ -22,9 +22,9 @@ function setup( codes = [ CODE ] ) {
 	document.body.innerHTML = '';
 	codes.forEach( ( code ) => {
 		const block = document.createElement( 'div' );
-		block.className = 'mermaid-blocks-diagram';
+		block.className = 'graphdraw-diagram';
 		const pre = document.createElement( 'pre' );
-		pre.className = 'mermaid-blocks-diagram__source';
+		pre.className = 'graphdraw-diagram__source';
 		// Mimic esc_textarea() output: parsed back through the HTML parser.
 		pre.innerHTML = code
 			.replace( /&/g, '&amp;' )
@@ -45,10 +45,10 @@ const themed = () => ( {
 	render: jest.fn( async ( id ) => ( { svg: `<svg id="${ id }"></svg>` } ) ),
 } );
 
-const getDiagram = () => document.querySelector( '.mermaid-blocks-diagram' );
+const getDiagram = () => document.querySelector( '.graphdraw-diagram' );
 
 const getCanvas = ( diagram ) =>
-	diagram.querySelector( '.mermaid-blocks-diagram__canvas' );
+	diagram.querySelector( '.graphdraw-diagram__canvas' );
 
 // The palette of a Pele diagram, by the colour its canvas gives the text.
 const getPalette = ( canvas ) =>
@@ -79,17 +79,16 @@ describe( 'renderDiagrams', () => {
 		await renderDiagrams( m );
 
 		document
-			.querySelectorAll( '.mermaid-blocks-diagram' )
+			.querySelectorAll( '.graphdraw-diagram' )
 			.forEach( ( block ) => {
 				expect( block.classList.contains( 'is-rendered' ) ).toBe(
 					true
 				);
 				expect(
-					block.querySelector( '.mermaid-blocks-diagram__canvas svg' )
+					block.querySelector( '.graphdraw-diagram__canvas svg' )
 				).not.toBeNull();
 				expect(
-					block.querySelector( '.mermaid-blocks-diagram__source' )
-						.hidden
+					block.querySelector( '.graphdraw-diagram__source' ).hidden
 				).toBe( true );
 			} );
 		expect( bindFunctions ).toHaveBeenCalledTimes( 2 );
@@ -115,14 +114,12 @@ describe( 'renderDiagrams', () => {
 		} );
 		await renderDiagrams( m );
 
-		const [ bad, good ] = document.querySelectorAll(
-			'.mermaid-blocks-diagram'
-		);
+		const [ bad, good ] = document.querySelectorAll( '.graphdraw-diagram' );
 		expect( bad.classList.contains( 'has-error' ) ).toBe( true );
 		expect( bad.classList.contains( 'is-rendered' ) ).toBe( false );
-		expect(
-			bad.querySelector( '.mermaid-blocks-diagram__source' ).hidden
-		).toBe( false );
+		expect( bad.querySelector( '.graphdraw-diagram__source' ).hidden ).toBe(
+			false
+		);
 		expect( good.classList.contains( 'is-rendered' ) ).toBe( true );
 		const badId = m.render.mock.calls[ 0 ][ 0 ];
 		expect( document.getElementById( 'd' + badId ) ).toBeNull();
@@ -143,7 +140,7 @@ describe( 'renderDiagrams', () => {
 
 		// eslint-disable-next-line no-console
 		expect( console.error ).toHaveBeenCalledWith(
-			'Mermaid Blocks: failed to render diagram.',
+			'GraphDraw: failed to render diagram.',
 			'Line 2: boom'
 		);
 	} );
@@ -163,9 +160,8 @@ describe( 'renderDiagrams', () => {
 
 	it( 'renders only the diagrams inside the given root', async () => {
 		setup( [ 'outside', 'inside' ] );
-		const [ outside, inside ] = document.querySelectorAll(
-			'.mermaid-blocks-diagram'
-		);
+		const [ outside, inside ] =
+			document.querySelectorAll( '.graphdraw-diagram' );
 		const container = document.createElement( 'section' );
 		container.appendChild( inside );
 		document.body.appendChild( container );
@@ -184,7 +180,7 @@ describe( 'renderDiagrams', () => {
 
 	it( 'renders the root itself when it is a diagram', async () => {
 		setup( [ 'graph LR\nA-->B' ] );
-		const diagram = document.querySelector( '.mermaid-blocks-diagram' );
+		const diagram = document.querySelector( '.graphdraw-diagram' );
 		const m = fake();
 
 		await renderDiagrams( m, diagram );
@@ -204,8 +200,8 @@ describe( 'renderDiagrams', () => {
 				( child ) => child.className || child.localName
 			)
 		).toEqual( [
-			'mermaid-blocks-diagram__source',
-			'mermaid-blocks-diagram__canvas',
+			'graphdraw-diagram__source',
+			'graphdraw-diagram__canvas',
 			'figcaption',
 		] );
 	} );
@@ -227,9 +223,8 @@ describe( 'renderDiagrams', () => {
 
 	it( 'draws a diagram that follows the page for the surface it is on', async () => {
 		setup( [ 'graph LR\nA-->B', 'graph LR\nC-->D', 'graph LR\nE-->F' ] );
-		const [ onLight, onDark, unknown ] = document.querySelectorAll(
-			'.mermaid-blocks-diagram'
-		);
+		const [ onLight, onDark, unknown ] =
+			document.querySelectorAll( '.graphdraw-diagram' );
 		onDark.dataset.mermaidTheme = 'auto';
 		darken( onDark );
 		unknown.dataset.mermaidTheme = 'no-such-theme';
@@ -325,7 +320,7 @@ describe( 'redrawDiagram', () => {
 		// As controls.js and zoom.js leave a zoomed diagram.
 		const previous = getCanvas( diagram );
 		const toolbar = document.createElement( 'div' );
-		toolbar.className = 'mermaid-blocks-diagram__toolbar';
+		toolbar.className = 'graphdraw-diagram__toolbar';
 		diagram.insertBefore( toolbar, previous );
 		diagram.classList.add( 'is-zoomed', 'is-panning' );
 
@@ -338,17 +333,15 @@ describe( 'redrawDiagram', () => {
 				( child ) => child.className || child.localName
 			)
 		).toEqual( [
-			'mermaid-blocks-diagram__source',
-			'mermaid-blocks-diagram__canvas',
+			'graphdraw-diagram__source',
+			'graphdraw-diagram__canvas',
 			'figcaption',
 		] );
 		expect( getCanvas( diagram ) ).not.toBe( previous );
 		expect( getCanvas( diagram ).dataset.mermaidTheme ).toBe( 'auto-dark' );
-		expect( diagram.className ).toBe(
-			'mermaid-blocks-diagram is-rendered'
-		);
+		expect( diagram.className ).toBe( 'graphdraw-diagram is-rendered' );
 		expect(
-			diagram.querySelector( '.mermaid-blocks-diagram__source' ).hidden
+			diagram.querySelector( '.graphdraw-diagram__source' ).hidden
 		).toBe( true );
 		expect( isOutdated( diagram ) ).toBe( false );
 	} );
@@ -366,9 +359,7 @@ describe( 'redrawDiagram', () => {
 		await expect( redrawDiagram( m, diagram ) ).resolves.toBe( false );
 
 		expect( getCanvas( diagram ) ).toBe( previous );
-		expect( diagram.className ).toBe(
-			'mermaid-blocks-diagram is-rendered'
-		);
+		expect( diagram.className ).toBe( 'graphdraw-diagram is-rendered' );
 		// eslint-disable-next-line no-console
 		expect( console.error ).toHaveBeenCalled();
 	} );
@@ -396,7 +387,7 @@ describe( 'redrawDiagram', () => {
 
 		expect( results ).toEqual( [ true, false ] );
 		expect(
-			diagram.querySelectorAll( '.mermaid-blocks-diagram__canvas' )
+			diagram.querySelectorAll( '.graphdraw-diagram__canvas' )
 		).toHaveLength( 1 );
 	} );
 } );
@@ -422,7 +413,7 @@ describe( 'renderDiagrams with Pele', () => {
 		expect( diagram.classList.contains( 'is-rendered' ) ).toBe( true );
 		expect( getCanvas( diagram ).querySelector( 'svg' ) ).not.toBeNull();
 		expect(
-			diagram.querySelector( '.mermaid-blocks-diagram__source' ).hidden
+			diagram.querySelector( '.graphdraw-diagram__source' ).hidden
 		).toBe( true );
 	} );
 
@@ -444,7 +435,7 @@ describe( 'renderDiagrams with Pele', () => {
 	it( 'gives each diagram of a page ids of its own', async () => {
 		setup( [ 'flowchart LR\nA --> B', 'flowchart LR\nA --> B' ] );
 		document
-			.querySelectorAll( '.mermaid-blocks-diagram' )
+			.querySelectorAll( '.graphdraw-diagram' )
 			.forEach( ( diagram ) => {
 				diagram.dataset.mermaidTitle = 'T';
 			} );
@@ -469,11 +460,11 @@ describe( 'renderDiagrams with Pele', () => {
 		expect( diagram.classList.contains( 'has-error' ) ).toBe( true );
 		expect( getCanvas( diagram ) ).toBeNull();
 		expect(
-			diagram.querySelector( '.mermaid-blocks-diagram__source' ).hidden
+			diagram.querySelector( '.graphdraw-diagram__source' ).hidden
 		).toBe( false );
 		// eslint-disable-next-line no-console
 		expect( console.error ).toHaveBeenCalledWith(
-			'Mermaid Blocks: failed to render diagram.',
+			'GraphDraw: failed to render diagram.',
 			expect.stringMatching( /^Line 3: / )
 		);
 	} );
@@ -526,7 +517,7 @@ describe( 'renderDiagrams with Pele', () => {
 		const canvas = getCanvas( diagram );
 		const svg = canvas.querySelector( 'svg' );
 		const toolbar = document.createElement( 'div' );
-		toolbar.className = 'mermaid-blocks-diagram__toolbar';
+		toolbar.className = 'graphdraw-diagram__toolbar';
 		diagram.appendChild( toolbar );
 
 		expect( getPalette( canvas ) ).toBe( 'light' );
@@ -541,9 +532,9 @@ describe( 'renderDiagrams with Pele', () => {
 
 		expect( getCanvas( diagram ) ).toBe( canvas );
 		expect( canvas.querySelector( 'svg' ) ).toBe( svg );
-		expect(
-			diagram.querySelector( '.mermaid-blocks-diagram__toolbar' )
-		).toBe( toolbar );
+		expect( diagram.querySelector( '.graphdraw-diagram__toolbar' ) ).toBe(
+			toolbar
+		);
 		expect( getPalette( canvas ) ).toBe( 'dark' );
 		expect( canvas.dataset.mermaidTheme ).toBe( 'auto-dark' );
 		expect( isOutdated( diagram ) ).toBe( false );
@@ -576,7 +567,7 @@ describe( 'redrawInPlace', () => {
 		const svg = canvas.querySelector( 'svg' );
 		const id = svg.id;
 		const toolbar = document.createElement( 'div' );
-		toolbar.className = 'mermaid-blocks-diagram__toolbar';
+		toolbar.className = 'graphdraw-diagram__toolbar';
 		diagram.appendChild( toolbar );
 		const palette = canvas.style.getPropertyValue( '--pele-fg' );
 
@@ -592,9 +583,9 @@ describe( 'redrawInPlace', () => {
 		expect( canvas.querySelector( 'svg' ) ).toBe( svg );
 		expect( svg.id ).toBe( id );
 		expect( svg.textContent ).toContain( 'C' );
-		expect(
-			diagram.querySelector( '.mermaid-blocks-diagram__toolbar' )
-		).toBe( toolbar );
+		expect( diagram.querySelector( '.graphdraw-diagram__toolbar' ) ).toBe(
+			toolbar
+		);
 		expect( canvas.style.getPropertyValue( '--pele-fg' ) ).toBe( palette );
 		expect( svg.querySelector( 'title' ).textContent ).toBe( 'A title' );
 		expect( svg.getAttribute( 'aria-labelledby' ) ).toBe(

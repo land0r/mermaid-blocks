@@ -2,13 +2,13 @@
 /**
  * The shortcode, for diagrams where the block can't be used.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Integrations;
+namespace GraphDraw\Integrations;
 
-use MermaidBlocks\Diagram;
-use MermaidBlocks\Hookable;
+use GraphDraw\Diagram;
+use GraphDraw\Hookable;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -37,7 +37,7 @@ final class Shortcode implements Hookable {
 	/**
 	 * The tag that is always this plugin's.
 	 */
-	const PREFIXED_TAG = 'mermaid_blocks';
+	const PREFIXED_TAG = 'graphdraw';
 
 	/**
 	 * The attributes, with their defaults.

@@ -2,18 +2,18 @@
 /**
  * Tests of the diagram types.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\DiagramTypes;
+use GraphDraw\DiagramTypes;
 use WP_UnitTestCase;
 
 /**
  * The diagram types, their variations, and the detection of a type.
  *
- * @covers \MermaidBlocks\DiagramTypes
+ * @covers \GraphDraw\DiagramTypes
  */
 class DiagramTypesTest extends WP_UnitTestCase {
 
@@ -73,7 +73,7 @@ class DiagramTypesTest extends WP_UnitTestCase {
 	 * The block gets the variations.
 	 */
 	public function test_the_block_has_the_variations(): void {
-		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( 'mermaid-blocks/diagram' );
+		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( 'graphdraw/diagram' );
 
 		$this->assertSame( $this->types->get_variations(), $block_type->get_variations() );
 	}

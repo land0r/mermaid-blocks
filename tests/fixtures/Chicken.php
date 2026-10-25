@@ -2,10 +2,10 @@
 /**
  * A class that needs another, which needs it: see ContainerTest.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests\Fixtures;
+namespace GraphDraw\Tests\Fixtures;
 
 /**
  * Needs an egg to be created.

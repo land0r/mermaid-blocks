@@ -2,14 +2,14 @@
 /**
  * The saved images of diagrams.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Images;
+namespace GraphDraw\Images;
 
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Options;
-use MermaidBlocks\Renderers;
+use GraphDraw\Hookable;
+use GraphDraw\Options;
+use GraphDraw\Renderers;
 use WP_Error;
 use WP_Post;
 
@@ -53,12 +53,12 @@ final class SavedImages implements Hookable {
 	 * its file, relative to the uploads directory, its size in pixels, and
 	 * the theme it was drawn in and the renderer.
 	 */
-	const META_KEY = '_mermaid_blocks_images';
+	const META_KEY = '_graphdraw_images';
 
 	/**
 	 * The directory of the images, in the uploads directory.
 	 */
-	const DIRECTORY = 'mermaid-blocks';
+	const DIRECTORY = 'graphdraw';
 
 	/**
 	 * How many pixels of an image make one pixel of the page.
@@ -301,7 +301,7 @@ final class SavedImages implements Hookable {
 		 *
 		 * @param bool $replaces Whether the image replaces the source.
 		 */
-		return (bool) apply_filters( 'mermaid_blocks_image_replaces_source', is_feed() );
+		return (bool) apply_filters( 'graphdraw_image_replaces_source', is_feed() );
 	}
 
 	/**
@@ -328,8 +328,8 @@ final class SavedImages implements Hookable {
 
 		if ( ! preg_match( '/^[a-f0-9]{32}$/', $key ) ) {
 			return new WP_Error(
-				'mermaid_blocks_image_invalid',
-				__( 'The key of the image is not valid.', 'mermaid-blocks' ),
+				'graphdraw_image_invalid',
+				__( 'The key of the image is not valid.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -357,10 +357,10 @@ final class SavedImages implements Hookable {
 
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error(
-				'mermaid_blocks_image_not_saved',
+				'graphdraw_image_not_saved',
 				sprintf(
 					/* translators: %s: The reason, such as "Unable to create directory". */
-					__( 'The image could not be saved: %s', 'mermaid-blocks' ),
+					__( 'The image could not be saved: %s', 'graphdraw-mermaid-diagrams-flowcharts' ),
 					$upload['error']
 				),
 				array( 'status' => 500 )
@@ -453,8 +453,8 @@ final class SavedImages implements Hookable {
 	private function get_size( string $png ) {
 		if ( strlen( $png ) > self::MAX_BYTES ) {
 			return new WP_Error(
-				'mermaid_blocks_image_too_large',
-				__( 'The image is too large.', 'mermaid-blocks' ),
+				'graphdraw_image_too_large',
+				__( 'The image is too large.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 413 )
 			);
 		}
@@ -463,16 +463,16 @@ final class SavedImages implements Hookable {
 
 		if ( ! $size || IMAGETYPE_PNG !== $size[2] || $size[0] < 1 || $size[1] < 1 ) {
 			return new WP_Error(
-				'mermaid_blocks_image_invalid',
-				__( 'The image is not a PNG file.', 'mermaid-blocks' ),
+				'graphdraw_image_invalid',
+				__( 'The image is not a PNG file.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 400 )
 			);
 		}
 
 		if ( $size[0] > self::MAX_SIDE || $size[1] > self::MAX_SIDE ) {
 			return new WP_Error(
-				'mermaid_blocks_image_too_large',
-				__( 'The image is too large.', 'mermaid-blocks' ),
+				'graphdraw_image_too_large',
+				__( 'The image is too large.', 'graphdraw-mermaid-diagrams-flowcharts' ),
 				array( 'status' => 413 )
 			);
 		}

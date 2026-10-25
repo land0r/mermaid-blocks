@@ -2,15 +2,15 @@
 /**
  * Tests of the REST routes of the saved images.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Images\ImagesController;
-use MermaidBlocks\Images\SavedImages;
-use MermaidBlocks\Options;
-use MermaidBlocks\Posts\EditablePosts;
+use GraphDraw\Images\ImagesController;
+use GraphDraw\Images\SavedImages;
+use GraphDraw\Options;
+use GraphDraw\Posts\EditablePosts;
 use WP_REST_Request;
 use WP_UnitTestCase;
 
@@ -19,7 +19,7 @@ require_once __DIR__ . '/ImageHelpers.php';
 /**
  * Which images the editor may send for a post, and who may do so.
  *
- * @covers \MermaidBlocks\Images\ImagesController
+ * @covers \GraphDraw\Images\ImagesController
  */
 class ImagesControllerTest extends WP_UnitTestCase {
 
@@ -44,7 +44,7 @@ class ImagesControllerTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->images = mermaid_blocks()->get( SavedImages::class );
+		$this->images = graphdraw()->get( SavedImages::class );
 
 		update_option( Options::SAVE_IMAGES, 1 );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
@@ -149,7 +149,7 @@ class ImagesControllerTest extends WP_UnitTestCase {
 	public function test_the_renderer_of_the_editor_decides_what_is_asked_for_and_kept(): void {
 		$post = $this->create_post( array( $this->diagram_block( self::FLOW ) ) );
 		add_filter(
-			'mermaid_blocks_renderer',
+			'graphdraw_renderer',
 			static function () {
 				return 'pele';
 			}
@@ -182,7 +182,7 @@ class ImagesControllerTest extends WP_UnitTestCase {
 		$this->assertSame( 'mermaid', $this->images->get_all( $post->ID )[ $mermaid ]['renderer'] );
 		$this->assertStringNotContainsString( '-pele-', $this->images->get_all( $post->ID )[ $mermaid ]['file'] );
 
-		remove_all_filters( 'mermaid_blocks_renderer' );
+		remove_all_filters( 'graphdraw_renderer' );
 	}
 
 	/**
@@ -195,7 +195,7 @@ class ImagesControllerTest extends WP_UnitTestCase {
 		$response = $this->send_image( $post->ID, self::PIE );
 
 		$this->assertSame( 409, $response->get_status() );
-		$this->assertSame( 'mermaid_blocks_image_not_wanted', $response->get_data()['code'] );
+		$this->assertSame( 'graphdraw_image_not_wanted', $response->get_data()['code'] );
 		$this->assertSame( 404, $this->request( 'POST', '/posts/' . $post->ID . '/images/not-a-key', $this->png() )->get_status() );
 		$this->assertSame( 409, $this->request( 'POST', '/posts/' . $post->ID . '/images/' . strtoupper( $this->images->get_key( self::FLOW ) ), $this->png() )->get_status() );
 		$this->assertSame( array(), $this->images->get_all( $post->ID ) );
@@ -212,7 +212,7 @@ class ImagesControllerTest extends WP_UnitTestCase {
 			$response = $this->request( 'POST', $route, $body );
 
 			$this->assertSame( 400, $response->get_status() );
-			$this->assertSame( 'mermaid_blocks_image_invalid', $response->get_data()['code'] );
+			$this->assertSame( 'graphdraw_image_invalid', $response->get_data()['code'] );
 		}
 
 		$this->assertSame( 400, $this->request( 'POST', $route )->get_status() );
@@ -294,9 +294,9 @@ class ImagesControllerTest extends WP_UnitTestCase {
 		$response = $this->request( 'GET', '/posts/999999/images' );
 
 		$this->assertSame( 404, $response->get_status() );
-		$this->assertSame( 'mermaid_blocks_post_not_found', $response->get_data()['code'] );
+		$this->assertSame( 'graphdraw_post_not_found', $response->get_data()['code'] );
 		$this->assertSame(
-			mermaid_blocks()->get( EditablePosts::class )->find( 999999 )->get_error_message(),
+			graphdraw()->get( EditablePosts::class )->find( 999999 )->get_error_message(),
 			$response->get_data()['message']
 		);
 		$this->assertSame( 404, $this->send_image( 999999, self::FLOW )->get_status() );
@@ -307,7 +307,7 @@ class ImagesControllerTest extends WP_UnitTestCase {
 	 * requests never need them.
 	 */
 	public function test_routes_are_added_when_the_rest_api_starts(): void {
-		$controller = mermaid_blocks()->get( ImagesController::class );
+		$controller = graphdraw()->get( ImagesController::class );
 
 		remove_action( 'rest_api_init', array( $controller, 'register_routes' ) );
 		$this->forget_rest_server();

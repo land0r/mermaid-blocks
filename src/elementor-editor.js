@@ -5,12 +5,12 @@
  * its theme until another is picked.
  *
  * Loaded in Elementor's editor, and only when some theme isn't offered, with
- * those themes in `mermaidBlocksThemeAliases` (see
+ * those themes in `graphDrawThemeAliases` (see
  * includes/Integrations/Elementor/Registrar.php).
  */
 
 // `DiagramWidget::NAME`, and the section of its theme.
-export const WIDGET = 'mermaid-blocks-diagram';
+export const WIDGET = 'graphdraw-diagram';
 export const SECTION = 'section_settings';
 
 /**
@@ -54,6 +54,6 @@ export default function watchPanel( elementor, aliases ) {
 	);
 }
 
-if ( window.elementor && window.mermaidBlocksThemeAliases ) {
-	watchPanel( window.elementor, window.mermaidBlocksThemeAliases );
+if ( window.elementor && window.graphDrawThemeAliases ) {
+	watchPanel( window.elementor, window.graphDrawThemeAliases );
 }

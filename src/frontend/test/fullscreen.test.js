@@ -5,8 +5,8 @@ import createFullscreen from '../fullscreen';
  */
 function setup() {
 	document.body.innerHTML =
-		'<div class="mermaid-blocks-diagram is-rendered">' +
-		'<div class="mermaid-blocks-diagram__canvas"><svg></svg></div>' +
+		'<div class="graphdraw-diagram is-rendered">' +
+		'<div class="graphdraw-diagram__canvas"><svg></svg></div>' +
 		'</div>';
 
 	return document.body.firstElementChild;
@@ -242,13 +242,13 @@ describe( 'createFullscreen', () => {
 			fullscreen.toggle();
 
 			expect(
-				diagram.style.getPropertyValue( '--mermaid-blocks-surface' )
+				diagram.style.getPropertyValue( '--graphdraw-surface' )
 			).toBe( expected || background );
 
 			fullscreen.toggle();
 
 			expect(
-				diagram.style.getPropertyValue( '--mermaid-blocks-surface' )
+				diagram.style.getPropertyValue( '--graphdraw-surface' )
 			).toBe( '' );
 		}
 	);

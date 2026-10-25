@@ -2,10 +2,10 @@
 /**
  * The plugin, which lists its parts and adds them to WordPress.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks;
+namespace GraphDraw;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,11 +16,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * of each part on the requests that need it. A part, and what it is built
  * from, is created when it is first needed: see Container.
  *
- * The function mermaid_blocks() returns the one instance. Through it, other
+ * The function graphdraw() returns the one instance. Through it, other
  * code reaches each part: to output a diagram, or to remove one of the hooks.
  *
- *     echo mermaid_blocks()->diagram()->get_markup( $code );
- *     remove_filter( 'the_content', array( mermaid_blocks()->get( Integrations\CodeBlocks::class ), 'render_content' ) );
+ *     echo graphdraw()->diagram()->get_markup( $code );
+ *     remove_filter( 'the_content', array( graphdraw()->get( Integrations\CodeBlocks::class ), 'render_content' ) );
  *
  * A new part is a class that implements Hookable, and a line in one of the
  * lists below. A unit test tells when a class that adds hooks is in none.
@@ -53,7 +53,7 @@ final class Plugin {
 	 *
 	 * The hooks of such a part are added when the action fires, so they can't
 	 * be removed before. To keep one from being added, remove
-	 * `array( mermaid_blocks(), 'add_deferred_hooks' )` from the action, at
+	 * `array( graphdraw(), 'add_deferred_hooks' )` from the action, at
 	 * priority 0.
 	 */
 	const DEFERRED_PARTS = array(
@@ -95,7 +95,7 @@ final class Plugin {
 	 */
 	public static function instance(): Plugin {
 		if ( null === self::$instance ) {
-			self::$instance = new self( MERMAID_BLOCKS_PLUGIN_FILE );
+			self::$instance = new self( GRAPHDRAW_PLUGIN_FILE );
 		}
 
 		return self::$instance;

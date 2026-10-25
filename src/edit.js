@@ -60,7 +60,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 	// The error the preview shows, if any, so the code field can mark the line
 	// it points at and refer to its message.
 	const [ error, setError ] = useState( null );
-	const errorId = useInstanceId( Edit, 'mermaid-blocks-error' );
+	const errorId = useInstanceId( Edit, 'graphdraw-error' );
 
 	const hasDiagram = !! previewCode.trim();
 	const hasPreview = hasDiagram && ! error;
@@ -96,7 +96,10 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 		if ( svg ) {
 			downloadDiagram( svg, format, getFullLayout( svg ) ).catch( () =>
 				createErrorNotice(
-					__( 'The file could not be created.', 'mermaid-blocks' ),
+					__(
+						'The file could not be created.',
+						'graphdraw-mermaid-diagrams-flowcharts'
+					),
 					{ type: 'snackbar' }
 				)
 			);
@@ -112,7 +115,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 					createSuccessNotice(
 						__(
 							'Diagram copied as a PNG image.',
-							'mermaid-blocks'
+							'graphdraw-mermaid-diagrams-flowcharts'
 						),
 						{ type: 'snackbar' }
 					),
@@ -120,7 +123,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 					createErrorNotice(
 						__(
 							'The image could not be copied.',
-							'mermaid-blocks'
+							'graphdraw-mermaid-diagrams-flowcharts'
 						),
 						{ type: 'snackbar' }
 					)
@@ -130,11 +133,17 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 
 	const exportControls = [
 		{
-			title: __( 'Download as SVG', 'mermaid-blocks' ),
+			title: __(
+				'Download as SVG',
+				'graphdraw-mermaid-diagrams-flowcharts'
+			),
 			onClick: () => downloadPreview( 'svg' ),
 		},
 		{
-			title: __( 'Download as PNG', 'mermaid-blocks' ),
+			title: __(
+				'Download as PNG',
+				'graphdraw-mermaid-diagrams-flowcharts'
+			),
 			onClick: () => downloadPreview( 'png' ),
 		},
 	];
@@ -142,7 +151,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 	// Only where the browser can put an image on the clipboard.
 	if ( canCopyImage() ) {
 		exportControls.push( {
-			title: __( 'Copy as PNG', 'mermaid-blocks' ),
+			title: __( 'Copy as PNG', 'graphdraw-mermaid-diagrams-flowcharts' ),
 			onClick: copyPreview,
 		} );
 	}
@@ -152,7 +161,10 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 			<BlockControls group="other">
 				<ToolbarDropdownMenu
 					icon="download"
-					label={ __( 'Download or copy', 'mermaid-blocks' ) }
+					label={ __(
+						'Download or copy',
+						'graphdraw-mermaid-diagrams-flowcharts'
+					) }
 					toggleProps={ { disabled: ! hasPreview } }
 					controls={ exportControls }
 				/>
@@ -163,7 +175,7 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 			/>
 			<figure
 				ref={ previewRef }
-				className="mermaid-blocks-preview"
+				className="graphdraw-preview"
 				hidden={ ! hasDiagram && RichText.isEmpty( caption ) }
 			>
 				<MermaidDiagram
@@ -180,9 +192,15 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 					<RichText
 						identifier="caption"
 						tagName="figcaption"
-						className="mermaid-blocks-diagram__caption wp-element-caption"
-						aria-label={ __( 'Diagram caption', 'mermaid-blocks' ) }
-						placeholder={ __( 'Add caption', 'mermaid-blocks' ) }
+						className="graphdraw-diagram__caption wp-element-caption"
+						aria-label={ __(
+							'Diagram caption',
+							'graphdraw-mermaid-diagrams-flowcharts'
+						) }
+						placeholder={ __(
+							'Add caption',
+							'graphdraw-mermaid-diagrams-flowcharts'
+						) }
 						value={ caption }
 						onChange={ ( value ) =>
 							setAttributes( { caption: value || undefined } )
@@ -193,22 +211,28 @@ export default function Edit( { attributes, setAttributes, isSelected } ) {
 			{ /* Below the preview, so the diagram that was clicked stays put */ }
 			{ showCode && (
 				<CodeInput
-					className="mermaid-blocks-code"
-					label={ __( 'Mermaid Code', 'mermaid-blocks' ) }
+					className="graphdraw-code"
+					label={ __(
+						'Mermaid Code',
+						'graphdraw-mermaid-diagrams-flowcharts'
+					) }
 					help={
 						<>
 							{ __(
 								'Tab indents. To leave the field, press Esc, then Tab.',
-								'mermaid-blocks'
+								'graphdraw-mermaid-diagrams-flowcharts'
 							) }{ ' ' }
 							<ExternalLink href={ SYNTAX_URL }>
-								{ __( 'Mermaid syntax', 'mermaid-blocks' ) }
+								{ __(
+									'Mermaid syntax',
+									'graphdraw-mermaid-diagrams-flowcharts'
+								) }
 							</ExternalLink>
 						</>
 					}
 					placeholder={ __(
 						'Write your MermaidJS code here…',
-						'mermaid-blocks'
+						'graphdraw-mermaid-diagrams-flowcharts'
 					) }
 					value={ code }
 					onChange={ ( value ) => setAttributes( { code: value } ) }

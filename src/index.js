@@ -59,6 +59,6 @@ registerBlockType( metadata.name, {
  * Printed before this script by includes/Admin/Editor.php: whether the site
  * keeps an image of each diagram, which only the editor can draw.
  */
-if ( window.mermaidBlocksEditorSettings?.saveImages ) {
+if ( window.graphDrawEditorSettings?.saveImages ) {
 	watchPost();
 }

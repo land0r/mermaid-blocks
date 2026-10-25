@@ -2,23 +2,23 @@
 /**
  * Tests of the code shown as diagrams.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Admin\SettingsPage;
-use MermaidBlocks\Assets;
-use MermaidBlocks\Integrations\Block;
-use MermaidBlocks\Integrations\CodeBlocks;
-use MermaidBlocks\Options;
+use GraphDraw\Admin\SettingsPage;
+use GraphDraw\Assets;
+use GraphDraw\Integrations\Block;
+use GraphDraw\Integrations\CodeBlocks;
+use GraphDraw\Options;
 use WP_UnitTestCase;
 
 /**
  * Code marked as Mermaid, in Code blocks and in classic content, run through
  * the filters WordPress runs content through.
  *
- * @covers \MermaidBlocks\Integrations\CodeBlocks
+ * @covers \GraphDraw\Integrations\CodeBlocks
  */
 class CodeBlocksTest extends WP_UnitTestCase {
 
@@ -42,7 +42,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	public function set_up(): void {
 		parent::set_up();
 
-		$this->code_blocks = mermaid_blocks()->get( CodeBlocks::class );
+		$this->code_blocks = graphdraw()->get( CodeBlocks::class );
 
 		update_option( Options::CODE_BLOCKS, 1 );
 
@@ -58,7 +58,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	 * @return string|null The source, or null when the markup has none.
 	 */
 	private function get_source( string $markup ): ?string {
-		if ( ! preg_match( '#<pre class="mermaid-blocks-diagram__source">(.*?)</pre>#s', $markup, $matches ) ) {
+		if ( ! preg_match( '#<pre class="graphdraw-diagram__source">(.*?)</pre>#s', $markup, $matches ) ) {
 			return null;
 		}
 
@@ -120,8 +120,8 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	 * @param string $markup The markup.
 	 */
 	private function assertIsDiagram( string $code, string $markup ): void {
-		$this->assertStringStartsWith( '<div class="mermaid-blocks-diagram" data-mermaid-theme="auto">', trim( $markup ) );
-		$this->assertSame( 1, substr_count( $markup, 'mermaid-blocks-diagram__source' ) );
+		$this->assertStringStartsWith( '<div class="graphdraw-diagram" data-mermaid-theme="auto">', trim( $markup ) );
+		$this->assertSame( 1, substr_count( $markup, 'graphdraw-diagram__source' ) );
 		$this->assertSame( $code, $this->get_source( $markup ) );
 		$this->assertStringNotContainsString( '<code', $markup );
 		$this->assertTrue( wp_script_is( Assets::DIAGRAM ) );
@@ -150,7 +150,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	public function test_shows_the_diagram_in_the_theme_of_the_site(): void {
 		update_option( Options::THEME, 'forest' );
 
-		$this->assertStringStartsWith( '<div class="mermaid-blocks-diagram" data-mermaid-theme="forest">', trim( do_blocks( $this->code_block() ) ) );
+		$this->assertStringStartsWith( '<div class="graphdraw-diagram" data-mermaid-theme="forest">', trim( do_blocks( $this->code_block() ) ) );
 	}
 
 	/**
@@ -338,7 +338,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 			$this->pre( "graph TD\nA --> B" ) . "\n<p>Between</p>\n" . $php . "\n" . $this->pre( "pie\n\"a\" : 1", 'language-mermaid', '' )
 		);
 
-		$this->assertSame( 2, substr_count( $content, 'mermaid-blocks-diagram__source' ) );
+		$this->assertSame( 2, substr_count( $content, 'graphdraw-diagram__source' ) );
 		$this->assertStringContainsString( '>graph TD' . "\n" . 'A --&gt; B</pre>', $content );
 		$this->assertStringContainsString( '>pie' . "\n" . '&quot;a&quot; : 1</pre>', $content );
 		$this->assertStringContainsString( "\n<p>Between</p>\n" . $php . "\n", $content );
@@ -351,7 +351,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	public function test_does_not_render_a_diagram_twice(): void {
 		$once = apply_filters( 'the_content', $this->code_block() . "\n\n" . $this->pre() ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The filter of WordPress.
 
-		$this->assertSame( 2, substr_count( $once, 'mermaid-blocks-diagram__source' ) );
+		$this->assertSame( 2, substr_count( $once, 'graphdraw-diagram__source' ) );
 		$this->assertSame( $once, $this->code_blocks->render_content( $once ) );
 	}
 
@@ -382,7 +382,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	public function test_filter_leaves_code(): void {
 		$seen = array();
 		add_filter(
-			'mermaid_blocks_show_code_as_diagram',
+			'graphdraw_show_code_as_diagram',
 			static function ( $show, $code, $html ) use ( &$seen ) {
 				$seen[] = array( $show, $code, $html );
 
@@ -396,7 +396,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 		$graph   = $this->pre( "graph TD\nA --> B" );
 		$content = $this->code_blocks->render_content( $pie . $graph );
 
-		$this->assertStringStartsWith( $pie . '<div class="mermaid-blocks-diagram"', $content );
+		$this->assertStringStartsWith( $pie . '<div class="graphdraw-diagram"', $content );
 		$this->assertSame(
 			array(
 				array( true, "pie\n\"a\" : 1", $pie ),
@@ -422,7 +422,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 
 		delete_option( Options::CODE_BLOCKS );
-		mermaid_blocks()->get( SettingsPage::class )->register();
+		graphdraw()->get( SettingsPage::class )->register();
 
 		$this->assertArrayHasKey( Options::CODE_BLOCKS, get_registered_settings() );
 		$this->assertArrayHasKey( Options::CODE_BLOCKS, $wp_settings_fields[ SettingsPage::PAGE ][ SettingsPage::SECTION ] );
@@ -438,7 +438,7 @@ class CodeBlocksTest extends WP_UnitTestCase {
 	 */
 	public function test_uninstall_deletes_the_setting(): void {
 		if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-			define( 'WP_UNINSTALL_PLUGIN', 'mermaid-blocks/mermaid-blocks.php' );
+			define( 'WP_UNINSTALL_PLUGIN', 'graphdraw-mermaid-diagrams-flowcharts/graphdraw-mermaid-diagrams-flowcharts.php' );
 		}
 
 		require dirname( __DIR__ ) . '/uninstall.php';

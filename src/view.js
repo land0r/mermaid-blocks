@@ -1,7 +1,7 @@
 /**
  * Renders Mermaid diagrams on the front end: the block's, and those of any
  * other integration that outputs the same markup (see includes/Diagram.php).
- * Registered as the `mermaid-blocks-diagram` script.
+ * Registered as the `graphdraw-diagram` script.
  *
  * Each diagram renders when it scrolls into view, and the renderer (Mermaid.js
  * or Pele) is loaded when the first one does, so a page whose diagrams are
@@ -12,7 +12,7 @@
  * the first diagram asks for one. A diagram that follows the page is drawn
  * again, in the other theme, when the page turns dark or light.
  *
- * Also exposes `window.mermaidBlocks.render( element )` for diagrams added to
+ * Also exposes `window.graphDraw.render( element )` for diagrams added to
  * the page after it loaded, such as a widget a page builder re-renders.
  */
 import renderDiagrams, {
@@ -32,7 +32,7 @@ import watchFonts from './utils/watch-fonts';
 const ROOT_MARGIN = '100% 0px';
 
 // Printed before this script by includes/Assets.php.
-const settings = window.mermaidBlocksSettings || {};
+const settings = window.graphDrawSettings || {};
 const { mermaidUrl, controlsUrl, i18n } = settings;
 
 // Whether the page is watched for turning dark or light.
@@ -81,7 +81,7 @@ function addControls( diagram ) {
 		.catch( ( error ) => {
 			// eslint-disable-next-line no-console
 			console.error(
-				'Mermaid Blocks: failed to load the controls of diagrams.',
+				'GraphDraw: failed to load the controls of diagrams.',
 				error
 			);
 		} );
@@ -105,7 +105,7 @@ function redrawOutdated() {
 				.catch( ( error ) => {
 					// eslint-disable-next-line no-console
 					console.error(
-						'Mermaid Blocks: failed to render diagram.',
+						'GraphDraw: failed to render diagram.',
 						error
 					);
 				} );
@@ -133,7 +133,7 @@ function redrawForFonts() {
 		} )
 		.catch( ( error ) => {
 			// eslint-disable-next-line no-console
-			console.error( 'Mermaid Blocks: failed to render diagram.', error );
+			console.error( 'GraphDraw: failed to render diagram.', error );
 		} );
 }
 
@@ -161,7 +161,7 @@ function renderNow( diagram ) {
 		.catch( ( error ) => {
 			diagram.classList.add( 'has-error' );
 			// eslint-disable-next-line no-console
-			console.error( 'Mermaid Blocks: failed to render diagram.', error );
+			console.error( 'GraphDraw: failed to render diagram.', error );
 		} )
 		.then( () => {
 			diagram.classList.remove( 'is-pending' );
@@ -203,7 +203,7 @@ function render( root = document ) {
 	if ( ! getRendererUrl( settings ) ) {
 		// eslint-disable-next-line no-console
 		console.warn(
-			'Mermaid Blocks: the URL of the renderer is missing. Mermaid diagrams will not be rendered.'
+			'GraphDraw: the URL of the renderer is missing. Mermaid diagrams will not be rendered.'
 		);
 		return;
 	}
@@ -224,7 +224,7 @@ function render( root = document ) {
 		} );
 }
 
-window.mermaidBlocks = { ...window.mermaidBlocks, render };
+window.graphDraw = { ...window.graphDraw, render };
 
 // The script may execute after DOMContentLoaded (deferred/delayed by
 // optimisation plugins), so do not rely on the event alone.

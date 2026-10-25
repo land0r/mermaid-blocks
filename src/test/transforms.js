@@ -111,13 +111,13 @@ describe( 'transforms.from[0] (markdown to Mermaid block)', () => {
 	} );
 
 	describe( 'transform', () => {
-		it( 'creates a mermaid-blocks/diagram block', () => {
+		it( 'creates a graphdraw/diagram block', () => {
 			const block = transform( [
 				para( '```mermaid' ),
 				para( 'flowchart LR' ),
 				para( '```' ),
 			] );
-			expect( block.name ).toBe( 'mermaid-blocks/diagram' );
+			expect( block.name ).toBe( 'graphdraw/diagram' );
 			expect( block.attributes ).toEqual( { code: 'flowchart LR' } );
 		} );
 
@@ -244,7 +244,7 @@ describe( 'transforms.from[1] (Code block marked as Mermaid)', () => {
 				code( 'graph TD\n  A --&gt; B{&quot;x &lt; y &amp; z&quot;}\n' )
 			);
 
-			expect( block.name ).toBe( 'mermaid-blocks/diagram' );
+			expect( block.name ).toBe( 'graphdraw/diagram' );
 			expect( block.attributes ).toEqual( {
 				code: 'graph TD\n  A --> B{"x < y & z"}',
 			} );

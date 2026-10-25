@@ -71,14 +71,14 @@ async function setup( renderer, start = 1280 ) {
 	);
 
 	document.body.innerHTML =
-		'<div class="mermaid-blocks-diagram">' +
-		`<pre class="mermaid-blocks-diagram__source">${ CODE }</pre></div>`;
-	diagram = document.querySelector( '.mermaid-blocks-diagram' );
+		'<div class="graphdraw-diagram">' +
+		`<pre class="graphdraw-diagram__source">${ CODE }</pre></div>`;
+	diagram = document.querySelector( '.graphdraw-diagram' );
 	sized( diagram );
 
 	await renderDiagrams( renderer, diagram );
 
-	canvas = diagram.querySelector( '.mermaid-blocks-diagram__canvas' );
+	canvas = diagram.querySelector( '.graphdraw-diagram__canvas' );
 	sized( canvas );
 	redrawOnResize( renderer, diagram );
 }
@@ -115,7 +115,7 @@ describe( 'redrawOnResize', () => {
 
 		await setup( renderer );
 		const toolbar = document.createElement( 'div' );
-		toolbar.className = 'mermaid-blocks-diagram__toolbar';
+		toolbar.className = 'graphdraw-diagram__toolbar';
 		diagram.insertBefore( toolbar, canvas );
 		const svg = canvas.querySelector( 'svg' );
 		const palette = canvas.style.getPropertyValue( '--pele-fg' );
@@ -128,9 +128,9 @@ describe( 'redrawOnResize', () => {
 		expect( draw ).toHaveBeenCalledTimes( 1 );
 		expect( draw.mock.calls[ 0 ][ 2 ] ).toBe( diagram );
 		expect( canvas.querySelector( 'svg' ) ).toBe( svg );
-		expect(
-			diagram.querySelector( '.mermaid-blocks-diagram__toolbar' )
-		).toBe( toolbar );
+		expect( diagram.querySelector( '.graphdraw-diagram__toolbar' ) ).toBe(
+			toolbar
+		);
 		expect( canvas.style.getPropertyValue( '--pele-fg' ) ).toBe( palette );
 	} );
 

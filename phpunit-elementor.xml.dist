@@ -14,7 +14,7 @@
 	convertDeprecationsToExceptions="true"
 >
 	<php>
-		<env name="MERMAID_BLOCKS_TESTS_ELEMENTOR" value="1"/>
+		<env name="GRAPHDRAW_TESTS_ELEMENTOR" value="1"/>
 	</php>
 	<testsuites>
 		<testsuite name="Elementor">

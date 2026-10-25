@@ -6,7 +6,7 @@ import { getRenderer } from '../renderers';
 /**
  * The name of the ability.
  */
-export const NAME = 'mermaid-blocks/validate-diagram';
+export const NAME = 'graphdraw/validate-diagram';
 
 /**
  * The JSON Schema of the ability's input.

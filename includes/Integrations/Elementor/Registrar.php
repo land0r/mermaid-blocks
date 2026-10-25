@@ -2,14 +2,14 @@
 /**
  * The Mermaid Diagram widget of Elementor, added to Elementor.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Integrations\Elementor;
+namespace GraphDraw\Integrations\Elementor;
 
-use MermaidBlocks\Files;
-use MermaidBlocks\Hookable;
-use MermaidBlocks\Themes;
+use GraphDraw\Files;
+use GraphDraw\Hookable;
+use GraphDraw\Themes;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -30,12 +30,12 @@ final class Registrar implements Hookable {
 	/**
 	 * The handle of the script that draws the widget's diagrams.
 	 */
-	const SCRIPT = 'mermaid-blocks-elementor';
+	const SCRIPT = 'graphdraw-elementor';
 
 	/**
 	 * The handle of the script of Elementor's editor.
 	 */
-	const EDITOR_SCRIPT = 'mermaid-blocks-elementor-editor';
+	const EDITOR_SCRIPT = 'graphdraw-elementor-editor';
 
 	/**
 	 * The plugin's files, to find the scripts.
@@ -123,7 +123,7 @@ final class Registrar implements Hookable {
 
 		wp_add_inline_script(
 			self::EDITOR_SCRIPT,
-			'var mermaidBlocksThemeAliases = ' . wp_json_encode( $aliases ) . ';',
+			'var graphDrawThemeAliases = ' . wp_json_encode( $aliases ) . ';',
 			'before'
 		);
 	}

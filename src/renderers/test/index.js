@@ -65,11 +65,11 @@ describe( 'the math of the editor preview', () => {
 	);
 
 	afterEach( () => {
-		delete window.mermaidBlocksEditorSettings;
+		delete window.graphDrawEditorSettings;
 	} );
 
 	it( 'is typeset in the document of the canvas, by the module the server names', async () => {
-		window.mermaidBlocksEditorSettings = { mathUrl: MATH_URL };
+		window.graphDrawEditorSettings = { mathUrl: MATH_URL };
 
 		let getEditorRenderer;
 		jest.isolateModules( () => {
@@ -96,7 +96,7 @@ describe( 'the icon packs of the editor', () => {
 	const iconPacks = { fa: 'https://example.test/fa.json' };
 
 	afterEach( () => {
-		delete window.mermaidBlocksEditorSettings;
+		delete window.graphDrawEditorSettings;
 	} );
 
 	const getEditorRenderer = () => {
@@ -108,7 +108,7 @@ describe( 'the icon packs of the editor', () => {
 	};
 
 	it( 'are registered with the Mermaid.js of the canvas', () => {
-		window.mermaidBlocksEditorSettings = { iconPacks };
+		window.graphDrawEditorSettings = { iconPacks };
 		const mermaid = { initialize: jest.fn(), registerIconPacks: jest.fn() };
 
 		getEditorRenderer()( { mermaid, document } );
@@ -119,7 +119,7 @@ describe( 'the icon packs of the editor', () => {
 	} );
 
 	it( 'are given to the Pele of the canvas', async () => {
-		window.mermaidBlocksEditorSettings = { iconPacks };
+		window.graphDrawEditorSettings = { iconPacks };
 		const pele = { render: jest.fn( () => ( { svg: '<svg></svg>' } ) ) };
 		const canvas = document.implementation.createHTMLDocument();
 		const element = canvas.createElement( 'div' );

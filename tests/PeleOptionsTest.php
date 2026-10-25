@@ -2,19 +2,19 @@
 /**
  * Tests of the options a site gives Pele.
  *
- * @package MermaidBlocks
+ * @package GraphDraw
  */
 
-namespace MermaidBlocks\Tests;
+namespace GraphDraw\Tests;
 
-use MermaidBlocks\Options;
-use MermaidBlocks\PeleOptions;
+use GraphDraw\Options;
+use GraphDraw\PeleOptions;
 use WP_UnitTestCase;
 
 /**
- * What the `mermaid_blocks_pele_options` filter may set, and who is told.
+ * What the `graphdraw_pele_options` filter may set, and who is told.
  *
- * @covers \MermaidBlocks\PeleOptions
+ * @covers \GraphDraw\PeleOptions
  */
 class PeleOptionsTest extends WP_UnitTestCase {
 
@@ -36,20 +36,20 @@ class PeleOptionsTest extends WP_UnitTestCase {
 	 */
 	private function filtered( $options ): array {
 		add_filter(
-			'mermaid_blocks_pele_options',
+			'graphdraw_pele_options',
 			static function () use ( $options ) {
 				return $options;
 			}
 		);
 
-		return mermaid_blocks()->get( PeleOptions::class )->get_settings();
+		return graphdraw()->get( PeleOptions::class )->get_settings();
 	}
 
 	/**
 	 * Nothing is told without a filter.
 	 */
 	public function test_is_empty_without_a_filter(): void {
-		$this->assertSame( array(), mermaid_blocks()->get( PeleOptions::class )->get_settings() );
+		$this->assertSame( array(), graphdraw()->get( PeleOptions::class )->get_settings() );
 	}
 
 	/**
