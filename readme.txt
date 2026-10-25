@@ -1,6 +1,6 @@
 === GraphDraw – Mermaid Diagrams & Flowcharts ===
 Contributors:      land0r
-Tags:              diagrams, mermaid, flowchart, block, gantt
+Tags:              diagrams, mermaid, flowchart, chart, block
 Requires at least: 6.6
 Tested up to:      7.1
 Stable tag:        1.0.0
@@ -243,3 +243,8 @@ No. Switch on "Show code marked as Mermaid as diagrams" under Settings → Graph
 * The `[mermaid]` shortcode, a Mermaid Diagram widget for Elementor, and code marked as Mermaid in posts shown as diagrams (off by default).
 * Abilities for AI agents, with the WordPress Abilities API (WordPress 6.9 and later).
 * Lighter pages: Mermaid loads only when a diagram scrolls into view, and only the parts that diagram needs.
+
+== Upgrade Notice ==
+
+= 1.0.0 =
+The first release on WordPress.org.
