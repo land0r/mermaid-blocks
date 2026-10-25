@@ -88,13 +88,20 @@ final class Registrar implements Hookable {
 	 * Registers the category of the abilities.
 	 */
 	public function register_category(): void {
-		wp_register_ability_category( self::CATEGORY, $this->get_category_args() );
+		// The action fires only on WordPress 6.9+, which has the function: the check is for Plugin Check.
+		if ( function_exists( 'wp_register_ability_category' ) ) {
+			wp_register_ability_category( self::CATEGORY, $this->get_category_args() );
+		}
 	}
 
 	/**
 	 * Registers the abilities.
 	 */
 	public function register_abilities(): void {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			return;
+		}
+
 		foreach ( $this->get_abilities() as $name => $ability ) {
 			wp_register_ability( $name, $ability->get_args( self::CATEGORY ) );
 		}

@@ -1,27 +1,28 @@
 === Mermaid Blocks ===
-Contributors:      IvanHryhorenko
-Tags:              block, diagrams, mermaidjs, flowchart, gantt, sequence
+Contributors:      land0r
+Tags:              diagrams, mermaid, flowchart, block, gantt
+Requires at least: 6.6
 Tested up to:      7.1
-Stable tag:        1.1.0
+Stable tag:        2.0.0
 Requires PHP:      7.4
 License:           GPL-3.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
-Mermaid Blocks allows you to add and render diagrams using MermaidJS directly in the WordPress editor.
+Draw Mermaid diagrams in the block editor, with a live preview: flowcharts, sequence, class and Gantt diagrams, mind maps and more.
 
 == Description ==
 
-Mermaid Blocks is a Gutenberg plugin that integrates [MermaidJS](https://mermaid-js.github.io/) diagrams into your WordPress posts and pages. It supports popular diagram types such as flowcharts, sequence diagrams, Gantt charts, class diagrams, and more.
+Mermaid Blocks adds [Mermaid](https://mermaid.js.org/) diagrams to your WordPress posts and pages. You write a diagram as text, in Mermaid's syntax, and the plugin draws it: flowcharts, sequence, class, state and Gantt diagrams, mind maps, timelines, Git graphs, architecture diagrams and every other type Mermaid has.
 
-This makes it easy to include **text-based diagrams** using MermaidJS syntax in the Gutenberg editor without additional tools or complex setups.
+This makes it easy to include **text-based diagrams** in the block editor without additional tools or complex setups.
 
 [Playground Demo](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/land0r/mermaid-blocks/main/blueprint.json)
 
 
 ### Features:
-- Add MermaidJS diagrams via a dedicated Gutenberg block.
-- **Supported diagram types:** Flowcharts, Sequence Diagrams, Gantt Charts, Class Diagrams.
-- Real-time preview of MermaidJS diagrams in the editor.
+- Add Mermaid diagrams with a dedicated block.
+- **Every diagram type of Mermaid 12**, with starter code for flowcharts, sequence, class and state diagrams and mind maps.
+- Real-time preview of diagrams in the editor, and the line of an error marked in the code.
 - Optional controls for visitors: zoom for large diagrams, a fullscreen view, buttons to download a diagram as an SVG or PNG file, and a button that copies its code.
 - Every Mermaid theme: one for the whole site under Settings → Mermaid Blocks, and one per diagram where you need it. The automatic theme follows the page, dark mode included.
 - Alignment (centre, wide and full width), spacing, and an optional caption.
@@ -158,22 +159,25 @@ A diagram is drawn in the visitor's browser, so a feed reader, or a browser that
 The diagrams of synced patterns, template parts, widgets and shortcodes get no image.
 
 ### Libraries:
-The diagrams are drawn by [Mermaid](https://mermaid.js.org/), by the Mermaid project (MIT licence), or by [Pele](https://pele.run/), by Obsidian (MIT licence). With Pele, formulas are typeset by [Temml](https://temml.org/), by Ron Kok (MIT licence). All three are included in the plugin.
+The diagrams are drawn by [Mermaid](https://mermaid.js.org/), by the Mermaid project (MIT licence), or by [Pele](https://pele.run/), by Obsidian (MIT licence). With Pele, formulas are typeset by [Temml](https://temml.org/), by Ron Kok (MIT licence). For a diagram that asks for the ELK layout, Mermaid uses [ELK](https://eclipse.dev/elk/), by the Eclipse Foundation, as elkjs (Eclipse Public License 2.0, which allows the GPL as a secondary licence). All four are included in the plugin.
+
+### Source code:
+The JavaScript in the plugin's `build/` folder is compiled. Its source, with the build scripts, is on GitHub: [land0r/mermaid-blocks](https://github.com/land0r/mermaid-blocks). Run `npm ci && composer install && npm run build` there to build it.
 
 == Installation ==
 
 1. Upload the plugin to the `/wp-content/plugins/mermaid-blocks` directory, or install it through the WordPress plugin screen.
 2. Activate the plugin through the 'Plugins' menu.
-3. Add the **Mermaid Diagram** block in the Gutenberg editor.
-4. Write MermaidJS code and preview your diagram instantly.
+3. Add the **Mermaid Diagram** block in the block editor.
+4. Write Mermaid code and preview your diagram instantly.
 
 == Frequently Asked Questions ==
 
 = What types of diagrams are supported? =
-The plugin supports popular MermaidJS diagrams: Flowcharts, Sequence Diagrams, Gantt Charts, and Class Diagrams.
+Every type of the Mermaid version the plugin has, Mermaid 12.1: flowcharts, sequence, class, state, entity relationship, user journey, Gantt, pie, quadrant, requirement, C4, Sankey, XY, block, packet, kanban, architecture, radar and treemap diagrams, mind maps, timelines and Git graphs among them. Pele draws them all too.
 
-= Can I edit MermaidJS code? =
-Yes, you can edit MermaidJS code directly in the block editor using plain text.
+= Can I edit Mermaid code? =
+Yes, you can edit Mermaid code directly in the block editor using plain text.
 
 = Is real-time rendering supported? =
 Yes, your diagrams are rendered in real-time as you edit the code.
@@ -219,23 +223,34 @@ No. Switch on "Show code marked as Mermaid as diagrams" under Settings → Merma
 
 == Screenshots ==
 
-1. **Adding a diagram block** – Inserting a Mermaid Diagram block in Gutenberg editor.
-2. **Example: Flowchart** – A rendered flowchart in the Gutenberg editor.
-3. **Example: Sequence Diagram** – MermaidJS sequence diagram rendered live.
+1. **Adding a diagram block** – Inserting a Mermaid Diagram block in the block editor.
+2. **Example: Flowchart** – A rendered flowchart in the block editor.
+3. **Example: Sequence Diagram** – A sequence diagram rendered live.
 4. **Frontend View** – A Mermaid diagram displayed on the published site.
 
 == Changelog ==
 
-= 1.0.0 =
-* Initial stable release.
-* Add MermaidJS block with support for flowcharts, sequence diagrams, Gantt charts, and class diagrams.
-* Real-time rendering of diagrams in the Gutenberg editor.
+= 2.0.0 =
+* Mermaid 12.1, with every diagram type it has.
+* A choice of renderer: Mermaid.js, or Pele, which draws the same code with much less JavaScript. With Pele: formulas, layouts for narrow screens, its own zoom, and options a site sets.
+* Icons in diagrams, from icon packs a site registers.
+* Themes: one for the site and one per diagram, and an automatic theme that follows the page, dark mode included.
+* Alignment, spacing, a caption, and an accessible title and description.
+* Controls for visitors: zoom, fullscreen, download as SVG or PNG, and copy the code.
+* The code field has line numbers, Tab indentation and the line of an error marked. Copy a diagram as PNG from the block's toolbar.
+* Saved images of diagrams, for feeds and browsers without JavaScript (off by default).
+* The `[mermaid]` shortcode, a Mermaid Diagram widget for Elementor, and code marked as Mermaid in posts shown as diagrams (off by default).
+* Abilities for AI agents, with the WordPress Abilities API (WordPress 6.9 and later).
+* Lighter pages: Mermaid loads only when a diagram scrolls into view, and only the parts that diagram needs.
+* Fix: `&`, `<` and `>` in labels are shown as written.
+* Fix: the editor no longer crashes when the Transform menu opens for a block without text.
+* Now requires PHP 7.4.
 
 = 1.1.0 =
 * Instructions in the editor.
 * ObsidianMD markdown to Mermaid Blocks transformation.
 
-== Future Plans ==
-
-* Add support for state diagrams, mindmaps, and other MermaidJS types.
-* Include pre-designed templates for faster diagram creation.
+= 1.0.0 =
+* Initial stable release.
+* Add MermaidJS block with support for flowcharts, sequence diagrams, Gantt charts, and class diagrams.
+* Real-time rendering of diagrams in the Gutenberg editor.
