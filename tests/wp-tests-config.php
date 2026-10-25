@@ -26,6 +26,11 @@ function graphdraw_tests_env( $name, $default_value ) {
 // WordPress, as Composer installs it.
 define( 'ABSPATH', dirname( __DIR__ ) . '/vendor/roots/wordpress-no-content/' );
 
+// That WordPress has no themes folder, so no theme directory is registered, and WordPress 6.8+ calls wp_is_block_theme() "incorrectly" as it loads. An empty one is enough.
+if ( ! is_dir( ABSPATH . 'wp-content/themes' ) ) {
+	mkdir( ABSPATH . 'wp-content/themes', 0755, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- WordPress isn't loaded yet.
+}
+
 define( 'DB_NAME', graphdraw_tests_env( 'WP_TESTS_DB_NAME', 'wordpress_tests' ) );
 define( 'DB_USER', graphdraw_tests_env( 'WP_TESTS_DB_USER', 'root' ) );
 define( 'DB_PASSWORD', graphdraw_tests_env( 'WP_TESTS_DB_PASSWORD', '' ) );
