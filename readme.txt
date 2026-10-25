@@ -164,6 +164,12 @@ The diagrams are drawn by [Mermaid](https://mermaid.js.org/), by the Mermaid pro
 ### Source code:
 The JavaScript in the plugin's `build/` folder is compiled. Its source, with the build scripts, is on GitHub: [land0r/graphdraw](https://github.com/land0r/graphdraw). Run `npm ci && composer install && npm run build` there to build it.
 
+== External services ==
+
+GraphDraw connects to no outside service by itself: Mermaid, Pele and Temml are included in the plugin, and nothing is sent anywhere.
+
+Icon packs are the one exception, and only when a site adds them. A pack registered with the `graphdraw_icon_packs` filter is downloaded by the visitor's browser from the URL the site gave, only on a page whose diagrams use one of its icons. The request is a plain download of the pack's JSON file: no data about the site or the visitor is sent with it, beyond what any browser request carries, such as the IP address and the user agent. The example in "Icons" above uses jsDelivr: [terms of use](https://www.jsdelivr.com/terms/terms-of-use) and [privacy policy](https://www.jsdelivr.com/terms/privacy-policy).
+
 == Installation ==
 
 1. Upload the plugin to the `/wp-content/plugins/graphdraw` directory, or install it through the WordPress plugin screen.
@@ -220,6 +226,9 @@ In Elementor, add the Mermaid Diagram widget: it has the block's settings, and i
 
 = My posts already have Mermaid code in code blocks. Do I have to convert them? =
 No. Switch on "Show code marked as Mermaid as diagrams" under Settings → GraphDraw. Code with the `language-mermaid` class is then shown as a diagram, and the posts stay as they are. The diagram replaces the code before the page is sent, so a script of another plugin that draws such code finds none: it is not drawn twice. To keep some code as code, return false from the `graphdraw_show_code_as_diagram` filter.
+
+= Where do I get help? =
+Ask in the plugin's support forum on WordPress.org. Report bugs and suggest features on GitHub: [land0r/graphdraw issues](https://github.com/land0r/graphdraw/issues). Support covers the plugin itself; help with Mermaid's syntax is in [Mermaid's documentation](https://mermaid.js.org/intro/syntax-reference.html).
 
 == Screenshots ==
 
